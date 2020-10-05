@@ -39,3 +39,20 @@ The GNN convolution layer consists of a target-to-source convolutions, where the
 We repeat the conv layer other 2 times for a total of 3 conv layers, so the depth of out GNN can be considered to be 3. This means that from the current node or track section where we are, we can reach the information of nodes 3 hops away from us.
 The root node is the only node about which we care the value, because it represents all the path reachable (at depth 3) from it.
 So, from the current switch, we consider as root node of different trees each reachable track section, in addition to the section we are at.
+
+### File browsing
+• "train.py": is the main training file where all the experiences to be saved in the replay memory are computed.
+This file is quite messy, but the main purpose is to store the experience for an agent when it computes a decision for at a switch, when it reaches the target and when it's stuck in a deadlock.
+When at a switch, we save the observation at the current track section and the observation at the next track section (decided by the network).
+When done, we save the observation at the last switch encountered and the observation of the track section where the target is.
+When in a deadlock, we do the same as for a done agent.
+When the agent decides to stop at a switch, we also compute the observation at the current track, whereas the next state is also the same observation 1 timestep later.
+If a track section can be reached through more paths at a switch (usually happens then the switch is composed of more cells, so they are considered as 1 unique switch), all the possible paths for the same track section are considered as different nodes. This should help when a certain path is blocked by another agent, so an alternative one could be chosen.
+
+• "dueling_double_dqn.py": contains the DQN agent implemented as DQN (planning to extend to Rainbow).
+
+• "graph_for_observation.py": all the computation for the observation (also a mess, I don't suggest you to look at it)
+
+• "VRSPConv.py": the convolution layer of the GNN model. Pytorch geometric is the framework used to implement conv layer.
+
+• "model.py": GNN model
