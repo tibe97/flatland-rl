@@ -656,7 +656,7 @@ class GraphObservation(ObservationBuilder):
                 current_track, next_switch, current_direction, root_track = node
                 if layer == start_index+1:
                     # retrieve indexes for PARTITIONED_GRAPH_EDGES (first paths IDs from root node)
-                    root_track = current_track
+                    root_track = (current_track,0)
 
                 if consider_joining_paths:
                     reachable_nodes = list(
@@ -784,7 +784,7 @@ class GraphObservation(ObservationBuilder):
 
         new_graph_edges = [[old_to_new_map[e[0]],
                             old_to_new_map[e[1]]] for e in new_mapped_graph_edges]
-
+        assert len(new_graph_edges) > 0
         new_node_features = []
         for new_node_index in range(len(old_ids)):
             new_node_features.append(node_features[new_to_old_map[new_node_index]])
@@ -816,6 +816,7 @@ class GraphObservation(ObservationBuilder):
 
             new_graph_edges = [[old_to_new_map[e[0]], old_to_new_map[e[1]]]
                                for e in new_mapped_graph_edges]
+            assert len(new_graph_edges) > 0
             new_node_features = []
             for new_node_index in range(len(old_ids)):
                 new_node_features.append(
@@ -996,11 +997,14 @@ class GraphObservation(ObservationBuilder):
                 for agent in self.env.agents:
                     if agent.status == RailAgentStatus.ACTIVE:
                         if agent.position == cell_position:
-                            if self.agents_path_at_switch[agent.handle][0] == self.get_track(agent_position):
+                            if agent.handle in self.agents_path_at_switch.keys():
+                                if self.agents_path_at_switch[agent.handle][0] == self.get_track(agent_position):
+                                    num_agents_opp_dir += 1
+                                elif self.agents_path_at_switch[agent.handle][0] == track_ID:
+                                    num_agents_same_dir += 1
+                            else:
                                 num_agents_opp_dir += 1
-                            elif self.agents_path_at_switch[agent.handle][0] == track_ID:
-                                num_agents_same_dir += 1
-        
+                                
         if self.get_track(agent_position) == track_ID and agent_orientation == orientation:
             num_agents_same_dir = 0
             num_agents_opp_dir = 0

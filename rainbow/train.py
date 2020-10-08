@@ -3,6 +3,7 @@ from print_info import print_info
 from dueling_double_dqn import Agent
 from predictions import ShortestPathPredictorForRailEnv
 from graph_for_observation import GraphObservation
+from test import test
 from flatland.envs.schedule_generators import sparse_schedule_generator
 from flatland.envs.rail_generators import sparse_rail_generator
 from flatland.envs.rail_env import RailEnv, RailEnvActions
@@ -37,34 +38,51 @@ def main(args):
         logging.basicConfig(level=logging.NOTSET)
         logging.getLogger().disabled = True
 
-    start_print = "About to train {} agents on ({},{}) env.\nParameters:\nmax_num_cities: {}\nmax_rails_between_cities: {}\nmax_rails_in_city: {}\nmalfunction_rate: {}\nmax_duration: {}\nmin_duration: {}\nnum_episodes: {}\nmax_steps: {}\n".format(
+    # ADAPTIVE parameters
+    max_num_cities_adaptive = (args.num_agents//10)+2
+    max_steps = int(4 * 2 * (args.width + args.height + args.num_agents / max_num_cities_adaptive))
+
+    start_print = "About to train {} agents on ({},{}) env.\nParameters:\nmax_num_cities: {}\nmax_rails_between_cities: {}\nmax_rails_in_city: {}\nmalfunction_rate: {}\nmax_duration: {}\nmin_duration: {}\nnum_episodes: {}\nmax_steps: {}\neps_initial: {}\neps_decay_rate: {}\nlearning_rate: {}\ndone_reward: {}\n".format(
         args.num_agents,
         args.width,
         args.height,
-        args.max_num_cities,
+        max_num_cities_adaptive,
         args.max_rails_between_cities,
         args.max_rails_in_city,
         args.malfunction_rate,
         args.max_duration,
         args.min_duration,
         args.num_episodes,
-        args.max_steps 
+        max_steps,
+        args.eps,
+        args.eps_decay,
+        args.learning_rate,
+        args.done_reward
     )
     print(start_print)
     with open(args.model_path + 'training_stats.txt', 'a') as f:
         print(start_print, file=f, end=" ")
 
-    rail_generator = sparse_rail_generator(max_num_cities=args.max_num_cities,
+    metrics = {'episodes': [], # originally 'steps'
+			   'rewards': [],
+			   'best_avg_done_agents': -float('inf'),
+			   'best_avg_reward': -float('inf')}
+
+    
+    rail_generator = sparse_rail_generator(max_num_cities=max_num_cities_adaptive,
                                            seed=args.seed,
                                            grid_mode=args.grid_mode,
                                            max_rails_between_cities=args.max_rails_between_cities,
                                            max_rails_in_city=args.max_rails_in_city,
                                            )
+    """                                   
     # Maps speeds to % of appearance in the env
     speed_ration_map = {1.: 0.25,  # Fast passenger train
                         1. / 2.: 0.25,  # Fast freight train
                         1. / 3.: 0.25,  # Slow commuter train
                         1. / 4.: 0.25}  # Slow freight train
+    """
+    speed_ration_map = {1.0: 1.0}
 
     schedule_generator = sparse_schedule_generator(speed_ration_map)
 
@@ -74,14 +92,12 @@ def main(args):
         max_duration=args.max_duration)  # Max duration of malfunction
 
     if args.observation_builder == 'GraphObsForRailEnv':
-        prediction_depth = args.prediction_depth
-        bfs_depth = args.bfs_depth
         observation_builder = GraphObservation()
         state_size = 12
         network_action_size = 4  # {follow path, stop}
         railenv_action_size = 4  # The RailEnv possible actions
         dqn_agent = Agent(
-            state_size=state_size, action_size=network_action_size, obs_builder=observation_builder)
+            state_size=state_size, action_size=network_action_size, obs_builder=observation_builder, learning_rate=args.learning_rate)
 
     # Construct the environment with the given observation, generators, predictors, and stochastic data
     env = RailEnv(width=args.width,
@@ -96,10 +112,9 @@ def main(args):
     env.reset()
 
     # max_steps = env.compute_max_episode_steps(args.width, args.height, args.num_agents/args.max_num_cities)
-    max_steps = args.max_steps  # TODO DEBUG
     eps = args.eps
     eps_end = 0.005
-    eps_decay = 0.999
+    eps_decay = args.eps_decay
     # Need to have two since env works with RailEnv actions but agent works with network actions
     railenv_action_dict = dict()
     scores_window = deque(maxlen=100)
@@ -186,8 +201,8 @@ def main(args):
                 elif agent.status in [RailAgentStatus.DONE, RailAgentStatus.DONE_REMOVED]:
                     num_agents_done += 1
 
-                logging.debug("Agent {} at position {}, fraction {}".format(
-                    a, agent.position, agent.speed_data["position_fraction"]))
+                logging.debug("Agent {} at position {}, fraction {}, status {}".format(
+                    a, agent.position, agent.speed_data["position_fraction"], agent.status))
 
                 if info['action_required'][a] and agent_at_switch[a] and agent.status in [RailAgentStatus.ACTIVE, RailAgentStatus.READY_TO_DEPART] and agent.malfunction_data["malfunction"] == 0:
                     # if we finish previous action (action may take more than 1 timestep)
@@ -226,12 +241,12 @@ def main(args):
 
                 elif agent.status != RailAgentStatus.DONE_REMOVED:  # When going straight
                     next_action = 0
-                    if not agent.moving and agent.malfunction_data["malfunction"] == 0:
+                    if agent.status == RailAgentStatus.READY_TO_DEPART or (not agent.moving and agent.malfunction_data["malfunction"] == 0):
                         valid_move_actions = get_valid_move_actions_(
                             agent.direction, agent_position, env.rail)
                         # agent could be at switch, so more actions possible
                         assert len(valid_move_actions) >= 1
-                        next_action = valid_move_actions.popitem()[0][2]
+                        next_action = valid_move_actions.popitem()[0].action
 
                 # Update action dicts
                 railenv_action_dict.update({a: next_action})
@@ -262,16 +277,16 @@ def main(args):
                         logging.debug("Update=True: agent {}".format(a))
                         # next state is the complete state, with all the possible path choices
                         if len(next_obs[a]) > 0 and len(agent_path_obs_buffer[a]) > 0:
-                            dqn_agent.step(
-                                agent_path_obs_buffer[a], acc_rewards[a], next_obs[a], done[a], agents_in_deadlock[a])
+                            if agent.status == RailAgentStatus.DONE_REMOVED or agent.status == RailAgentStatus.DONE:
+                                logging.debug("Agent {} DONE! It has been removed and experience saved!".format(a))
+                                agent_done_removed[a] = True
+                                acc_rewards[a] += args.done_reward # Explicit individual reward of reaching target
+
+                            dqn_agent.step(agent_path_obs_buffer[a], acc_rewards[a], next_obs[a], done[a], agents_in_deadlock[a])
                             acc_rewards[a] = 0
                             update_values[a] = False
                             # agent_obs_buffer[a] = agent_obs[a].copy()
-                            if agent.status == RailAgentStatus.DONE_REMOVED or agent.status == RailAgentStatus.DONE:
-                                logging.debug(
-                                    "Agent {} DONE! It has been removed and experience saved!".format(a))
-                                agent_done_removed[a] = True
-
+                            
                     if len(next_obs[a]) > 0:
                         agent_obs[a] = next_obs[a].copy()
 
@@ -420,7 +435,19 @@ def main(args):
         with open(args.model_path + 'training_stats.txt', 'a') as f:
             print(episode_stats, file=f, end=" ")
 
-        if ep % 20 == 0:
+        if (ep % args.evaluation_interval) == 0:  # Evaluate only at the end of the episodes
+
+            dqn_agent.eval()  # Set DQN (online network) to evaluation mode
+            avg_done_agents, avg_reward, avg_norm_reward, avg_deadlock_agents = test(
+                args, ep, dqn_agent, metrics, args.model_path)  # Test
+            
+            testing_stats = '\nTesting agents on ' + str(args.evaluation_episodes) + ': Avg. done agents: ' + str(avg_done_agents) + ' | Avg. reward: ' + str(avg_reward) + ' | Avg. normalized reward: ' + str(avg_norm_reward) + ' | Avg. agents in deadlock: ' + str(avg_deadlock_agents)
+            print(testing_stats)
+            with open(args.model_path + 'training_stats.txt', 'a') as f:
+                print(testing_stats, file=f)
+            dqn_agent.train()  # Set DQN (online network) back to training mode
+
+        if ep % args.save_model_interval == 0:
             dqn_agent.save(args.model_path + args.model_name)  # Save models
             eps_stats = '\rTraining {} Agents.\t Episode {}\t Average Score: {:.3f}\tDones: {:.2f}%\tEpsilon: {:.2f} \n'.format(
                 env.get_num_agents(),
@@ -432,7 +459,7 @@ def main(args):
             with open(args.model_path + 'training_stats.txt', 'a') as f:
                 print(eps_stats, file=f)
 
-        if ep % 100 == 0:  # backup weights
+        if ep % (args.save_model_interval * 5) == 0:  # backup weights
             now = datetime.now()
             dt_string = now.strftime("%d_%m_%Y__%H_%M_")
             if not os.path.exists(args.model_path + "checkpoint"):
@@ -445,11 +472,11 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Flatland')
     # Flatland parameters
-    parser.add_argument('--width', type=int, default=50,
+    parser.add_argument('--width', type=int, default=25,
                         help='Environment width')
-    parser.add_argument('--height', type=int, default=50,
+    parser.add_argument('--height', type=int, default=25,
                         help='Environment height')
-    parser.add_argument('--num-agents', type=int, default=10,
+    parser.add_argument('--num-agents', type=int, default=5,
                         help='Number of agents in the environment')
     parser.add_argument('--max-num-cities', type=int, default=6,
                         help='Maximum number of cities where agents can start or end')
@@ -457,24 +484,20 @@ if __name__ == '__main__':
                         help='Seed used to generate grid environment randomly')
     parser.add_argument('--grid-mode', type=bool, default=False,
                         help='Type of city distribution, if False cities are randomly placed')
-    parser.add_argument('--max-rails-between-cities', type=int, default=4,
+    parser.add_argument('--max-rails-between-cities', type=int, default=2,
                         help='Max number of tracks allowed between cities, these count as entry points to a city')
-    parser.add_argument('--max-rails-in-city', type=int, default=6,
+    parser.add_argument('--max-rails-in-city', type=int, default=4,
                         help='Max number of parallel tracks within a city allowed')
     parser.add_argument('--malfunction-rate', type=int, default=0,
                         help='Rate of malfunction occurrence of single agent')
     parser.add_argument('--min-duration', type=int,
-                        default=5, help='Min duration of malfunction')
+                        default=20, help='Min duration of malfunction')
     parser.add_argument('--max-duration', type=int,
-                        default=10, help='Max duration of malfunction')
+                        default=50, help='Max duration of malfunction')
     parser.add_argument('--observation-builder', type=str, default='GraphObsForRailEnv',
                         help='Class to use to build observation for agent')
     parser.add_argument('--predictor', type=str, default='ShortestPathPredictorForRailEnv',
                         help='Class used to predict agent paths and help observation building')
-    parser.add_argument('--bfs-depth', type=int, default=4,
-                        help='BFS depth of the graph observation')
-    parser.add_argument('--prediction-depth', type=int, default=108,
-                        help='Prediction depth for shortest path strategy, i.e. length of a path')
     parser.add_argument('--view-semiwidth', type=int, default=7,
                         help='Semiwidth of field view for agent in local obs')
     parser.add_argument('--view-height', type=int, default=30,
@@ -484,17 +507,31 @@ if __name__ == '__main__':
     # Training parameters
     parser.add_argument('--num-episodes', type=int, default=1000,
                         help='Number of episodes on which to train the agents')
-    parser.add_argument('--max-steps', type=int, default=200,
+    parser.add_argument('--max-steps', type=int, default=300,
                         help='Maximum number of steps for each episode')
-    parser.add_argument('--eps', type=float, default=0.3,
+    parser.add_argument('--eps', type=float, default=1,
                         help='epsilon value for e-greedy')
+    parser.add_argument('--eps-decay', type=float, default=0.999,
+                        help='epsilon decay value')
+    parser.add_argument('--learning-rate', type=float, default=0.001,
+                        help='LR for DQN agent')
     parser.add_argument('--model-path', type=str, default='', help="")
     parser.add_argument('--model-name', type=str, default='dd_dqn',
                         help='Name to use to save the model .pth')
     parser.add_argument('--resume-weights', type=bool, default=True,
                         help='True if load previous weights')
-    parser.add_argument('--debug-print', type=bool, default=True,
+    parser.add_argument('--debug-print', type=bool, default=False,
                         help='requires debug printing')
+    parser.add_argument('--evaluation-episodes', type=int, default=10,
+                        metavar='N', help='Number of evaluation episodes to average over')
+    parser.add_argument('--render', action='store_true',
+                        default=False, help='Display screen (testing only)')
+    parser.add_argument('--evaluation-interval', type=int, default=10, metavar='EPISODES', help='Number of episodes between evaluations')
+    parser.add_argument('--save-model-interval', type=int, default=10,
+                        help='Save models every tot episodes')
+    parser.add_argument('--done-reward', type=int, default=100,
+                        help='Reward given to agent when it reaches target')
+    
     # DDQN hyperparameters
 
     args = parser.parse_args()

@@ -17,7 +17,8 @@ BUFFER_SIZE = int(1e4)  # replay buffer size
 BATCH_SIZE = 128
 GAMMA = 0.99  # discount factor 0.99
 TAU = 1e-3  # for soft update of target parameters
-LR = 0.001  # learning rate 0.5e-4 works
+#LR = 0.001  # learning rate 0.5e-4 works
+LR = 0.03 # 30x original LR to use with batch norm
 UPDATE_EVERY = 10  # how often to update the network
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -27,7 +28,7 @@ print("Available device is " + str(device))
 class Agent:
     """Interacts with and learns from the environment."""
 
-    def __init__(self, state_size, action_size, obs_builder, agent_messages={}, double_dqn=True):
+    def __init__(self, state_size, action_size, obs_builder, agent_messages={}, double_dqn=True, learning_rate=0.001):
         """Initialize an Agent object.
 
         Params
@@ -41,13 +42,24 @@ class Agent:
         # Q-Network
         self.qnetwork_local = DQN(state_size).to(device)
         self.qnetwork_target = copy.deepcopy(self.qnetwork_local)
-        self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=LR)
-
+        self.learning_rate = learning_rate
+        self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=self.learning_rate)
+        self.evaluation_mode = False
         # Replay memory
         self.memory = ReplayBuffer("fc", BUFFER_SIZE, BATCH_SIZE)
         # Initialize time step (for updating every UPDATE_EVERY steps)
         self.t_step = 0
         self.obs_builder = obs_builder
+
+    def eval(self):
+        self.evaluation_mode = True
+        self.qnetwork_local.eval()
+        self.qnetwork_target.eval()
+
+    def train(self):
+        self.evaluation_mode = False
+        self.qnetwork_local.train()
+        self.qnetwork_target.train()
 
     def save(self, filename):
         print("AGENT: Saving local and target networks")
@@ -121,12 +133,16 @@ class Agent:
             paths = []
             for path in out_mapped[handle].keys():
                 paths.append([path, out_mapped[handle][path][0]])
-            if random.random() > eps:
+            if self.evaluation_mode:
                 best_path = max(paths, key=lambda item:item[1])
                 agents_best_path_values.update({handle: best_path})
-            else:
-                random_index = random.choice(np.arange(len(paths)))
-                agents_best_path_values.update({handle: paths[random_index]})
+            else: 
+                if random.random() > eps:
+                    best_path = max(paths, key=lambda item:item[1])
+                    agents_best_path_values.update({handle: best_path})
+                else:
+                    random_index = random.choice(np.arange(len(paths)))
+                    agents_best_path_values.update({handle: paths[random_index]})
             """
             for path in state.keys():
                 node_features, graph_edges = state[path].node_features, state[path].graph_edges
@@ -161,7 +177,7 @@ class Agent:
                 path_values = self.act(preprocessed_next_state, eps=0) # Choose path to take at the current switch        
                 next_state = state["partitioned"][path_values[0][0]]
             else: 
-                next_state = state["partitioned"][0]
+                next_state = state["partitioned"][(0, 0)]
             selected_next_states.append(next_state)
          
         # Double DQN
