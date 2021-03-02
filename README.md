@@ -1,4 +1,4 @@
-# flatland_rl
+# Flatland Challenge with Graph Neural Networks
 
 ### Observation
 The rail environment can be seen as composed of track sections, where each track section is a portion of the track delimited by 2 switches (forks). A switch is a cell where the train can choose between 2 different direcitions, so it's a choice point. Other cells where there is only one possible direction are part of at least one track section. There are cells belonging to 2 track sections, these are the intersections.
