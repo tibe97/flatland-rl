@@ -1,5 +1,7 @@
 # Flatland Challenge with Graph Neural Networks
 
+The official page of the challenge, with all the details and materials, can be reached here: https://www.aicrowd.com/challenges/flatland
+
 ### Observation
 The rail environment can be seen as composed of track sections, where each track section is a portion of the track delimited by 2 switches (forks). A switch is a cell where the train can choose between 2 different direcitions, so it's a choice point. Other cells where there is only one possible direction are part of at least one track section. There are cells belonging to 2 track sections, these are the intersections.
 The state is the subjective point of view of an agent. Each agent has its own state-representation.
