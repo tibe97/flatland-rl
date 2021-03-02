@@ -3,23 +3,25 @@ import os
 import random
 from collections import namedtuple, deque, Iterable, defaultdict
 from datetime import date
-
+import pickle
 import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from torch_geometric.data import DataLoader, Batch, Data
+from torch.distributions import Categorical
+from torch_geometric.data import Batch, Data
+# import torchsummary
 
-from model import DQN
+from model import DQN_action, DQN_value
 
 BUFFER_SIZE = int(1e4)  # replay buffer size
-#BATCH_SIZE = 512  # minibatch size
+# BATCH_SIZE = 512  # minibatch size
 BATCH_SIZE = 128
 GAMMA = 0.99  # discount factor 0.99
 TAU = 1e-3  # for soft update of target parameters
-#LR = 0.001  # learning rate 0.5e-4 works
-LR = 0.03 # 30x original LR to use with batch norm
-UPDATE_EVERY = 10  # how often to update the network
+# LR = 0.001  # learning rate 0.5e-4 works
+LR = 0.03  # 30x original LR to use with batch norm
+UPDATE_EVERY = 15  # how often to update the network
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Available device is " + str(device))
@@ -28,7 +30,7 @@ print("Available device is " + str(device))
 class Agent:
     """Interacts with and learns from the environment."""
 
-    def __init__(self, state_size, action_size, obs_builder, agent_messages={}, double_dqn=True, learning_rate=0.001):
+    def __init__(self, args, state_size, obs_builder, summary_writer):
         """Initialize an Agent object.
 
         Params
@@ -36,77 +38,113 @@ class Agent:
             state_size (int): dimension of each state
             action_size (int): dimension of each action
         """
+        self.args = args
         self.state_size = state_size
-        self.double_dqn = double_dqn
-        self.action_size = action_size
         # Q-Network
-        self.qnetwork_local = DQN(state_size).to(device)
-        self.qnetwork_target = copy.deepcopy(self.qnetwork_local)
-        self.learning_rate = learning_rate
-        self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=self.learning_rate)
+        self.qnetwork_value_local = DQN_value(state_size).to(device)
+        self.qnetwork_value_target = copy.deepcopy(self.qnetwork_value_local)
+        self.qnetwork_action = DQN_action(state_size).to(device)
+        self.learning_rate = args.learning_rate
+        self.optimizer_value = optim.Adam(self.qnetwork_value_local.parameters(), lr=self.learning_rate)
+        self.optimizer_action = optim.Adam(self.qnetwork_action.parameters(), lr=self.learning_rate)
         self.evaluation_mode = False
         # Replay memory
         self.memory = ReplayBuffer("fc", BUFFER_SIZE, BATCH_SIZE)
         # Initialize time step (for updating every UPDATE_EVERY steps)
         self.t_step = 0
         self.obs_builder = obs_builder
+        self.summary_writer = summary_writer
+
 
     def eval(self):
         self.evaluation_mode = True
-        self.qnetwork_local.eval()
-        self.qnetwork_target.eval()
+        self.qnetwork_value_local.eval()
+        self.qnetwork_value_target.eval()
+        self.qnetwork_action.eval()
 
     def train(self):
         self.evaluation_mode = False
-        self.qnetwork_local.train()
-        self.qnetwork_target.train()
+        self.qnetwork_value_local.train()
+        self.qnetwork_value_target.train()
+        self.qnetwork_action.train()
 
     def save(self, filename):
         print("AGENT: Saving local and target networks")
-        torch.save(self.qnetwork_local.state_dict(), filename + "_local.pth")
-        torch.save(self.qnetwork_target.state_dict(), filename + "_target.pth")
+        torch.save(self.qnetwork_value_local.state_dict(), filename + "_value_local.pth")
+        torch.save(self.qnetwork_value_target.state_dict(), filename + "_value_target.pth")
+        torch.save(self.qnetwork_action.state_dict(), filename + "_action.pth")
+        #print(self.qnetwork_local.conv1.mlp[0].weight)
 
     def load(self, filename):
         print("filename is: " + filename)
-        if os.path.exists(filename + "_local.pth"):
+        if os.path.exists(filename + "_value_local.pth"):
             try:
                 if device == torch.device("cpu"):
                     print("Loading local model on cpu")
-                    self.qnetwork_local.load_state_dict(torch.load(filename + "_local.pth", map_location=torch.device('cpu')))
+                    self.qnetwork_value_local.load_state_dict(torch.load(
+                        filename + "_value_local.pth", map_location=torch.device('cpu')))
+                    #print(self.qnetwork_local.conv1.mlp[0].weight)
                 else:
-                    self.qnetwork_local.load_state_dict(torch.load(filename + "_local.pth"))
-                print("Weights for model {} have been loaded!".format(filename+"_local.pth"))
+                    self.qnetwork_value_local.load_state_dict(
+                        torch.load(filename + "_value_local.pth"))
+                print("Weights for model {} have been loaded!".format(
+                    filename+"_value_local.pth"))
             except Exception as e:
-                print("Weights for model {} couldn't be loaded!".format(filename+ "_local.pth"))
+                print("Weights for model {} couldn't be loaded!".format(
+                    filename + "_value_local.pth"))
                 print(str(e))
-        if os.path.exists(filename + "_target.pth"):
+        if os.path.exists(filename + "_value_target.pth"):
             try:
                 if device == torch.device("cpu"):
                     print("Loading target model on cpu")
-                    self.qnetwork_local.load_state_dict(torch.load(filename + "_target.pth", map_location=torch.device('cpu')))
+                    self.qnetwork_value_target.load_state_dict(torch.load(
+                        filename + "_value_target.pth", map_location=torch.device('cpu')))
                 else:
-                    self.qnetwork_target.load_state_dict(torch.load(filename + "_target.pth"))
-                print("Weights for model {} have been loaded!".format(filename + "_target.pth"))
+                    self.qnetwork_value_target.load_state_dict(
+                        torch.load(filename + "_value_target.pth"))
+                print("Weights for model {} have been loaded!".format(
+                    filename + "_value_target.pth"))
             except Exception as e:
-                print("Weights for model {} couldn't be loaded!".format(filename + "_target.pth"))
+                print("Weights for model {} couldn't be loaded!".format(
+                    filename + "_value_target.pth"))
+                print(str(e))
+        if os.path.exists(filename + "_action.pth"):
+            try:
+                if device == torch.device("cpu"):
+                    print("Loading target model on cpu")
+                    self.qnetwork_action.load_state_dict(torch.load(
+                        filename + "_action.pth", map_location=torch.device('cpu')))
+                else:
+                    self.qnetwork_action.load_state_dict(
+                        torch.load(filename + "_action.pth"))
+                print("Weights for model {} have been loaded!".format(
+                    filename + "_action.pth"))
+            except Exception as e:
+                print("Weights for model {} couldn't be loaded!".format(
+                    filename + "_action.pth"))
                 print(str(e))
 
-    def step(self, state, reward, next_state, done, deadlock, train=True):
+    def step(self, state, reward, next_state, done, deadlock, ep=0, train=True):
         # Save experience in replay memory
+        # Logarithmic scaling
+        reward = np.log10(abs(reward)) * np.sign(reward)
+        if reward is None:
+            return None
         self.memory.add(state, reward, next_state, done, deadlock)
-
         # Learn every UPDATE_EVERY time steps.
         self.t_step = (self.t_step + 1) % UPDATE_EVERY
         if self.t_step == 0:
             # If enough samples are available in memory, get random subset and learn
-            if len(self.memory) > BATCH_SIZE:
+            #print("Dones: {}, deadlock: {}, other: {}".format(len(self.memory.memory_dones), len(self.memory.memory_deadlocks), len(self.memory.memory_other)))
+            if (len(self.memory.memory_dones) > BATCH_SIZE//10*2 and len(self.memory.memory_deadlocks) > BATCH_SIZE//10*3 and len(self.memory.memory_other) > BATCH_SIZE//10*5) or (len(self.memory.memory_dones) > BATCH_SIZE//2 and len(self.memory.memory_other) > BATCH_SIZE//2):
                 experiences = self.memory.sample()
                 if train:
-                    self.learn(experiences, GAMMA)
-
-    
+                    return self.learn(experiences, GAMMA, ep)
+        return None
+        
     def act(self, state, eps=0.):
-        """Returns actions for given state as per current policy.
+        """ Returns the path to take and whether to stop or go.
+            2 separate networks (we should try to unify)
 
         Params
         ======
@@ -120,51 +158,67 @@ class Agent:
         # state = torch.from_numpy(state).float().unsqueeze(0).to(device)
         batch = state.to(device)
         batch_list = batch.to_data_list()
-        self.qnetwork_local.eval()
+        self.qnetwork_value_local.eval()
         agents_best_path_values = dict()
+        
         with torch.no_grad():
-            out = self.qnetwork_local(batch.x, batch.edge_index)
-            out_mapped = defaultdict(lambda: defaultdict(list))
-            for i, res in enumerate(out):
-                batch_index = batch.batch[i]
-                handle, path = batch_list[batch_index].graph_info
-                out_mapped[handle][(path[0], path[1])].append(res)
+            out_value = self.qnetwork_value_local(batch.x, batch.edge_index) 
+        out_action = self.qnetwork_action(batch.x, batch.edge_index)
+        out_mapped = defaultdict(lambda: defaultdict(list))
+        for i, res in enumerate(zip(out_value, out_action)):
+            batch_index = batch.batch[i]
+            handle, path = batch_list[batch_index].graph_info
+            out_mapped[handle][(path[0], path[1])].append(res) # path[0] = path ID, path[1] = path variation(through a switch)
+
         for handle in out_mapped.keys():
             paths = []
+            action_prob = None
             for path in out_mapped[handle].keys():
-                paths.append([path, out_mapped[handle][path][0]])
-            if self.evaluation_mode:
-                best_path = max(paths, key=lambda item:item[1])
-                agents_best_path_values.update({handle: best_path})
-            else: 
+                if path[0] != 0: # Skip STOP action
+                    paths.append([path, out_mapped[handle][path][0]])
+                else:
+                    action_prob = out_mapped[handle][path][0]
+                
+            if self.evaluation_mode: # test time
+                best_path = max(paths, key=lambda item: item[1][0])
+                m = Categorical(action_prob[1])
+                action = m.sample()
+                #action = torch.argmax(m.probs) # take maximum prob
+                log_prob = m.log_prob(action)
+                agents_best_path_values.update({handle: [best_path[0], action.item(), log_prob, best_path[1][0]]})
+            else:
                 if random.random() > eps:
-                    best_path = max(paths, key=lambda item:item[1])
-                    agents_best_path_values.update({handle: best_path})
+                    best_path = max(paths, key=lambda item: item[1][0])
+                    m = Categorical(action_prob[1])
+                    action = m.sample()
+                    log_prob = m.log_prob(action)
+                    agents_best_path_values.update({handle: [best_path[0], action.item(), log_prob, best_path[1][0]]})
                 else:
                     random_index = random.choice(np.arange(len(paths)))
-                    agents_best_path_values.update({handle: paths[random_index]})
+                    random_path = paths[random_index]
+                    m = Categorical(action_prob[1])
+                    action = m.sample()
+                    log_prob = m.log_prob(action)
+                    agents_best_path_values.update({handle: [random_path[0], action.item(), log_prob, random_path[1][0]]})
             """
             for path in state.keys():
                 node_features, graph_edges = state[path].node_features, state[path].graph_edges
-                path_values.append([path, self.qnetwork_local(node_features, graph_edges)])
+                path_values.append(
+                    [path, self.qnetwork_local(node_features, graph_edges)])
             """
-        self.qnetwork_local.train()
+        self.qnetwork_value_local.train()
+        self.qnetwork_action.train()
 
         return agents_best_path_values
-       
 
-
-
-    def learn(self, experiences, gamma):
-
+    def learn(self, experiences, gamma, ep):
         """Update value parameters using given batch of experience tuples.
 
         Params
         ======
-            experiences (Tuple[torch.Tensor]): 
+            experiences (Tuple[torch.Tensor]):
             gamma (float): discount factor
         """
-        
         states, rewards, next_states, dones, deadlocks = experiences
 
         Q_expected = self.compute_Q_values(states, "local")
@@ -172,46 +226,111 @@ class Agent:
         # Choose best paths with local network, then compute value with target network
         selected_next_states = []
         for i, state in enumerate(next_states):
-            if not deadlocks[i]:
-                preprocessed_next_state = self.obs_builder.preprocess_agent_obs(state, 0) # 0 is just a placeholder value
-                path_values = self.act(preprocessed_next_state, eps=0) # Choose path to take at the current switch        
+            if not deadlocks[i] and not dones[i]:
+                preprocessed_next_state = self.obs_builder.preprocess_agent_obs(
+                    state, 0)  # 0 is just a placeholder value
+                # Choose path to take at the current switch
+                path_values = self.act(preprocessed_next_state, eps=0)
                 next_state = state["partitioned"][path_values[0][0]]
-            else: 
+            else:
                 next_state = state["partitioned"][(0, 0)]
             selected_next_states.append(next_state)
-         
+
         # Double DQN
         Q_targets_next = self.compute_Q_values(selected_next_states, "target")
-        
+
         rewards = torch.tensor(rewards).to(device)
+        # convert true/false in integers
         dones = torch.tensor([1 if done else 0 for done in dones]).to(device)
+        deadlocks = torch.tensor([1 if deadlock else 0 for deadlock in deadlocks]).to(device)
 
         # Compute Q targets for current states
-        Q_targets = rewards + (gamma * Q_targets_next * (1 - dones))
+        Q_targets = rewards + (gamma * Q_targets_next * (1 - dones) * (1 - deadlocks))
 
         # Compute loss
-        loss = F.mse_loss(Q_expected, Q_targets)
+        loss = F.smooth_l1_loss(Q_expected, Q_targets) # Huber loss
+        loss_to_return = loss.item()
         # Minimize the loss
-        self.optimizer.zero_grad()
+        self.optimizer_action.zero_grad()
         loss.backward()
-        self.optimizer.step()
+        # Clip gradients - https://stackoverflow.com/questions/47036246/dqn-q-loss-not-converging
+        for param in self.qnetwork_value_local.parameters():
+            param.grad.data.clamp_(-1, 1)
+        
+        # plot gradients
+        step = (ep//100)*100 + 100
+        self.summary_writer.add_histogram("value.conv1.weights.gradients", self.qnetwork_value_local.conv1.mlp[0].weight.grad, step)
+        self.summary_writer.add_histogram("value.conv1.bias.gradients", self.qnetwork_value_local.conv1.mlp[0].bias.grad, step)
+        self.summary_writer.add_histogram("value.conv2.weights.gradients", self.qnetwork_value_local.conv2.mlp[0].weight.grad, step)
+        self.summary_writer.add_histogram("value.conv2.bias.gradients", self.qnetwork_value_local.conv2.mlp[0].bias.grad, step)
+        self.summary_writer.add_histogram("value.conv3.weights.gradients", self.qnetwork_value_local.conv3.mlp[0].weight.grad, step)
+        self.summary_writer.add_histogram("value.conv3.bias.gradients", self.qnetwork_value_local.conv3.mlp[0].bias.grad, step)
+        self.summary_writer.add_histogram("value.linear1.weights.gradients", self.qnetwork_value_local.linear1.weight.grad, step)
+        self.summary_writer.add_histogram("value.linear1.bias.gradients", self.qnetwork_value_local.linear1.bias.grad, step)
+        self.summary_writer.add_histogram("value.out.weights.gradients", self.qnetwork_value_local.out.weight.grad, step)
+        self.summary_writer.add_histogram("value.out.bias.gradients", self.qnetwork_value_local.out.bias.grad, step)
+        self.summary_writer.close()
+        self.optimizer_value.step()
 
         # ------------------- update target network ------------------- #
-        self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU)
+        self.soft_update(self.qnetwork_value_local, self.qnetwork_value_target, TAU)
+        
+        return loss_to_return
+
+    def learn_actions(self, log_probs, ending_step, dones, max_steps, ep, gamma=1.0):
+        '''
+            Network to learn STOP/GO action for each reachable path
+        '''
+        # Compute the rewards to assign to each trajectory (between -1 and 1)
+        # If agent reaches destination, the reward is inversely proportional to time taken.
+        # Faster the agent, higher the reward
+        # -1 if agent in deadlock or doesn't finish
+        for a in range(len(log_probs)):
+            policy_loss = []
+            if dones[a]:
+                agent_reward = (max_steps-ending_step[a])/max_steps
+            else:
+                agent_reward = -1
+            for log_prob in log_probs[a]:
+                policy_loss.append(-log_prob * agent_reward)
+        policy_loss = torch.stack(policy_loss).sum() / len(log_probs)
+
+        self.optimizer_action.zero_grad()
+        policy_loss.backward()
+        step = (ep//100)*100 + 100
+        # tensorboard
+        self.summary_writer.add_histogram("action.conv1.weights.gradients", self.qnetwork_action.conv1.mlp[0].weight.grad, step)
+        self.summary_writer.add_histogram("action.conv1.bias.gradients", self.qnetwork_action.conv1.mlp[0].bias.grad, step)
+        self.summary_writer.add_histogram("action.conv2.weights.gradients", self.qnetwork_action.conv2.mlp[0].weight.grad, step)
+        self.summary_writer.add_histogram("action.conv2.bias.gradients", self.qnetwork_action.conv2.mlp[0].bias.grad, step)
+        self.summary_writer.add_histogram("action.conv3.weights.gradients", self.qnetwork_action.conv3.mlp[0].weight.grad, step)
+        self.summary_writer.add_histogram("action.conv3.bias.gradients", self.qnetwork_action.conv3.mlp[0].bias.grad, step)
+        self.summary_writer.add_histogram("action.linear1.weights.gradients", self.qnetwork_action.linear1.weight.grad, step)
+        self.summary_writer.add_histogram("action.linear1.bias.gradients", self.qnetwork_action.linear1.bias.grad, step)
+        self.summary_writer.add_histogram("action.out.weights.gradients", self.qnetwork_action.out.weight.grad, step)
+        self.summary_writer.add_histogram("action.out.bias.gradients", self.qnetwork_action.out.bias.grad, step)
+        self.summary_writer.close()
+
+        self.optimizer_action.step()
 
 
     def compute_Q_values(self, states, net):
-        network = self.qnetwork_local if net=="local" else self.qnetwork_target
+        ''' 
+            Used at learning time to compute values of states 
+        '''
+        network = self.qnetwork_value_local if net == "local" else self.qnetwork_value_target
         network.train()
         batch_list = []
         for i, state in enumerate(states):
-            data = Data(x=state["node_features"], edge_index=state["graph_edges"])
+            data = Data(x=state["node_features"],
+                        edge_index=state["graph_edges"])
             data.new_to_old_map = state["new_to_old_map"]
             batch_list.append(data)
         batch = Batch.from_data_list(batch_list).to(device)
 
-        # Get expected Q values from local model
-        out_q_expected = self.qnetwork_local(batch.x, batch.edge_index).flatten()
+        # Get expected Q values from local or target model
+        out_q_expected = network(batch.x, batch.edge_index).flatten()
+        
         out_mapped = defaultdict(list)
         for i, res in enumerate(out_q_expected):
             batch_index = int(batch.batch[i])
@@ -233,24 +352,16 @@ class Agent:
             tau (float): interpolation parameter
         """
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
-            target_param.data.copy_(tau * local_param.data + (1.0 - tau) * target_param.data)
+            target_param.data.copy_(
+                tau * local_param.data + (1.0 - tau) * target_param.data)
 
-    def get_q_values(self, state):
-        """
-        Used for debugging.
-        :param state: 
-        :return: 
-        """
-        state = torch.from_numpy(state).float().unsqueeze(0).to(device)
-        self.qnetwork_local.eval()
-        with torch.no_grad():
-            q_values = self.qnetwork_local(state)
-        self.qnetwork_local.train()
-        return q_values
-        
-    
+   
+
 class ReplayBuffer:
-    """Fixed-size buffer to store experience tuples."""
+    """
+        Fixed-size buffer to store experience tuples.
+        TODO: implement experience replay
+    """
 
     def __init__(self, network_type, buffer_size, batch_size):
         """Initialize a ReplayBuffer object.
@@ -262,69 +373,98 @@ class ReplayBuffer:
             batch_size (int): size of each training batch
         """
         self.network_type = network_type
-        self.memory = deque(maxlen=buffer_size)
+        self.memory_dones = deque(maxlen=buffer_size) # save done experiences
+        self.memory_deadlocks = deque(maxlen=buffer_size) # save deadlock experiences
+        self.memory_other = deque(maxlen=buffer_size)
         self.batch_size = batch_size
-        self.experience = namedtuple("Experience", field_names=["state", "reward", "next_state", "done", "deadlock"])
+        # self.experience = namedtuple("Experience", field_names=["state", "reward", "next_state", "done", "deadlock"])
 
     def add(self, state, reward, next_state, done, deadlock):
         """Add a new experience to memory."""
-        if state and next_state and reward:
-            e = self.experience(state, reward, next_state, done, deadlock)
-            self.memory.append(e)
+        if state and next_state and reward is not None:
+            # e = self.experience(state, reward, next_state, done, deadlock)
+            reward = reward
+            e = (state, reward, next_state, done, deadlock)
+            if done:
+                self.memory_dones.append(e)
+            elif deadlock: 
+                self.memory_deadlocks.append(e)
+                
+            else:
+                self.memory_other.append(e)
 
     def sample(self):
         """Randomly sample a batch of experiences from memory."""
-        experiences = random.sample(self.memory, k=self.batch_size)
+        states = []
+        rewards = []
+        next_states = []
+        dones = []
+        deadlocks = []
 
-        """
-        states = torch.from_numpy(self.__v_stack_impr([e.state for e in experiences if e is not None])) \
-            .float().to(device)
-        rewards = torch.from_numpy(self.__v_stack_impr([e.reward for e in experiences if e is not None])) \
-            .float().to(device)
-        next_states = torch.from_numpy(self.__v_stack_impr([e.next_state for e in experiences if e is not None])) \
-            .float().to(device)
-        dones = torch.from_numpy(self.__v_stack_impr([e.done for e in experiences if e is not None]).astype(np.uint8)) \
-            .float().to(device)
-        """
-        states = [e.state for e in experiences if e is not None]
-        rewards = [e.reward for e in experiences if e is not None]
-        next_states = [e.next_state for e in experiences if e is not None]
-        dones = [e.done for e in experiences if e is not None]
-        deadlocks = [e.deadlock for e in experiences if e is not None]
+        if len(self.memory_dones) > BATCH_SIZE//10*2 and len(self.memory_deadlocks) > BATCH_SIZE//10*3 and len(self.memory_other) > BATCH_SIZE//10*5:
+            dones_size = self.batch_size//10*2
+            deadlocks_size = self.batch_size//10*3
+            others_size = self.batch_size - dones_size - deadlocks_size
+        else: # we are possibly training only 1 agent
+            dones_size = self.batch_size//2
+            deadlocks_size = 0
+            others_size = self.batch_size - dones_size
 
+        experiences = random.sample(self.memory_dones, k=dones_size)
+        
+        states += [e[0] for e in experiences if e is not None]
+        rewards += [e[1] for e in experiences if e is not None]
+        next_states += [e[2] for e in experiences if e is not None]
+        dones += [e[3] for e in experiences if e is not None]
+        deadlocks += [e[4] for e in experiences if e is not None]
+
+        experiences = random.sample(self.memory_deadlocks, k=deadlocks_size)
+        
+        states += [e[0] for e in experiences if e is not None]
+        rewards += [e[1] for e in experiences if e is not None]
+        next_states += [e[2] for e in experiences if e is not None]
+        dones += [e[3] for e in experiences if e is not None]
+        deadlocks += [e[4] for e in experiences if e is not None]
+
+        experiences = random.sample(self.memory_other, k=others_size)
+        
+        states += [e[0] for e in experiences if e is not None]
+        rewards += [e[1] for e in experiences if e is not None]
+        next_states += [e[2] for e in experiences if e is not None]
+        dones += [e[3] for e in experiences if e is not None]
+        deadlocks += [e[4] for e in experiences if e is not None]
 
         return states, rewards, next_states, dones, deadlocks
+
+    def load_memory(self, memory_path):
+        try:
+            with open(memory_path+"_dones.pickle", 'rb') as pickle_file:
+                self.memory_dones = pickle.load(pickle_file)
+            with open(memory_path+"_deadlocks.pickle", 'rb') as pickle_file:
+                self.memory_deadlocks = pickle.load(pickle_file)
+            with open(memory_path+"_other.pickle", 'rb') as pickle_file:
+                self.memory_other = pickle.load(pickle_file)
+            print("Replay memory loaded")
+        except Exception as e:
+            print("Impossible to load replay memory.")
+            print(e)
         
-        
 
-    def __len__(self):
-        """Return the current size of internal memory."""
-        return len(self.memory)
 
-    ''' 
-    This same function is used for states, actions, rewards etc, so the parameter 'states' doesn't contain states all the time
-    and for this reason output can have different shapes.
-    In any case returns a batch of experience according to the specified batch_size.
-    '''
-'''
-    def __v_stack_impr(self, values):
-        #sub_dim = len(values[0][0]) if isinstance(values[0], Iterable) else 1
-        # values are actually states (not actions, or rewards...)
-        if self.network_type == 'fc':
-            sub_dim = len(values[0][0]) if isinstance(values[0], Iterable) else 1
-            np_values = np.reshape(np.array(values), (len(values), sub_dim))
-            return np_values
-            
-        elif self.network_type == 'conv':
-            if isinstance(values[0], Iterable):
-                sub_dim = len(values[0][0])
-                # Create a 1d array of states and reshape it into (batch_size, in_channels, view_width, view_height)
-                # 'states' is a list containing batch_size arrays of shape (1, in_channels, view_width, view_height)
-                np_values = np.reshape(np.array(values), (len(values), sub_dim, 15,  30)) # TODO add param env_width env_height
-            else:  # values are actions or rewards...
-                sub_dim = 1
-                # Create a 1d array of values and reshape it into (batch_size, in_channels)
-                np_values = np.reshape(np.array(values), (len(values), sub_dim))
+    def save_memory(self, memory_path):
+        try:
+            with open(memory_path+"_dones.pickle", 'wb') as pickle_file:
+                pickle.dump(self.memory_dones, pickle_file)
+            with open(memory_path+"_deadlocks.pickle", 'wb') as pickle_file:
+                pickle.dump(self.memory_deadlocks, pickle_file)
+            with open(memory_path+"_other.pickle", 'wb') as pickle_file:
+                pickle.dump(self.memory_other, pickle_file)
+            print("Replay memory saved")
+        except Exception as e:
+            print("Impossible to save replay memory")
+            print(e)
 
-        return np_values
-'''
+ 
+
+
+  

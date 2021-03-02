@@ -48,7 +48,7 @@ class GraphObservation(ObservationBuilder):
     def __init__(self):
         super(GraphObservation, self).__init__()
         # self.bfs_depth = bfs_depth
-        self.track_map = []
+        self.track_map = [] # matrix used to build the graph of nodes
         self.switches = []
         self.switch_paths_dict = {}
         self.path_switches_dict = {}
@@ -78,7 +78,6 @@ class GraphObservation(ObservationBuilder):
 
 
     def get(self, handle: int) -> {}:
-        # self._initGraphObservation
         obs = {}
         if len(self.agent_requires_obs) == 0 or self.agent_requires_obs[handle]:
             agent_pos = self.env.agents[handle].position
@@ -87,7 +86,7 @@ class GraphObservation(ObservationBuilder):
                     agent_pos = self.env.agents[handle].initial_position
                 else: # agent done
                     agent_pos = self.env.agents[handle].target 
-            if self.track_map[agent_pos[0], agent_pos[1]] != -2: # or self.is_agent_in_deadlock(handle):  # not at switch
+            if self.track_map[agent_pos[0], agent_pos[1]] != -2: # not at switch
                 unified, partitioned = self._get_graph_observation(
                     depth=3, handle=handle)
                 obs = {
@@ -144,6 +143,8 @@ class GraphObservation(ObservationBuilder):
     def _build_track_map(self):
         """
         Assign to each cell of the railway map the ID corresponding to the track section
+        Switches -> -2
+        Intersections -> -1
         """
 
         bfs_queue = []  # store switches found at the end of a track section
@@ -275,6 +276,8 @@ class GraphObservation(ObservationBuilder):
     def _complete_intersections_dict(self, key, prev_orient=None):
         '''
         Returns the missing IntersectionBranch of intersection
+        Example: we have found a intersection cell (-1 in TRACK_MAP) but we only know one path crossing it.
+        So we need to find the other path crossing the intersection.
         '''
         if prev_orient is not None:
             missing_orientations = [prev_orient]
@@ -309,8 +312,6 @@ class GraphObservation(ObservationBuilder):
 
         # Continue along direction until next switch or
         # until no transitions are possible along the current direction (i.e., dead-ends)
-        # We treat dead-ends as nodes, instead of going back, to avoid loops
-        # 4 different cases to have a branching point:
         last_is_switch = False
         last_is_dead_end = False
         last_is_terminal = False  # wrong cell or cycle
@@ -424,11 +425,11 @@ class GraphObservation(ObservationBuilder):
 
     def _find_next_switch_from_position(self, position, orientation):
         '''
+        Given a position and a orientation of the agent, find the next reachable switch and return the position,
+        orientation of the agent at that switch and whether it's deadend
         '''
         # Continue along direction until next switch or
         # until no transitions are possible along the current direction (i.e., dead-ends)
-        # We treat dead-ends as nodes, instead of going back, to avoid loops
-        # 4 different cases to have a branching point:
         last_is_switch = False
         last_is_dead_end = False
         last_is_terminal = False  # wrong cell or cycle
@@ -482,8 +483,9 @@ class GraphObservation(ObservationBuilder):
 
     def _get_reachable_paths(self, switch_position: Tuple[int, int], current_orientation: int, explored_cells=None):
         '''
+        Given a switch and the orientation, return the next reachable tracks with their ID
         Paths are represented by their track ID and progressive index, because the same track section could be reached
-        through more ways 
+        through more ways.
         '''
         if explored_cells is None:
             explored_cells = []
@@ -518,30 +520,6 @@ class GraphObservation(ObservationBuilder):
     #def _get_path_dict_progessive_index(self, path, )
     
 
-    """
-    def _get_reachable_paths(self, switch_position: Tuple[int, int], current_orientation: int):
-        '''
-        Paths are represented by their track ID
-        '''
-        reachable_paths = []
-        orientation = current_orientation
-        valid_move_actions = get_valid_move_actions_(orientation, switch_position, self.env.rail)
-        for a in valid_move_actions:
-            new_direction = a[2]
-            new_track_id = self.get_track(a[1])
-            if new_track_id == -2:
-                reachable_paths += self._get_reachable_paths(
-                    (a[1][0], a[1][1]), new_direction)
-            elif new_track_id==0:
-                raise Exception("Error: empty cell can't be reached")
-            else:
-                if new_track_id == -1: # Intersection, have to handle which path to consider
-                    new_track_id = self.resolve_intersection_cell(a[1], new_direction)
-                current_orientation = new_direction
-                reachable_paths.append(
-                    (new_track_id, current_orientation, a[1]))
-        return reachable_paths
-    """
 
     def resolve_intersection_cell(self, position, orientation):
         intesection_branches = self.intersections_dict[position]
@@ -558,12 +536,13 @@ class GraphObservation(ObservationBuilder):
         Each track section is associated with a ID, used in OBS_GRAPH to build the graph.
         The cells belonging to a certain track are noted with the same ID.
 
-        Since we use a value-based approach for reinforcement learning, where each action is mapped to the selection of
-        certain path represented by another track section, which is directly reachable from the current one
+        We use a value-based approach for reinforcement learning, where each action is mapped to the selection of
+        certain path represented by track ID, which is directly reachable from the current one
 
         When using pytorch_geometric there is no chance to selectively compute node features
         only for single nodes (our agents), so in order to avoid expensive and useless
-        computations we do graph convolutions on a subgraph.
+        computations we do graph convolutions on a subgraph. We need to compute the subgraph, given a certain depth, for 
+        each agent when required
 
         Parameters
         ----------
@@ -604,18 +583,12 @@ class GraphObservation(ObservationBuilder):
         current_direction = agent.direction
         current_track = self.get_track(agent_position)
         if current_track == -1:  # agent is at an intersection
-            agent_position = get_new_position(
-                agent_position, current_direction)
-            current_track = self.get_track(agent_position)
+            current_track = self.resolve_intersection_cell(agent_position, current_direction)
         elif current_track == -2 and self.is_agent_in_deadlock(handle):  # agent is at switch
-            # TODO
+            # TODO: find a way to implement this observation
             # print("Agent {} start position at switch. Need to handle this case".format(handle))
             return {}, {}
-            """
-            next_agent_handle = 
-            return self._get_graph_observation(depth=depth, handle=handle, consider_joining_paths=consider_joining_paths,
-                                                include_root=include_root, symmetric_edges=symmetric_edges)
-            """
+            
         # store the nodes at each level of computation graph
         computation_graph = defaultdict(set)
         tracks_queue = []  # list of tuples (TRACK_ID, SWITCH_ORIGIN)
@@ -636,12 +609,6 @@ class GraphObservation(ObservationBuilder):
         node = (current_track, next_switch, switch_orientation, current_track)
         tracks_queue.append(node)
 
-        '''
-        new_direction = list(get_valid_move_actions_(current_direction,
-                                                    agent_position,
-                                                    self.env.rail)
-                                                    .items())[0][0].next_direction
-        '''
         root_node = (current_track, current_direction, agent_position)
         start_index = 0
         if include_root:
@@ -656,7 +623,7 @@ class GraphObservation(ObservationBuilder):
                 current_track, next_switch, current_direction, root_track = node
                 if layer == start_index+1:
                     # retrieve indexes for PARTITIONED_GRAPH_EDGES (first paths IDs from root node)
-                    root_track = (current_track,0)
+                    root_track = (current_track, 0)
 
                 if consider_joining_paths:
                     reachable_nodes = list(
@@ -685,7 +652,7 @@ class GraphObservation(ObservationBuilder):
                         if symmetric_edges:
                             graph_edges.append([new_track_id, current_track])
                     if layer == start_index:  # initialize partition_computation_graph
-                        root_track = new_track_id
+                        root_track = (new_track_id, 0)
                         partitioned_computation_graph[root_track][layer].add(
                             track)
                     if layer > start_index:  # skip for the current track where the agent is.
@@ -738,17 +705,19 @@ class GraphObservation(ObservationBuilder):
         for path in partitioned_node_features_tmp.keys():
             for track in partitioned_computation_graph[path][0]:
                 track_id, current_orientation, origin_switch = track
-                assert track_id == path
+                assert track_id == path[0]
                 track_features = []
                 switch_cells = None
                 for i, switch_branch in enumerate(fist_layer_paths_dict[track_id]):
                     switch_cells = list(map(lambda x: x.position, switch_branch))
                     track_features = self._compute_node_features(
-                        handle, path, current_orientation, origin_switch, switch_cells)
-                    partitioned_node_features[(path, i)][(path, i)] = track_features
-                    computed_features.update({(path, i): partitioned_node_features[(path, i)][(path, i)]})
+                        handle, track_id, current_orientation, origin_switch, switch_cells)
+                    partitioned_node_features[(track_id, i)][(track_id, i)] = track_features
+                    computed_features.update({(track_id, i): partitioned_node_features[(track_id, i)][(track_id, i)]})
+                    if i > 0:
+                        partitioned_graph_edges[(track_id, i)] = partitioned_graph_edges[(track_id, 0)]
                     for k,v in partitioned_node_features_tmp[path].items():
-                        partitioned_node_features[(path, i)][k] = copy(v)
+                        partitioned_node_features[(track_id, i)][k] = copy(v)
 
         # Normalize data in computed features and then reassign the normalized features to the nodes
         computed_features_tensor = []
@@ -769,6 +738,8 @@ class GraphObservation(ObservationBuilder):
         data_normalized = F.normalize(data, dim=0)
         '''
         # scaled_features = minmax_scaler.transform(data)
+
+
         # Now remap the track indexes from old IDs to new ones
         # (ID are the row of the node features in the graph feature matrix)
         old_ids = list(node_features.keys())
@@ -790,7 +761,8 @@ class GraphObservation(ObservationBuilder):
             new_node_features.append(node_features[new_to_old_map[new_node_index]])
             
 
-        new_node_features = torch.FloatTensor(minmax_scaler.transform(torch.FloatTensor(new_node_features)))
+        # new_node_features = torch.FloatTensor(minmax_scaler.transform(torch.FloatTensor(new_node_features)))
+        new_node_features = torch.FloatTensor(torch.FloatTensor(new_node_features) * 0.1)
         new_graph_edges = torch.LongTensor(new_graph_edges).t().contiguous()
         observation = {
             "node_features": new_node_features,
@@ -855,7 +827,7 @@ class GraphObservation(ObservationBuilder):
 
         origin_switch = if we are computing features for a track section where our agent is not present, we
         need to compute a valid direction in order to compute the shortest path. So we use the information
-        about the switch we come from to compute this direction
+        about the switch we come from to compute this direction. This information is given by how we explore the graph
         '''
         track_map = self.track_map.copy()
 
@@ -872,8 +844,7 @@ class GraphObservation(ObservationBuilder):
             agent_position = agent.target
 
 
-        # NB: it doesn't consider intersections
-        track_length = np.count_nonzero(track_map == track_ID)
+        track_length = np.count_nonzero(track_map == track_ID) # doesn't count intersections
         target_distance = 0  # distance to the agent's target from this track section
         num_agents_same_dir = 0  # agents on this track in the same direction
         num_agents_opp_dir = 0
@@ -891,7 +862,7 @@ class GraphObservation(ObservationBuilder):
         # remaining cells to complete this track section, before reaching switch.
         # If the agent is not on this track, consider the path to reach this track
         
-        node_degree = 0  # TODO: how many path branches on next switch decision
+        node_degree = 0  
         dead_end = 0  # 1 if track section has a dead end
 
         num_switches = len(self.path_switches_dict[track_ID])
@@ -1038,7 +1009,7 @@ class GraphObservation(ObservationBuilder):
         figure = ax.get_figure()
         figure.savefig('svm_conf.png', dpi=200)
 
-    def choose_railenv_actions(self, handle, target_track):
+    def choose_railenv_actions(self, handle, track):
         '''
         Parameters
         ----------
@@ -1047,8 +1018,9 @@ class GraphObservation(ObservationBuilder):
 
         Compute the action/s required to reach the next track represented by track_ID
         '''
+        target_track, action, _, _ = track
         track_ID, index = target_track
-        if track_ID > 0:  # if 0, the best path is the current one, so stop and don't move
+        if action == 1:
             agents = self.env.agents
             agent = agents[handle]
             agent_orientation = agent.direction
@@ -1066,7 +1038,7 @@ class GraphObservation(ObservationBuilder):
             waypoint_path = [Waypoint(agent_position, agent_orientation)] + waypoint_path_dict[track_ID][index]
 
             return self.convert_waypoints_to_railenvactions(waypoint_path)
-        elif track_ID == 0:
+        elif action == 0:
             return [RailEnvActions.STOP_MOVING]
         else: 
             raise Exception("Error: Track_ID can't be negative")
@@ -1075,7 +1047,8 @@ class GraphObservation(ObservationBuilder):
 
     def find_closest_track_cell(self, agent_position, agent_orientation, target_track_id):
         # returns the closest cell to the agent position belonging to the target track section.
-        # Computed to compute the shortest path to the track section
+        # Used to compute the shortest path to the track section, during the computation of actions to reach a 
+        # certain track section on a switch region
         track_cells = list(zip(*np.where(self.track_map == target_track_id)))
         if len(track_cells)>0:
             track_cell = track_cells[0]
