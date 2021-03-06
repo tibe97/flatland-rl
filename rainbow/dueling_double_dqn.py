@@ -261,6 +261,7 @@ class Agent:
         
         # plot gradients
         step = (ep//100)*100 + 100
+        '''
         self.summary_writer.add_histogram("value.conv1.weights.gradients", self.qnetwork_value_local.conv1.mlp[0].weight.grad, step)
         self.summary_writer.add_histogram("value.conv1.bias.gradients", self.qnetwork_value_local.conv1.mlp[0].bias.grad, step)
         self.summary_writer.add_histogram("value.conv2.weights.gradients", self.qnetwork_value_local.conv2.mlp[0].weight.grad, step)
@@ -272,6 +273,7 @@ class Agent:
         self.summary_writer.add_histogram("value.out.weights.gradients", self.qnetwork_value_local.out.weight.grad, step)
         self.summary_writer.add_histogram("value.out.bias.gradients", self.qnetwork_value_local.out.bias.grad, step)
         self.summary_writer.close()
+        '''
         self.optimizer_value.step()
 
         # ------------------- update target network ------------------- #
