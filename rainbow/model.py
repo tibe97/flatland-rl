@@ -6,6 +6,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F, Linear, BatchNorm1d, Dropout
 from VRSPConv import VRSPConv
+from layers import GraphAttentionLayer, SpGraphAttentionLayer
 
 
 
@@ -34,17 +35,7 @@ class DQN_value(nn.Module):
         self.out = Linear(hidsizes[4], out_size)
 
         
-        '''
-        self.conv1 = VRSPConv(2*feature_size, hidsizes[0])
-        self.drop1 = Dropout(p=0.3)
-        self.conv2 = VRSPConv(6*hidsizes[0], hidsizes[1])
-        self.drop2 = Dropout(p=0.25)
-        self.conv3 = VRSPConv(6*hidsizes[1], out_size)
-        self.drop3 = Dropout(p=0.2)
-        self.linear1 = Linear(3*out_size, out_size)
-        self.drop4 = Dropout(p=0.2)
-        self.linear2 = Linear(out_size, 1)
-        '''
+       
     def forward(self, x, edge_index, agents_messages=None, log=False):
         '''
         If in training mode, we need to pass the agent handle and its position, so we can store its message
@@ -63,17 +54,6 @@ class DQN_value(nn.Module):
         #x = self.drop4(x)
         out = self.out(x_value)
         
-        '''
-        x = F.relu(self.conv1(x, edge_index, agents_messages))
-        x = self.drop1(x)
-        x = F.relu(self.conv2(x, edge_index, agents_messages))
-        x = self.drop2(x)
-        x = F.relu(self.conv3(x, edge_index, agents_messages))
-        x = self.drop3(x)
-        x = F.relu(self.linear1(x))
-        x = self.drop4(x)
-        x = self.linear2(x)
-        '''
         return out
 
 
@@ -101,17 +81,7 @@ class DQN_action(nn.Module):
         #self.drop4 = Dropout(p=0.2)
         self.out = Linear(hidsizes[4], out_size)
         
-        '''
-        self.conv1 = VRSPConv(2*feature_size, hidsizes[0])
-        self.drop1 = Dropout(p=0.3)
-        self.conv2 = VRSPConv(6*hidsizes[0], hidsizes[1])
-        self.drop2 = Dropout(p=0.25)
-        self.conv3 = VRSPConv(6*hidsizes[1], out_size)
-        self.drop3 = Dropout(p=0.2)
-        self.linear1 = Linear(3*out_size, out_size)
-        self.drop4 = Dropout(p=0.2)
-        self.linear2 = Linear(out_size, 1)
-        '''
+     
     def forward(self, x, edge_index, agents_messages=None, log=False):
         '''
         If in training mode, we need to pass the agent handle and its position, so we can store its message
@@ -130,16 +100,47 @@ class DQN_action(nn.Module):
         x_action = F.leaky_relu(self.bn4(self.linear2(x_action)))
         #x = self.drop4(x)
         out = self.out(x_action)
-        '''
-        x = F.relu(self.conv1(x, edge_index, agents_messages))
-        x = self.drop1(x)
-        x = F.relu(self.conv2(x, edge_index, agents_messages))
-        x = self.drop2(x)
-        x = F.relu(self.conv3(x, edge_index, agents_messages))
-        x = self.drop3(x)
-        x = F.relu(self.linear1(x))
-        x = self.drop4(x)
-        x = self.linear2(x)
-        '''
+       
         return F.softmax(out, dim=1)
 
+
+
+
+class GAT_value(nn.Module):
+    def __init__(self, nfeat, nhid, nclass, dropout, alpha, nheads):
+        """Dense version of GAT."""
+        super(GAT_value, self).__init__()
+        self.dropout = dropout
+
+        self.attentions = [GraphAttentionLayer(nfeat, nhid, dropout=dropout, alpha=alpha, concat=True) for _ in range(nheads)]
+        for i, attention in enumerate(self.attentions):
+            self.add_module('attention_{}'.format(i), attention)
+
+        self.out_att = GraphAttentionLayer(nhid * nheads, nclass, dropout=dropout, alpha=alpha, concat=False)
+
+    def forward(self, x, adj):
+        x = F.dropout(x, self.dropout, training=self.training)
+        x = torch.cat([att(x, adj) for att in self.attentions], dim=1)
+        x = F.dropout(x, self.dropout, training=self.training)
+        x = F.elu(self.out_att(x, adj))
+        return x
+
+
+class GAT_action(nn.Module):
+    def __init__(self, nfeat, nhid, nclass, dropout, alpha, nheads):
+        """Dense version of GAT."""
+        super(GAT_action , self).__init__()
+        self.dropout = dropout
+
+        self.attentions = [GraphAttentionLayer(nfeat, nhid, dropout=dropout, alpha=alpha, concat=True) for _ in range(nheads)]
+        for i, attention in enumerate(self.attentions):
+            self.add_module('attention_{}'.format(i), attention)
+
+        self.out_att = GraphAttentionLayer(nhid * nheads, nclass, dropout=dropout, alpha=alpha, concat=False)
+
+    def forward(self, x, adj):
+        x = F.dropout(x, self.dropout, training=self.training)
+        x = torch.cat([att(x, adj) for att in self.attentions], dim=1)
+        x = F.dropout(x, self.dropout, training=self.training)
+        x = F.elu(self.out_att(x, adj))
+        return F.log_softmax(x, dim=1)

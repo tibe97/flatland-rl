@@ -12,7 +12,7 @@ from torch.distributions import Categorical
 from torch_geometric.data import Batch, Data
 # import torchsummary
 
-from model import DQN_action, DQN_value
+from model import DQN_action, DQN_value, GAT_action, GAT_value
 
 BUFFER_SIZE = int(1e4)  # replay buffer size
 # BATCH_SIZE = 512  # minibatch size
@@ -41,9 +41,11 @@ class Agent:
         self.args = args
         self.state_size = state_size
         # Q-Network
-        self.qnetwork_value_local = DQN_value(state_size).to(device)
+        #self.qnetwork_value_local = DQN_value(state_size).to(device)
+        self.qnetwork_value_local = GAT_value(state_size, 8, 1, 0.6, 0.2, 8)
         self.qnetwork_value_target = copy.deepcopy(self.qnetwork_value_local)
-        self.qnetwork_action = DQN_action(state_size).to(device)
+        #self.qnetwork_action = DQN_action(state_size).to(device)
+        self.qnetwork_action = GAT_action(state_size, 8, 2, 0.6, 0.2, 8)
         self.learning_rate = args.learning_rate
         self.optimizer_value = optim.Adam(self.qnetwork_value_local.parameters(), lr=self.learning_rate)
         self.optimizer_action = optim.Adam(self.qnetwork_action.parameters(), lr=self.learning_rate)
