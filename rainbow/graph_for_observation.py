@@ -28,8 +28,6 @@ from flatland.envs.rail_env_shortest_paths import get_valid_move_actions_, get_k
 from flatland.core.grid.grid4_utils import get_new_position
 from flatland.core.grid.grid_utils import coordinate_to_position, distance_on_rail, position_to_coordinate
 
-from predictions import ShortestPathPredictorForRailEnv
-
 import torch.utils.data as D
 from torch_geometric.data import Data
 from torch_geometric.data import DataLoader, Batch
