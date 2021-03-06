@@ -152,6 +152,7 @@ def main(args):
         dqn_agent.memory.load_memory(args.model_path + "replay_buffer")
 
     # Plot initial weights to see difference after 100 epochs
+    '''
     tb.add_histogram("value.conv1.weight", dqn_agent.qnetwork_value_local.conv1.mlp[0].weight, args.start_epoch)
     tb.add_histogram("value.conv1.bias", dqn_agent.qnetwork_value_local.conv1.mlp[0].bias, args.start_epoch)
     tb.add_histogram("value.conv2.weight", dqn_agent.qnetwork_value_local.conv2.mlp[0].weight, args.start_epoch)
@@ -174,10 +175,9 @@ def main(args):
     tb.add_histogram("action.out.weight", dqn_agent.qnetwork_action.out.weight, args.start_epoch)
     tb.add_histogram("action.out.bias", dqn_agent.qnetwork_action.out.bias, args.start_epoch)
     tb.close()
+    '''
 
-    '''
-        EXPLAINATION: 
-    '''
+    
     for ep in range(1+args.start_epoch, args.num_episodes + args.start_epoch + 1):
         '''
         if args.render:
@@ -550,6 +550,8 @@ def main(args):
             dqn_agent.train()  # Set DQN (online network) back to training mode
             # Save replay buffer
             dqn_agent.memory.save_memory(args.model_path + "replay_buffer")
+
+            '''
             tb.add_scalar("Avg reward ({} agents)".format(args.num_agents), avg_reward, ep)
             tb.add_scalar("Done Agents ({} agents)".format(args.num_agents), avg_done_agents, ep)
             tb.add_scalar("Deadlock Agents ({} agents)".format(args.num_agents), avg_deadlock_agents, ep)
@@ -578,7 +580,8 @@ def main(args):
 
             tb.add_histogram("Actions test ({} agents)".format(args.num_agents), test_actions, ep)
             tb.close()
-
+            '''
+            
             '''
             # reduce LR based on reward
             if ep >= args.start_lr_decay:
