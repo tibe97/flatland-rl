@@ -1,7 +1,5 @@
 from flatland.envs.malfunction_generators import malfunction_from_params, MalfunctionParameters
-from print_info import print_info
 from dueling_double_dqn import Agent
-from predictions import ShortestPathPredictorForRailEnv
 from graph_for_observation import GraphObservation
 from flatland.envs.schedule_generators import sparse_schedule_generator
 from flatland.envs.rail_generators import sparse_rail_generator
