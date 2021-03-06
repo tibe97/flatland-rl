@@ -301,6 +301,7 @@ class Agent:
         policy_loss.backward()
         step = (ep//100)*100 + 100
         # tensorboard
+        '''
         self.summary_writer.add_histogram("action.conv1.weights.gradients", self.qnetwork_action.conv1.mlp[0].weight.grad, step)
         self.summary_writer.add_histogram("action.conv1.bias.gradients", self.qnetwork_action.conv1.mlp[0].bias.grad, step)
         self.summary_writer.add_histogram("action.conv2.weights.gradients", self.qnetwork_action.conv2.mlp[0].weight.grad, step)
@@ -312,7 +313,7 @@ class Agent:
         self.summary_writer.add_histogram("action.out.weights.gradients", self.qnetwork_action.out.weight.grad, step)
         self.summary_writer.add_histogram("action.out.bias.gradients", self.qnetwork_action.out.bias.grad, step)
         self.summary_writer.close()
-
+        '''
         self.optimizer_action.step()
 
 

@@ -664,7 +664,7 @@ if __name__ == '__main__':
                         help='title for tensorboard run')
     parser.add_argument('--eps-decay', type=float, default=0.999,
                         help='epsilon decay value')
-    parser.add_argument('--learning-rate', type=float, default=0.0,
+    parser.add_argument('--learning-rate', type=float, default=0.005,
                         help='LR for DQN agent')
     parser.add_argument('--learning-rate-decay', type=float, default=0.5,
                         help='LR decay for DQN agent')

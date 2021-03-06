@@ -9,9 +9,6 @@ from flatland.utils.rendertools import RenderTool, AgentRenderVariant
 from collections import deque, defaultdict
 from flatland.envs.rail_env_shortest_paths import get_valid_move_actions_
 from datetime import date, datetime
-import plotly
-from plotly.graph_objects import Scatter
-from plotly.graph_objs.scatter import Line
 import numpy as np
 import torch
 import sys
@@ -367,7 +364,4 @@ def _plot_line(xs, ys_population, title, path=''):
     trace_min = Scatter(x=xs, y=ys_min.numpy(), line=Line(
         color=max_colour, dash='dash'), name='Min')
 
-    plotly.offline.plot({
-        'data': [trace_upper, trace_mean, trace_lower, trace_min, trace_max],
-        'layout': dict(title=title, xaxis={'title': 'Episode'}, yaxis={'title': title})
-    }, filename=os.path.join(path, title + '.html'), auto_open=False)
+  
