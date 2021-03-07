@@ -42,10 +42,10 @@ class Agent:
         self.state_size = state_size
         # Q-Network
         #self.qnetwork_value_local = DQN_value(state_size).to(device)
-        self.qnetwork_value_local = GAT_value(state_size, 8, 1, 0.6, 0.2, 8).to(device)
+        self.qnetwork_value_local = GAT_value(state_size, 8, 1, 3, 0.6, 0.2, 4).to(device)
         self.qnetwork_value_target = copy.deepcopy(self.qnetwork_value_local)
         #self.qnetwork_action = DQN_action(state_size).to(device)
-        self.qnetwork_action = GAT_action(state_size, 8, 2, 0.6, 0.2, 8).to(device)
+        self.qnetwork_action = GAT_action(state_size, 8, 2, 3, 0.6, 0.2, 4).to(device)
         self.learning_rate = args.learning_rate
         self.optimizer_value = optim.Adam(self.qnetwork_value_local.parameters(), lr=self.learning_rate)
         self.optimizer_action = optim.Adam(self.qnetwork_action.parameters(), lr=self.learning_rate)
@@ -202,12 +202,7 @@ class Agent:
                     action = m.sample()
                     log_prob = m.log_prob(action)
                     agents_best_path_values.update({handle: [random_path[0], action.item(), log_prob, random_path[1][0]]})
-            """
-            for path in state.keys():
-                node_features, graph_edges = state[path].node_features, state[path].graph_edges
-                path_values.append(
-                    [path, self.qnetwork_local(node_features, graph_edges)])
-            """
+           
         self.qnetwork_value_local.train()
         self.qnetwork_action.train()
 

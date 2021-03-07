@@ -721,12 +721,12 @@ class GraphObservation(ObservationBuilder):
         computed_features_tensor = []
         for k,v in computed_features.items():
             computed_features_tensor.append(torch.FloatTensor(v))
-        #scaled_features_map = dict(zip(list(range(len(list(computed_features.keys())))), list(computed_features.keys())))      
+           
         # computed_features_tensor = torch.FloatTensor(computed_features_tensor)
-        loader = D.DataLoader(computed_features_tensor, batch_size=len(computed_features_tensor), num_workers=1)
-        data = next(iter(loader))
-        minmax_scaler = preprocessing.MinMaxScaler()
-        minmax_scaler.fit(data)
+        # loader = D.DataLoader(computed_features_tensor, batch_size=len(computed_features_tensor), num_workers=1)
+        # data = next(iter(loader))
+        # minmax_scaler = preprocessing.MinMaxScaler()
+        # minmax_scaler.fit(data)
         '''
         means = []
         stds = []
@@ -792,7 +792,8 @@ class GraphObservation(ObservationBuilder):
                 new_node_features.append(
                     partitioned_node_features[path][new_to_old_map[new_node_index]])
 
-            new_node_features = torch.FloatTensor(minmax_scaler.transform(torch.FloatTensor(new_node_features)))
+            #new_node_features = torch.FloatTensor(minmax_scaler.transform(torch.FloatTensor(new_node_features)))
+            new_node_features = torch.FloatTensor(torch.FloatTensor(new_node_features) * 0.1)
             new_graph_edges = torch.LongTensor(
                 new_graph_edges).t().contiguous()
             partitioned_observation[path] = {
@@ -886,6 +887,8 @@ class GraphObservation(ObservationBuilder):
         # TARGET_DISTANCE
         if agent_on_this_track:
             target_distance = distance_map[(handle, *agent_position, agent_orientation)]
+            if target_distance == float('inf'):
+                target_distance = np.count_nonzero(track_map != 0) # penalize if shortest path can't be computed
             #print("target distance: {}".format(target_distance))
             '''
             shortest_path = get_k_shortest_paths(
@@ -914,6 +917,8 @@ class GraphObservation(ObservationBuilder):
                     break
             
             target_distance = distance_map[(handle, *mid_cell, orientation)]
+            if target_distance == float('inf'):
+                target_distance = np.count_nonzero(track_map != 0) # penalize if shortest path can't be computed
             #print("target distance: {}".format(target_distance))
 
             '''

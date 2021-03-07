@@ -108,44 +108,69 @@ class DQN_action(nn.Module):
 
 
 class GAT_value(nn.Module):
-    def __init__(self, nfeat, nhid, nclass, dropout, alpha, nheads):
+    def __init__(self, nfeat, nhid, nclass, nlayers, dropout, alpha, nheads):
         """Dense version of GAT."""
         super(GAT_value, self).__init__()
         self.dropout = dropout
+        self.nlayers = nlayers
+        self.attentions = []
+        self.batch_norms = []
+        
+        # for now all layers have same input and output size, except first attention layer 
+        for l in range(nlayers):
+            input_size = nfeat if l==0 else nhid * nheads
+            self.attentions.append([GATConv(input_size, nhid, dropout=dropout, negative_slope=alpha, concat=True) for _ in range(nheads)])
+            for i, attention in enumerate(self.attentions[l]):
+                self.add_module('attention_{}_head_{}'.format(l, i), attention)
+            if l > 0:
+                self.batch_norms.append(BatchNorm1d(num_features=input_size))
 
-        #self.attentions = [GraphAttentionLayer(nfeat, nhid, dropout=dropout, alpha=alpha, concat=True) for _ in range(nheads)]
-        self.attentions = [GATConv(nfeat, nhid, dropout=dropout, negative_slope=alpha, concat=True) for _ in range(nheads)]
-        for i, attention in enumerate(self.attentions):
-            self.add_module('attention_{}'.format(i), attention)
-
-        #self.out_att = GraphAttentionLayer(nhid * nheads, nclass, dropout=dropout, alpha=alpha, concat=False)
         self.out_att = GATConv(nhid * nheads, nclass, dropout=dropout, negative_slope=alpha, concat=False)
 
     def forward(self, x, adj):
         x = F.dropout(x, self.dropout, training=self.training)
-        x = torch.cat([att(x, adj) for att in self.attentions], dim=1)
+        for l in range(self.nlayers):
+            if l > 0: 
+                residual = x
+            x = self.batch_norms[l-1](torch.cat([att(x, adj) for att in self.attentions[l]], dim=1))
+            if l > 0:
+                x += residual # residual connection
+            x = F.elu(x) 
         x = F.dropout(x, self.dropout, training=self.training)
         x = F.elu(self.out_att(x, adj))
         return x
 
 
 class GAT_action(nn.Module):
-    def __init__(self, nfeat, nhid, nclass, dropout, alpha, nheads):
+    def __init__(self, nfeat, nhid, nclass, nlayers, dropout, alpha, nheads):
         """Dense version of GAT."""
         super(GAT_action , self).__init__()
         self.dropout = dropout
+        self.nlayers = nlayers
+        self.attentions = []
+        self.batch_norms = []
 
-        #self.attentions = [GraphAttentionLayer(nfeat, nhid, dropout=dropout, alpha=alpha, concat=True) for _ in range(nheads)]
-        self.attentions = [GATConv(nfeat, nhid, dropout=dropout, negative_slope=alpha, concat=True) for _ in range(nheads)]
-        for i, attention in enumerate(self.attentions):
-            self.add_module('attention_{}'.format(i), attention)
+        # for now all layers have same input and output size, except first attention layer 
+        for l in range(nlayers):
+            input_size = nfeat if l==0 else nhid * nheads
+            self.attentions.append([GATConv(input_size, nhid, dropout=dropout, negative_slope=alpha, concat=True) for _ in range(nheads)])
+            for i, attention in enumerate(self.attentions[l]):
+                self.add_module('attention_{}_head_{}'.format(l, i), attention)
+            if l > 0:
+                self.batch_norms.append(BatchNorm1d(num_features=input_size))
 
         #self.out_att = GraphAttentionLayer(nhid * nheads, nclass, dropout=dropout, alpha=alpha, concat=False)
         self.out_att = GATConv(nhid * nheads, nclass, dropout=dropout, negative_slope=alpha, concat=False)
 
     def forward(self, x, adj):
         x = F.dropout(x, self.dropout, training=self.training)
-        x = torch.cat([att(x, adj) for att in self.attentions], dim=1)
+        for l in range(self.nlayers):
+            if l > 0: 
+                residual = x
+            x = self.batch_norms[l-1](torch.cat([att(x, adj) for att in self.attentions[l]], dim=1))
+            if l > 0:
+                x += residual # residual connection
+            x = F.elu(x) 
         x = F.dropout(x, self.dropout, training=self.training)
         x = F.elu(self.out_att(x, adj))
         return F.log_softmax(x, dim=1)

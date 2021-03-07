@@ -435,14 +435,7 @@ def main(args):
                     if railenv_action_dict[a] == RailEnvActions.STOP_MOVING:
                         agents_speed_timesteps[a] -= 1
                         env.obs_builder.agent_requires_obs.update({a: True})
-                        '''
-                        # When agent stops, store the experience
-                        if len(agent_obs[a]) > 0 and agent_path_obs_buffer[a] is not None:
-                            if len(next_obs[a]["partitioned"]) > 0:
-                                step_loss = dqn_agent.step(agent_path_obs_buffer[a], all_rewards[a], next_obs[a], done[a], agents_in_deadlock[a], ep=ep)
-                                if step_loss is not None:
-                                    epoch_loss.append(step_loss)
-                        '''
+                      
                     else:
                         logging.debug("Agent {} cannot move at position {}, fraction {}".format(
                             a, agent.position, agent.speed_data["position_fraction"]))
