@@ -122,17 +122,7 @@ def main(args):
                   remove_agents_at_target=True)
     env.reset()
     
-    '''
-    # Rendering of env. Disable on colab and while training. Use it on local machine to test agent
-    if args.render:
-        env_renderer = RenderTool(
-            env,
-            #gl="PILSVG",
-            #agent_render_variant=AgentRenderVariant.AGENT_SHOWS_OPTIONS_AND_BOX,
-            show_debug=False,
-            screen_height=1080,
-            screen_width=1920)
-    '''
+     
 
     # max_steps = env.compute_max_episode_steps(args.width, args.height, args.num_agents/args.max_num_cities)
     eps = args.eps
@@ -179,10 +169,7 @@ def main(args):
 
     
     for ep in range(1+args.start_epoch, args.num_episodes + args.start_epoch + 1):
-        '''
-        if args.render:
-            env_renderer.reset()
-        '''
+        
         logging.debug("Episode {} of {}".format(ep, args.num_episodes))
         obs, info = env.reset()
         path_values_buffer = [] # to compute mean path value for debugging
@@ -475,11 +462,7 @@ def main(args):
 
                 agent_old_speed_data.update({a: agent.speed_data.copy()})
             
-            '''
-            if args.render:
-                env_renderer.render_env(
-                    show=True, show_observations=False, show_predictions=False)
-            '''
+            
             if agent_done_removed.count(True) == env.get_num_agents(): 
                 break  
 
@@ -670,7 +653,7 @@ if __name__ == '__main__':
                         help='LR decay for DQN agent')
     parser.add_argument('--learning-rate-decay-policy', type=float, default=0.5,
                         help='LR decay for policy network')
-    parser.add_argument('--model-path', type=str, default='', help="")
+    parser.add_argument('--model-path', type=str, default='', help="results/")
     parser.add_argument('--model-name', type=str, default='weights/best_model_8_agents_on_25_25',
                         help='Name to use to save the model .pth')
     parser.add_argument('--resume-weights', type=bool, default=True,
