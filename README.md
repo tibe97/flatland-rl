@@ -6,6 +6,15 @@ The official page of the challenge, with all the details and materials, can be r
 The rail environment can be seen as composed of track sections, where each track section is a portion of the track delimited by 2 switches (forks). A switch is a cell where the train can choose between different direcitions, so it's a choice point. Other cells where there is only one possible direction are part of at least one track section. There are cells belonging to 2 track sections, these are the intersection cells.
 The state is the subjective point of view of an agent. Each agent has its own state-representation because the features are determined by relative attributes, such as the distance to the goal, the number of agents on the same track section navigating in the same or opposite direction and so on.
 The state is composed of the neighboring tracks features, up to a certain depth/level. In this way we perform GNN on a subset of the overall graph, determined by the depth of aggregation. 
+
+### Track section features
+This feature is used to represent railway tracks. In this approach, tracks become the nodes of the graph, while the switches are implicitly represented by the edges of the graph (possible directions from one node/track to another).
+In this way we simplify an important aspect:
+• Adjacent tracks which are not directly reachable with an action are not considered, because we only add an edge between 2 tracks that are directly linked and connected.
+
+A possible problem emerging from this type of representation would be that intersecting paths are not directly represented.
+We can thus integrate this type of information in the track feature representation.
+
 ### Computing observation
 We want to optimize computation of observations only when it's needed, i.e. before 
 making a decision.
@@ -16,14 +25,6 @@ We compute observations only in these cases:
 2. Agent is exiting a switch (obs for new cell of new path): we compute the obs because we could immediately
     meet another switch (track section only has 1 cell), so we need the observation in buffer
 3. Agent is about to finish: we compute obs to save the experience tuple
-
-### Track section features
-This feature is used to represent railway tracks. In this approach, tracks become the nodes of the graph, while the switches are implicitly represented by the edges of the graph (possible directions from one node/track to another).
-In this way we simplify an important aspect:
-• Adjacent tracks which are not directly reachable with an action are not considered, because we only add an edge between 2 tracks that are directly linked and connected.
-
-A possible problem emerging from this type of representation would be that intersecting paths are not directly represented.
-We can thus integrate this type of information in the track feature representation.
 
 ## Graph Neural Network (GNN) approach
 The problem of finding a suitable observation is the variable size of the state. In fact by choosing a fixed-size state representation we could limit ourselves when changing the size of the rail environment. By using a fixed-size observation we use are determining a fixed architecture of the NN, which we would tend to implement as big as possible in order to capture the most of information available. But this leads to an increase in complexity.
