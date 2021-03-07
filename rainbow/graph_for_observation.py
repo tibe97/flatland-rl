@@ -863,6 +863,8 @@ class GraphObservation(ObservationBuilder):
         node_degree = 0  
         dead_end = 0  # 1 if track section has a dead end
 
+        distance_map = self.env.distance_map.get()
+
         num_switches = len(self.path_switches_dict[track_ID])
         if num_switches == 1:
             dead_end = 1
@@ -883,12 +885,16 @@ class GraphObservation(ObservationBuilder):
             self.switch_paths_dict[next_switch_from_origin_switch])
         # TARGET_DISTANCE
         if agent_on_this_track:
+            target_distance = distance_map[(handle, *agent_position, agent_orientation)]
+            #print("target distance: {}".format(target_distance))
+            '''
             shortest_path = get_k_shortest_paths(
                 self.env, agent_position, agent_orientation, agent_target)
             if len(shortest_path) > 0:
                 target_distance = len(shortest_path[0])
             else:
                 target_distance = np.count_nonzero(track_map != 0)
+            '''
             malfunction_agent = agent.malfunction_data["malfunction"]
             agent_speed = agent.speed_data["speed"] if agent.moving else 0
            
@@ -906,7 +912,11 @@ class GraphObservation(ObservationBuilder):
                 if next_switch_from_mid_cell == next_switch_from_origin_switch:
                     orientation = mid_cell_orientation
                     break
+            
+            target_distance = distance_map[(handle, *mid_cell, orientation)]
+            #print("target distance: {}".format(target_distance))
 
+            '''
             shortest_path = get_k_shortest_paths(
                 self.env, mid_cell, orientation, agent_target)  # agent_direction could not work
             if len(shortest_path) > 0:
@@ -921,7 +931,7 @@ class GraphObservation(ObservationBuilder):
                 logging.debug("agent_target: {}, track_id: {}".format(
                     agent_target, self.get_track(agent_target)))
                 target_distance = np.count_nonzero(track_map != 0) # penalize if shortest path can't be computed
-            
+            '''
             
         agents_blocking_steps = []
         agents_speeds = []
