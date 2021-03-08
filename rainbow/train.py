@@ -41,7 +41,7 @@ def main(args):
     tb = SummaryWriter(args.model_path + 'runs/{}_{}_agents_on_{}_{}_start_epoch_{}'.format(args.tb_title, args.num_agents, args.width, args.height, args.start_epoch))
     tb_path = "agents_{}_on_{}_{}_start_{}_LR_{}".format(args.num_agents, args.width, args.height, args.start_epoch, args.learning_rate)
 
-    wandb.init(project="Flatland-V11", config=args)
+    wandb.init(project="Flatland-V11/{}_agents_on_({}, {})".format(args.num_agents, args.width, args.height), config=args)
 
 
     # ADAPTIVE parameters according to official configurations of tests 
@@ -107,7 +107,7 @@ def main(args):
         state_size = 12
         dqn_agent = Agent(args=args, state_size=state_size, obs_builder=observation_builder, summary_writer=tb)
 
-    wandb.watch((dqn_agent.qnetwork_action, dqn_agent.qnetwork_value_local))
+    wandb.watch((dqn_agent.qnetwork_action, dqn_agent.qnetwork_value_local), log='all')
     # LR scheduler to reduce learning rate over epochs
     lr_scheduler = StepLR(dqn_agent.optimizer_value, step_size=25, gamma=args.learning_rate_decay)
     #lr_scheduler = ReduceLROnPlateau(dqn_agent.optimizer_value, mode='min', factor=args.learning_rate_decay, patience=0, verbose=True, eps=1e-25)
@@ -513,7 +513,7 @@ def main(args):
         if epoch_mean_loss is not None:
             tb.add_scalar("Loss", epoch_mean_loss, ep)
             tb.close()
-            wandb.log({"epoch": ep, "mean_loss": epoch_mean_loss})
+            wandb.log({"mean_loss": epoch_mean_loss})
 
         print(episode_stats, end=" ")
         '''
@@ -533,6 +533,8 @@ def main(args):
             dqn_agent.train()  # Set DQN (online network) back to training mode
             # Save replay buffer
             dqn_agent.memory.save_memory(args.model_path + "replay_buffer")
+
+            wandb.log({"avg_reward": avg_reward, "done_agents": avg_done_agents, "deadlock_agents": avg_deadlock_agents})
 
             '''
             tb.add_scalar("Avg reward ({} agents)".format(args.num_agents), avg_reward, ep)
