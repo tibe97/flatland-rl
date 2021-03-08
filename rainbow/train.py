@@ -41,8 +41,8 @@ def main(args):
     tb = SummaryWriter(args.model_path + 'runs/{}_{}_agents_on_{}_{}_start_epoch_{}'.format(args.tb_title, args.num_agents, args.width, args.height, args.start_epoch))
     tb_path = "agents_{}_on_{}_{}_start_{}_LR_{}".format(args.num_agents, args.width, args.height, args.start_epoch, args.learning_rate)
 
-    wandb.init(project="Flatland-{} [{}_agents_on_({}, {})]".format(args.wandb_project_name, args.num_agents, args.width, args.height), config=args)
-
+    wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_agents_on_({}, {})_".format(args.num_agents, args.width, args.height), config=args)
+    
 
     # ADAPTIVE parameters according to official configurations of tests 
     max_num_cities_adaptive = (args.num_agents//10)+2
@@ -519,8 +519,8 @@ def main(args):
             if ep >= args.start_lr_decay:
                 lr_scheduler.step(-avg_reward)
             '''
-            
-         wandb.log(wandb_log_dict)  
+
+        wandb.log(wandb_log_dict, step=ep)  
        
         if ep % (args.save_model_interval) == 0:  #backup weights
             now = datetime.now()
