@@ -22,10 +22,10 @@ from pathlib import Path
 from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau
 from torch.utils.tensorboard import SummaryWriter
 import logging
+import wandb
 
 base_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(base_dir))
-
 
 
 def main(args):
@@ -40,6 +40,9 @@ def main(args):
     # initialize tensorboard 
     tb = SummaryWriter(args.model_path + 'runs/{}_{}_agents_on_{}_{}_start_epoch_{}'.format(args.tb_title, args.num_agents, args.width, args.height, args.start_epoch))
     tb_path = "agents_{}_on_{}_{}_start_{}_LR_{}".format(args.num_agents, args.width, args.height, args.start_epoch, args.learning_rate)
+
+    wandb.init(project="Flatland-V11", config=args)
+
 
     # ADAPTIVE parameters according to official configurations of tests 
     max_num_cities_adaptive = (args.num_agents//10)+2
@@ -104,7 +107,7 @@ def main(args):
         state_size = 12
         dqn_agent = Agent(args=args, state_size=state_size, obs_builder=observation_builder, summary_writer=tb)
 
-    
+    wandb.watch((dqn_agent.qnetwork_action, dqn_agent.qnetwork_value_local))
     # LR scheduler to reduce learning rate over epochs
     lr_scheduler = StepLR(dqn_agent.optimizer_value, step_size=25, gamma=args.learning_rate_decay)
     #lr_scheduler = ReduceLROnPlateau(dqn_agent.optimizer_value, mode='min', factor=args.learning_rate_decay, patience=0, verbose=True, eps=1e-25)
@@ -488,6 +491,8 @@ def main(args):
             epoch_mean_loss = (sum(epoch_loss)/(len(epoch_loss)))
         else:
             epoch_mean_loss = None
+        
+
 
         # Print training results info
         episode_stats = '\rEp: {}\t {} Agents on ({},{}).\t Ep score {:.3f}\tAvg Score: {:.3f}\t Env Dones so far: {:.2f}%\t Done Agents in ep: {:.2f}%\t In deadlock {:.2f}%(at switch {})\n\t\t Not started {}\t Eps: {:.2f}\tEP ended at step: {}/{}\tMean state_value: {}\t Epoch avg_loss: {}\n'.format(
@@ -508,6 +513,8 @@ def main(args):
         if epoch_mean_loss is not None:
             tb.add_scalar("Loss", epoch_mean_loss, ep)
             tb.close()
+            wandb.log({"epoch": ep, "mean_loss": epoch_mean_loss})
+
         print(episode_stats, end=" ")
         '''
         with open(args.model_path + 'training_stats.txt', 'a') as f:
