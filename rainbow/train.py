@@ -41,7 +41,7 @@ def main(args):
     tb = SummaryWriter(args.model_path + 'runs/{}_{}_agents_on_{}_{}_start_epoch_{}'.format(args.tb_title, args.num_agents, args.width, args.height, args.start_epoch))
     tb_path = "agents_{}_on_{}_{}_start_{}_LR_{}".format(args.num_agents, args.width, args.height, args.start_epoch, args.learning_rate)
 
-    wandb.init(project="Flatland-V11 [{}_agents_on_({}, {})]".format(args.num_agents, args.width, args.height), config=args)
+    wandb.init(project="Flatland-{} [{}_agents_on_({}, {})]".format(args.wandb_project_name, args.num_agents, args.width, args.height), config=args)
 
 
     # ADAPTIVE parameters according to official configurations of tests 
@@ -583,6 +583,8 @@ if __name__ == '__main__':
                         help='epsilon value for e-greedy')
     parser.add_argument('--tb-title', type=str, default="no_title",
                         help='title for tensorboard run')
+    parser.add_argument('--wandb-project-title', type=str, default="wandb_default",
+                        help='title for wandb run')
     parser.add_argument('--eps-decay', type=float, default=0.999,
                         help='epsilon decay value')
     parser.add_argument('--learning-rate', type=float, default=0.005,
