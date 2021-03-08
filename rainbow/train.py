@@ -108,7 +108,7 @@ def main(args):
         dqn_agent = Agent(args=args, state_size=state_size, obs_builder=observation_builder, summary_writer=tb)
 
     wandb.watch(dqn_agent.qnetwork_value_local, log='all')
-    wandb.watch(dqn_agent.qnetwork_value_local, log='all')
+    wandb.watch(dqn_agent.qnetwork_action, log='all')
     # LR scheduler to reduce learning rate over epochs
     lr_scheduler = StepLR(dqn_agent.optimizer_value, step_size=25, gamma=args.learning_rate_decay)
     #lr_scheduler = ReduceLROnPlateau(dqn_agent.optimizer_value, mode='min', factor=args.learning_rate_decay, patience=0, verbose=True, eps=1e-25)
