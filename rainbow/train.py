@@ -583,7 +583,7 @@ if __name__ == '__main__':
                         help='epsilon value for e-greedy')
     parser.add_argument('--tb-title', type=str, default="no_title",
                         help='title for tensorboard run')
-    parser.add_argument('--wandb-project-title', type=str, default="wandb_default",
+    parser.add_argument('--wandb-project-name', type=str, default="wandb_default",
                         help='title for wandb run')
     parser.add_argument('--eps-decay', type=float, default=0.999,
                         help='epsilon decay value')
