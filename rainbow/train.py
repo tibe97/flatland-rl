@@ -107,7 +107,8 @@ def main(args):
         state_size = 12
         dqn_agent = Agent(args=args, state_size=state_size, obs_builder=observation_builder, summary_writer=tb)
 
-    wandb.watch((dqn_agent.qnetwork_action, dqn_agent.qnetwork_value_local), log='all')
+    wandb.watch(dqn_agent.qnetwork_value_local, log='all')
+    wandb.watch(dqn_agent.qnetwork_value_local, log='all')
     # LR scheduler to reduce learning rate over epochs
     lr_scheduler = StepLR(dqn_agent.optimizer_value, step_size=25, gamma=args.learning_rate_decay)
     #lr_scheduler = ReduceLROnPlateau(dqn_agent.optimizer_value, mode='min', factor=args.learning_rate_decay, patience=0, verbose=True, eps=1e-25)
@@ -143,32 +144,6 @@ def main(args):
     # load previous saved experience memory if available
     if args.load_memory:
         dqn_agent.memory.load_memory(args.model_path + "replay_buffer")
-
-    # Plot initial weights to see difference after 100 epochs
-    '''
-    tb.add_histogram("value.conv1.weight", dqn_agent.qnetwork_value_local.conv1.mlp[0].weight, args.start_epoch)
-    tb.add_histogram("value.conv1.bias", dqn_agent.qnetwork_value_local.conv1.mlp[0].bias, args.start_epoch)
-    tb.add_histogram("value.conv2.weight", dqn_agent.qnetwork_value_local.conv2.mlp[0].weight, args.start_epoch)
-    tb.add_histogram("value.conv2.bias", dqn_agent.qnetwork_value_local.conv2.mlp[0].bias, args.start_epoch)
-    tb.add_histogram("value.conv3.weight", dqn_agent.qnetwork_value_local.conv3.mlp[0].weight, args.start_epoch)
-    tb.add_histogram("value.conv3.bias", dqn_agent.qnetwork_value_local.conv3.mlp[0].bias, args.start_epoch)
-    tb.add_histogram("value.linear1.weight", dqn_agent.qnetwork_value_local.linear1.weight, args.start_epoch)
-    tb.add_histogram("value.linear1.bias", dqn_agent.qnetwork_value_local.linear1.bias, args.start_epoch)
-    tb.add_histogram("value.out.weight", dqn_agent.qnetwork_value_local.out.weight, args.start_epoch)
-    tb.add_histogram("value.out.bias", dqn_agent.qnetwork_value_local.out.bias, args.start_epoch)
-
-    tb.add_histogram("action.conv1.weight", dqn_agent.qnetwork_action.conv1.mlp[0].weight, args.start_epoch)
-    tb.add_histogram("action.conv1.bias", dqn_agent.qnetwork_action.conv1.mlp[0].bias, args.start_epoch)
-    tb.add_histogram("action.conv2.weight", dqn_agent.qnetwork_action.conv2.mlp[0].weight, args.start_epoch)
-    tb.add_histogram("action.conv2.bias", dqn_agent.qnetwork_action.conv2.mlp[0].bias, args.start_epoch)
-    tb.add_histogram("action.conv3.weight", dqn_agent.qnetwork_action.conv3.mlp[0].weight, args.start_epoch)
-    tb.add_histogram("action.conv3.bias", dqn_agent.qnetwork_action.conv3.mlp[0].bias, args.start_epoch)
-    tb.add_histogram("action.linear1.weight", dqn_agent.qnetwork_action.linear1.weight, args.start_epoch)
-    tb.add_histogram("action.linear1.bias", dqn_agent.qnetwork_action.linear1.bias, args.start_epoch)
-    tb.add_histogram("action.out.weight", dqn_agent.qnetwork_action.out.weight, args.start_epoch)
-    tb.add_histogram("action.out.bias", dqn_agent.qnetwork_action.out.bias, args.start_epoch)
-    tb.close()
-    '''
 
     
     for ep in range(1+args.start_epoch, args.num_episodes + args.start_epoch + 1):
@@ -289,11 +264,11 @@ def main(args):
                             logging.debug("Agent {} choses path {} with value {} at position {}. Num actions to take: {}".format(
                                 a, path_values[a][0][0], path_values[a][3], agent.position, len(agent_action_buffer[a])))
                             path_values_buffer.append(path_values[a][1]) # for debug 
-                            tb.add_histogram("Path values", path_values[a][3].item(), (ep//100)*100 + 100)
+                            # tb.add_histogram("Path values", path_values[a][3].item(), (ep//100)*100 + 100)
                             logging.debug(
                                 "Agent {} actions: {}".format(a, railenv_action))
                         next_action = agent_action_buffer[a].pop(0)
-                        tb.add_histogram("Actions train ({} agents)".format(args.num_agents), int(next_action), (ep//100)*100 + 100)
+                        #tb.add_histogram("Actions train ({} agents)".format(args.num_agents), int(next_action), (ep//100)*100 + 100)
                         logging.debug("Agent {} at: {}. Action is: {}. Speed: {}. Fraction {}. Remaining actions: {}. SpeedTimesteps: {}".format(
                             a, agent.position, next_action, agent.speed_data["speed"], agent.speed_data["position_fraction"], len(agent_action_buffer[a]), agents_speed_timesteps[a]))
                         # if agent has to stop, do it for 1 timestep
@@ -511,11 +486,13 @@ def main(args):
             (sum(path_values_buffer)/len(path_values_buffer)),
             epoch_mean_loss)
         if epoch_mean_loss is not None:
-            tb.add_scalar("Loss", epoch_mean_loss, ep)
-            tb.close()
             wandb.log({"mean_loss": epoch_mean_loss})
 
         print(episode_stats, end=" ")
+
+        wandb.log({"Learning rate value": dqn_agent.optimizer_value.param_groups[0]['lr'], 
+                    "Learning rate action": dqn_agent.optimizer_action.param_groups[0]['lr']})
+        
         '''
         with open(args.model_path + 'training_stats.txt', 'a') as f:
             print(episode_stats, file=f, end=" ")
@@ -535,37 +512,6 @@ def main(args):
             dqn_agent.memory.save_memory(args.model_path + "replay_buffer")
 
             wandb.log({"avg_reward": avg_reward, "done_agents": avg_done_agents, "deadlock_agents": avg_deadlock_agents})
-
-            '''
-            tb.add_scalar("Avg reward ({} agents)".format(args.num_agents), avg_reward, ep)
-            tb.add_scalar("Done Agents ({} agents)".format(args.num_agents), avg_done_agents, ep)
-            tb.add_scalar("Deadlock Agents ({} agents)".format(args.num_agents), avg_deadlock_agents, ep)
-
-            tb.add_histogram("value.conv1.weight", dqn_agent.qnetwork_value_local.conv1.mlp[0].weight, ep)
-            tb.add_histogram("value.conv1.bias", dqn_agent.qnetwork_value_local.conv1.mlp[0].bias, ep)
-            tb.add_histogram("value.conv2.weight", dqn_agent.qnetwork_value_local.conv2.mlp[0].weight, ep)
-            tb.add_histogram("value.conv2.bias", dqn_agent.qnetwork_value_local.conv2.mlp[0].bias, ep)
-            tb.add_histogram("value.conv3.weight", dqn_agent.qnetwork_value_local.conv3.mlp[0].weight, ep)
-            tb.add_histogram("value.conv3.bias", dqn_agent.qnetwork_value_local.conv3.mlp[0].bias, ep)
-            tb.add_histogram("value.linear1.weight", dqn_agent.qnetwork_value_local.linear1.weight, ep)
-            tb.add_histogram("value.linear1.bias", dqn_agent.qnetwork_value_local.linear1.bias, ep)
-            tb.add_histogram("value.out.weight", dqn_agent.qnetwork_value_local.out.weight, ep)
-            tb.add_histogram("value.out.bias", dqn_agent.qnetwork_value_local.out.bias, ep)
-
-            tb.add_histogram("action.conv1.weight", dqn_agent.qnetwork_action.conv1.mlp[0].weight, ep)
-            tb.add_histogram("action.conv1.bias", dqn_agent.qnetwork_action.conv1.mlp[0].bias, ep)
-            tb.add_histogram("action.conv2.weight", dqn_agent.qnetwork_action.conv2.mlp[0].weight, ep)
-            tb.add_histogram("action.conv2.bias", dqn_agent.qnetwork_action.conv2.mlp[0].bias, ep)
-            tb.add_histogram("action.conv3.weight", dqn_agent.qnetwork_action.conv3.mlp[0].weight, ep)
-            tb.add_histogram("action.conv3.bias", dqn_agent.qnetwork_action.conv3.mlp[0].bias, ep)
-            tb.add_histogram("action.linear1.weight", dqn_agent.qnetwork_action.linear1.weight, ep)
-            tb.add_histogram("action.linear1.bias", dqn_agent.qnetwork_action.linear1.bias, ep)
-            tb.add_histogram("action.out.weight", dqn_agent.qnetwork_action.out.weight, ep)
-            tb.add_histogram("action.out.bias", dqn_agent.qnetwork_action.out.bias, ep)
-
-            tb.add_histogram("Actions test ({} agents)".format(args.num_agents), test_actions, ep)
-            tb.close()
-            '''
             
             '''
             # reduce LR based on reward
@@ -573,17 +519,7 @@ def main(args):
                 lr_scheduler.step(-avg_reward)
             '''
             
-            # Plot Learning rate in tensorboard
-            tb.add_scalar("Learning rate value", dqn_agent.optimizer_value.param_groups[0]['lr'], ep)
-            tb.add_scalar("Learning rate action", dqn_agent.optimizer_action.param_groups[0]['lr'], ep)
-
-            # Adaptive Epsilon Greedy 
-            #eps = 1 - avg_done_agents
-        '''
-        if ep % args.save_model_interval == 0:
-            dqn_agent.save(args.model_path + args.model_name)  # Save models
-        '''   
-
+       
         if ep % (args.save_model_interval) == 0:  #backup weights
             now = datetime.now()
             dt_string = now.strftime("%d_%m_%Y__%H_%M_")
