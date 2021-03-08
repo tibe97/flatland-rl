@@ -485,13 +485,15 @@ def main(args):
             max_steps,
             (sum(path_values_buffer)/len(path_values_buffer)),
             epoch_mean_loss)
-        if epoch_mean_loss is not None:
-            wandb.log({"mean_loss": epoch_mean_loss})
 
+        wandb_log_dict = {"Learning rate value": dqn_agent.optimizer_value.param_groups[0]['lr'], 
+                    "Learning rate action": dqn_agent.optimizer_action.param_groups[0]['lr']}
+        if epoch_mean_loss is not None:
+            wandb_log_dict.update({"mean_loss": epoch_mean_loss})
+
+        wandb.log(wandb_log_dict)
         print(episode_stats, end=" ")
 
-        wandb.log({"Learning rate value": dqn_agent.optimizer_value.param_groups[0]['lr'], 
-                    "Learning rate action": dqn_agent.optimizer_action.param_groups[0]['lr']})
         
         '''
         with open(args.model_path + 'training_stats.txt', 'a') as f:
