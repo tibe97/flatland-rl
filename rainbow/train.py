@@ -491,7 +491,6 @@ def main(args):
         if epoch_mean_loss is not None:
             wandb_log_dict.update({"mean_loss": epoch_mean_loss})
 
-        wandb.log(wandb_log_dict)
         print(episode_stats, end=" ")
 
         
@@ -513,7 +512,7 @@ def main(args):
             # Save replay buffer
             dqn_agent.memory.save_memory(args.model_path + "replay_buffer")
 
-            wandb.log({"avg_reward": avg_reward, "done_agents": avg_done_agents, "deadlock_agents": avg_deadlock_agents})
+            wandb_log_dict.update({"avg_reward": avg_reward, "done_agents": avg_done_agents, "deadlock_agents": avg_deadlock_agents})
             
             '''
             # reduce LR based on reward
@@ -521,6 +520,7 @@ def main(args):
                 lr_scheduler.step(-avg_reward)
             '''
             
+         wandb.log(wandb_log_dict)  
        
         if ep % (args.save_model_interval) == 0:  #backup weights
             now = datetime.now()
