@@ -119,12 +119,12 @@ class GAT_value(nn.Module):
         # for now all layers have same input and output size, except first attention layer 
         for l in range(nlayers):
             input_size = nfeat if l==0 else nhid * nheads
-            self.attentions.append(GATConv(input_size, nhid, heads=nheads, dropout=dropout, negative_slope=alpha, concat=True, flow="source_to_target"))
+            self.attentions.append(GATConv(input_size, nhid, heads=nheads, dropout=dropout, negative_slope=alpha, concat=True, flow="target_to_source"))
             self.batch_norms.append(BatchNorm1d(num_features=nhid*nheads))
 
         for i, attention in enumerate(self.attentions):
             self.add_module('attention_{}'.format(i), attention)
-        self.out_att = GATConv(nhid * nheads, nclass, negative_slope=alpha, concat=False, flow="source_to_target", add_self_loops=False)
+        self.out_att = GATConv(nhid * nheads, nclass, negative_slope=alpha, concat=False, flow="target_to_source", add_self_loops=False)
 
     def forward(self, x, adj):
         #x = F.dropout(x, self.dropout, training=self.training)
@@ -152,13 +152,13 @@ class GAT_action(nn.Module):
         # for now all layers have same input and output size, except first attention layer 
         for l in range(self.nlayers):
             input_size = nfeat if l==0 else nhid * nheads
-            self.attentions.append(GATConv(input_size, nhid, heads=nheads, dropout=dropout, negative_slope=alpha, concat=True, flow="source_to_target"))
+            self.attentions.append(GATConv(input_size, nhid, heads=nheads, dropout=dropout, negative_slope=alpha, concat=True, flow="target_to_source"))
             self.batch_norms.append(BatchNorm1d(num_features=nhid*nheads))
 
         for i, attention in enumerate(self.attentions):
             self.add_module('attention_{}'.format(i), attention)
         
-        self.out_att = GATConv(nhid * nheads, nclass, negative_slope=alpha, concat=False, flow="source_to_target")
+        self.out_att = GATConv(nhid * nheads, nclass, negative_slope=alpha, concat=False, flow="target_to_source")
 
     def forward(self, x, adj):
         #x = F.dropout(x, self.dropout, training=self.training)
