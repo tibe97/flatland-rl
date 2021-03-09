@@ -1031,7 +1031,7 @@ class GraphObservation(ObservationBuilder):
 
         Compute the action/s required to reach the next track represented by track_ID
         '''
-        target_track, action, _, _ = track
+        target_track, action, _, _, _ = track
         track_ID, index = target_track
         if action == 1:
             agents = self.env.agents
