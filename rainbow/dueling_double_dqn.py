@@ -130,11 +130,13 @@ class Agent:
     def step(self, state, reward, next_state, done, deadlock, ep=0, train=True):
         # Save experience in replay memory
         # Logarithmic scaling
+        '''
         reward = np.log10(abs(reward)) * np.sign(reward)
         if np.isnan(reward):
             return None
         if reward is None:
             return None
+        '''
         self.memory.add(state, reward, next_state, done, deadlock)
         # Learn every UPDATE_EVERY time steps.
         self.t_step = (self.t_step + 1) % UPDATE_EVERY
