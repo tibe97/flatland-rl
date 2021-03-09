@@ -597,7 +597,7 @@ if __name__ == '__main__':
                         help='LR decay for DQN agent')
     parser.add_argument('--learning-rate-decay-policy', type=float, default=0.5,
                         help='LR decay for policy network')
-    parser.add_argument('--model-path', type=str, default='', help="results/")
+    parser.add_argument('--model-path', type=str, default='test_results/', help="result directory")
     parser.add_argument('--model-name', type=str, default='weights/best_model_8_agents_on_25_25',
                         help='Name to use to save the model .pth')
     parser.add_argument('--resume-weights', type=bool, default=True,

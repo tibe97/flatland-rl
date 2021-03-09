@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Categorical
 from torch_geometric.data import Batch, Data
+import pdb
 # import torchsummary
 
 from model import DQN_action, DQN_value, GAT_action, GAT_value
@@ -249,7 +250,11 @@ class Agent:
         loss_to_return = loss.item()
         # Minimize the loss
         self.optimizer_value.zero_grad()
-        loss.backward()
+        try:
+            loss.backward()
+        except:
+            pdb.set_trace()
+
         # Clip gradients - https://stackoverflow.com/questions/47036246/dqn-q-loss-not-converging
         for param in self.qnetwork_value_local.parameters():
             param.grad.data.clamp_(-1, 1)
