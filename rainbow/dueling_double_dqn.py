@@ -288,8 +288,6 @@ class Agent:
 
         self.optimizer_action.zero_grad()
         policy_loss.backward()
-        step = (ep//100)*100 + 100
-       
         self.optimizer_action.step()
 
 
