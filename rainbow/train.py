@@ -41,7 +41,7 @@ def main(args):
     tb = SummaryWriter(args.model_path + 'runs/{}_{}_agents_on_{}_{}_start_epoch_{}'.format(args.tb_title, args.num_agents, args.width, args.height, args.start_epoch))
     tb_path = "agents_{}_on_{}_{}_start_{}_LR_{}".format(args.num_agents, args.width, args.height, args.start_epoch, args.learning_rate)
 
-    wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_agents_on_({}, {})_".format(args.num_agents, args.width, args.height), config=args)
+    wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_agents_on_({}, {})_{}".format(args.num_agents, args.width, args.height, datetime.now().strftime("%d/%m/%Y %H:%M:%S")), config=args)
     
 
     # ADAPTIVE parameters according to official configurations of tests 
@@ -168,6 +168,7 @@ def main(args):
         epoch_loss = []
         rewards_buffer = [list()] * env.get_num_agents()
         log_probs_buffer = [list()] * env.get_num_agents()
+        probs_buffer = [list()] * env.get_num_agents()
         agent_ending_timestep = [max_steps] * env.get_num_agents()
         num_agents_at_switch = 0 # number of agents at switches
  
@@ -257,6 +258,7 @@ def main(args):
                             # Choose path to take at the current switch
                             path_values = dqn_agent.act(obs_batch, eps=eps)
                             log_probs_buffer[a].append(path_values[a][2])
+                            probs_buffer[a].append(path_values[a][4])
                             railenv_action = env.obs_builder.choose_railenv_actions(a, path_values[a])
                             agent_action_buffer[a] = railenv_action
                             # as state to save we take the path (with its children) chosen by agent
@@ -492,7 +494,7 @@ def main(args):
             wandb_log_dict.update({"mean_loss": epoch_mean_loss})
 
         print(episode_stats, end=" ")
-
+        wandb_log_dict.update({"action_probs": [prob for agent_probs in probs_buffer for prob in agent_probs]})
         
         '''
         with open(args.model_path + 'training_stats.txt', 'a') as f:

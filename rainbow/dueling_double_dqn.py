@@ -2,7 +2,7 @@ import copy
 import os
 import random
 from collections import namedtuple, deque, Iterable, defaultdict
-from datetime import date
+from datetime import datetime
 import pickle
 import numpy as np
 import torch
@@ -201,7 +201,7 @@ class Agent:
                     m = Categorical(action_prob[1])
                     action = m.sample()
                     log_prob = m.log_prob(action)
-                    agents_best_path_values.update({handle: [random_path[0], action.item(), log_prob, random_path[1][0]]})
+                    agents_best_path_values.update({handle: [random_path[0], action.item(), log_prob, random_path[1][0], m.probs[action]]})
            
         self.qnetwork_value_local.train()
         self.qnetwork_action.train()
