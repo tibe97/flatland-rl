@@ -173,6 +173,7 @@ def main(args):
         rewards_buffer = [list()] * env.get_num_agents()
         log_probs_buffer = [list()] * env.get_num_agents()
         probs_buffer = [list()] * env.get_num_agents()
+        stop_go_buffer = [list()] * env.get_num_agents()
         agent_ending_timestep = [max_steps] * env.get_num_agents()
         num_agents_at_switch = 0 # number of agents at switches
  
@@ -263,6 +264,7 @@ def main(args):
                             path_values = dqn_agent.act(obs_batch, eps=eps)
                             log_probs_buffer[a].append(path_values[a][2])
                             probs_buffer[a].append(path_values[a][4])
+                            stop_go_buffer[a].append(path_values[a][1])
                             railenv_action = env.obs_builder.choose_railenv_actions(a, path_values[a])
                             agent_action_buffer[a] = railenv_action
                             # as state to save we take the path (with its children) chosen by agent
@@ -500,6 +502,7 @@ def main(args):
         print(episode_stats, end=" ")
 
         wandb_log_dict.update({"action_probs": wandb.Histogram(np.array([prob.detach().numpy() for agent_probs in probs_buffer for prob in agent_probs]))})
+        wandb_log_dict.update({"stop_go_action": wandb.Histogram(np.array([action.detach().numpy() for agent_actions in stop_go_buffer for action in agent_actions]))})
         
         '''
         with open(args.model_path + 'training_stats.txt', 'a') as f:
