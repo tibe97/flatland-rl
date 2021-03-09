@@ -618,7 +618,7 @@ if __name__ == '__main__':
                         metavar='N', help='Number of evaluation episodes to average over')
     parser.add_argument('--render', action='store_true',
                         default=False, help='Display screen (testing only)')
-    parser.add_argument('--evaluation-interval', type=int, default=100, metavar='EPISODES', help='Number of episodes between evaluations')
+    parser.add_argument('--evaluation-interval', type=int, default=50, metavar='EPISODES', help='Number of episodes between evaluations')
     parser.add_argument('--save-model-interval', type=int, default=50,
                         help='Save models every tot episodes')
     parser.add_argument('--start-lr-decay', type=int, default=150,
