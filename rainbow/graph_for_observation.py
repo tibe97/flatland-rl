@@ -2,7 +2,7 @@ import collections
 from typing import Optional, List, Dict, Tuple
 import queue
 import numpy as np
-from collections import defaultdict, namedtuple
+from collections import defaultdict, namedtuple, deque
 import math
 import torch
 import matplotlib.pyplot as plt
@@ -32,8 +32,337 @@ import torch.utils.data as D
 from torch_geometric.data import Data
 from torch_geometric.data import DataLoader, Batch
 import torch.nn.functional as F
+import wandb
 
 IntersectionBranch = namedtuple("IntersectionBranch", "track_id, orientation")
+
+class EpisodeController():
+    def __init__(self, env, agent, max_steps):
+        super(EpisodeController, self).__init__()
+        self.env = env
+        self.dqn_agent = agent
+        self.scores_window = deque(maxlen=100)
+        self.done_window = deque(maxlen=100)
+        self.score = 0
+        self.max_steps = max_steps
+        self.path_values_buffer = [] # to compute mean path value for debugging
+        self.agent_obs = [None] * self.env.get_num_agents()
+        self.agent_obs_buffer = [None] * self.env.get_num_agents()  # updated twice
+        self.agent_action_buffer = defaultdict(list)
+        # some switches are long so we have to accumulate reward or penalty
+        self.acc_rewards = defaultdict(lambda: 0)
+        # how many timesteps remaining to complete current action
+        self.agents_speed_timesteps = [0] * self.env.get_num_agents()
+        self.agent_at_switch = [False] * self.env.get_num_agents()
+        self.agent_path_obs_buffer = [None] * self.env.get_num_agents()
+        # Used to check if agent with fractionary speed could move at current cell
+        self.agent_old_speed_data = {}
+        self.agent_done_removed = [False] * self.env.get_num_agents()
+        self.update_values = [False] * self.env.get_num_agents()
+        self.agents_in_deadlock = [False] * self.env.get_num_agents()
+        self.epoch_loss = []
+        self.rewards_buffer = [list()] * self.env.get_num_agents()
+        self.log_probs_buffer = [list()] * self.env.get_num_agents()
+        self.probs_buffer = [list()] * self.env.get_num_agents()
+        self.stop_go_buffer = [list()] * self.env.get_num_agents()
+        self.agent_ending_timestep = [self.max_steps] * self.env.get_num_agents()
+        self.num_agents_at_switch = 0 # number of agents at switches
+        self.stats = defaultdict(list)
+        self.epoch_mean_loss = None
+
+    def reset(self):
+        self.score = 0
+        self.path_values_buffer = [] # to compute mean path value for debugging
+        self.agent_obs = [None] * self.env.get_num_agents()
+        self.agent_obs_buffer = [None] * self.env.get_num_agents()  # updated twice
+        self.agent_action_buffer = defaultdict(list)
+        # some switches are long so we have to accumulate reward or penalty
+        self.acc_rewards = defaultdict(lambda: 0)
+        # how many timesteps remaining to complete current action
+        self.agents_speed_timesteps = [0] * self.env.get_num_agents()
+        self.agent_at_switch = [False] * self.env.get_num_agents()
+        self.agent_path_obs_buffer = [None] * self.env.get_num_agents()
+        # Used to check if agent with fractionary speed could move at current cell
+        self.agent_old_speed_data = {}
+        self.agent_done_removed = [False] * self.env.get_num_agents()
+        self.update_values = [False] * self.env.get_num_agents()
+        self.agents_in_deadlock = [False] * self.env.get_num_agents()
+        self.epoch_loss = []
+        self.rewards_buffer = [list()] * self.env.get_num_agents()
+        self.log_probs_buffer = [list()] * self.env.get_num_agents()
+        self.probs_buffer = [list()] * self.env.get_num_agents()
+        self.stop_go_buffer = [list()] * self.env.get_num_agents()
+        self.agent_ending_timestep = [self.max_steps] * self.env.get_num_agents()
+        self.num_agents_at_switch = 0 # number of agents at switches
+        self.stats = defaultdict(list)
+        self.epoch_mean_loss = None
+    
+    def is_episode_done(self):
+        return self.agent_done_removed.count(True) == self.env.get_num_agents()
+
+    def compute_agent_action(self, handle, info, eps):
+        ''' 
+            If agent is arriving at switch we need to compute the next path to reach in advance.
+            The agent computes a sequence of actions because the switch could be composed of more cells.
+            Each action (e.g. MOVE_FORWARD) could take more than 1 timestep if speed is not 1.
+            Each action has a fixed TIME_STEPS value for each agent, computed as 1/agent_speed.
+            At each environment step we subtract 1 from the remaining timestep for a certain action of an agent.
+            When we finish all the actions we have reached the new node, here the only allowed action is MOVE_FORWARD
+            until we reach the next switch.
+        '''
+        next_action = 0
+        agent = self.env.agents[handle]
+
+        # Compute agent position
+        if agent.status == RailAgentStatus.ACTIVE:
+            agent_position = agent.position
+        elif agent.status == RailAgentStatus.READY_TO_DEPART:
+            agent_position = agent.initial_position
+
+        if agent.status in [RailAgentStatus.DONE, RailAgentStatus.DONE_REMOVED]:
+            logging.debug("Agent {} is done".format(handle))
+        else:
+            logging.debug("Agent {} at position {}, fraction {}, status {}".format(
+                handle, agent.position, agent.speed_data["position_fraction"], agent.status))
+
+
+        # If the agent arrives at a switch
+        if info['action_required'][handle] and self.agent_at_switch[handle] and agent.status in [RailAgentStatus.ACTIVE, RailAgentStatus.READY_TO_DEPART] and agent.malfunction_data["malfunction"] == 0:
+            # if we finish previous action (action may take more than 1 timestep)
+            if self.agents_speed_timesteps[handle] == 0:
+                # if we arrive before a switch we compute the next path to reach and the actions required
+                # (this is due to the switch being eventually composed of more cells)
+                # We are about to enter the switch
+                if len(self.agent_action_buffer[handle]) == 0:
+                    # Check that dict is not empty
+                    assert self.agent_obs[handle]["partitioned"]
+                    obs_batch = self.env.obs_builder.preprocess_agent_obs(self.agent_obs[handle], handle)
+                    # Choose path to take at the current switch
+                    path_values = self.dqn_agent.act(obs_batch, eps=eps)
+                    self.log_probs_buffer[handle].append(path_values[handle][2])
+                    self.probs_buffer[handle].append(path_values[handle][4])
+                    self.stop_go_buffer[handle].append(path_values[handle][1])
+                    railenv_action = self.env.obs_builder.choose_railenv_actions(handle, path_values[handle])
+                    self.agent_action_buffer[handle] = railenv_action
+                    # as state to save we take the path (with its children) chosen by agent
+                    self.agent_path_obs_buffer[handle] = self.agent_obs[handle]["partitioned"][path_values[handle][0]]
+                    logging.debug("Agent {} choses path {} with value {} at position {}. Num actions to take: {}".format(
+                        handle, path_values[handle][0][0], path_values[handle][3], agent.position, len(self.agent_action_buffer[handle])))
+                    self.path_values_buffer.append(path_values[handle][3]) # for debug 
+                    
+                    logging.debug(
+                        "Agent {} actions: {}".format(handle, railenv_action))
+                next_action = self.agent_action_buffer[handle].pop(0)
+                
+                logging.debug("Agent {} at: {}. Action is: {}. Speed: {}. Fraction {}. Remaining actions: {}. SpeedTimesteps: {}".format(
+                    handle, agent.position, next_action, agent.speed_data["speed"], agent.speed_data["position_fraction"], len(self.agent_action_buffer[handle]), self.agents_speed_timesteps[handle]))
+                # if agent has to stop, do it for 1 timestep
+                if (next_action == RailEnvActions.STOP_MOVING):
+                    self.agents_speed_timesteps[handle] = 1
+                    self.env.obs_builder.agent_requires_obs.update({handle: True})
+                else:
+                    # speed is a fractionary value between 0 and 1
+                    self.agents_speed_timesteps[handle] = int(round(1 / info["speed"][handle]))
+        # if agent is not at switch just go straight
+        elif agent.status != RailAgentStatus.DONE_REMOVED:  
+            next_action = 0
+            if agent.status == RailAgentStatus.READY_TO_DEPART or (not agent.moving and agent.malfunction_data["malfunction"] == 0):
+                valid_move_actions = get_valid_move_actions_(agent.direction, agent_position, self.env.rail)
+                # agent could be at switch, so more actions possible
+                assert len(valid_move_actions) >= 1
+                next_action = valid_move_actions.popitem()[0].action
+
+        return next_action
+    
+    def save_experience_and_train(self, a, action, reward, next_obs, done, step, args, ep):
+        agent = self.env.agents[a]
+        if not self.agent_done_removed[a]:
+            logging.debug("Agent {} at position {}, fraction {}, speed Timesteps {}, reward {}".format(a, agent.position, agent.speed_data["position_fraction"], self.agents_speed_timesteps[a], self.acc_rewards[a]))
+
+        self.score += reward / self.env.get_num_agents()  # Update score
+
+        # if agent didn't move do nothing: agent couldn't perform action because another agent
+        # occupied next cell or agent's action was STOP
+        if self.env.obs_builder.agent_could_move(a, action, self.agent_old_speed_data[a]):
+            # update replay memory
+            self.acc_rewards[a] += reward
+            if ((self.update_values[a] and agent.speed_data["position_fraction"] == 0) or agent.status == RailAgentStatus.DONE_REMOVED) and not self.agent_done_removed[a]:
+                logging.debug("Update=True: agent {}".format(a))
+                # next state is the complete state, with all the possible path choices
+                if len(next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
+                    # if agent reaches target
+                    if agent.status == RailAgentStatus.DONE_REMOVED or agent.status == RailAgentStatus.DONE:
+                        self.agent_done_removed[a] = True
+                        self.acc_rewards[a] = args.done_reward
+                        self.agent_ending_timestep[a] = step
+                        #acc_rewards[a] += args.done_reward # Explicit individual reward of reaching target
+                        logging.debug("Agent {} DONE! It has been removed and experience saved with reward of {}!".format(a, self.acc_rewards[a]))
+                    else: 
+                        logging.debug("Agent reward is {}".format(self.acc_rewards[a]))
+                    # step saves experience tuple and can perform learning (every T time steps)
+                    step_loss = self.dqn_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], ep=ep)
+                    
+                    # save stats
+                    if step_loss is not None:
+                        self.epoch_loss.append(step_loss)
+                    if self.agent_done_removed[a]:
+                        self.rewards_buffer[a].append(0)
+                    else:
+                        self.rewards_buffer[a].append(self.acc_rewards[a])
+                    self.acc_rewards[a] = 0
+                    self.update_values[a] = False
+                    
+                    
+            if len(next_obs) > 0:
+                # prepare agent obs for next timestep
+                self.agent_obs[a] = next_obs.copy()
+
+            if self.agent_at_switch[a]:
+                # we descrease timestep if agent is performing actions at switch
+                self.agents_speed_timesteps[a] -= 1
+                
+            """
+                We want to optimize computation of observations only when it's needed, i.e. before 
+                making a decision.
+                We update the dictionary AGENT_REQUIRED_OBS to tell the ObservationBuilder for which agent to compute obs.
+                We compute observations only in these cases:
+                1. Agent is entering switch (obs for last cell of current path): we need obs to evaluate which path
+                    to take next
+                2. Agent is exiting a switch (obs for new cell of new path): we compute the obs because we could immediately
+                    meet another switch (track section only has 1 cell), so we need the observation in buffer
+                3. Agent is about to finish: we compute obs to save the experience tuple
+            """
+            if agent.status == RailAgentStatus.ACTIVE:
+                # Compute when agent is about to enter a switch and when it's about to leave a switch
+                # PURPOSE: to compute observations only when needed, i.e. before a switch and after, also before and
+                # after making an action that leads to the target of an agent
+                if not self.agent_at_switch[a]:
+                    agent_pos = agent.position
+                    assert self.env.obs_builder.get_track(agent_pos) != -2
+                    if self.env.obs_builder.is_agent_entering_switch(a) and agent.speed_data["position_fraction"] == 0:
+                        logging.debug("Agent {} arrived at 1 cell before switch".format(a))
+                        self.agent_at_switch[a] = True
+                        self.agents_speed_timesteps[a] = 0
+                        # env.obs_builder.agent_requires_obs.update({a: False})
+                    elif self.env.obs_builder.is_agent_2_steps_from_switch(a):
+                        self.env.obs_builder.agent_requires_obs.update({a: True})
+                        self.update_values[a] = True
+                    if self.env.obs_builder.is_agent_about_to_finish(a):
+                        self.env.obs_builder.agent_requires_obs.update({a: True})
+                else:  # Agent at SWITCH. In the step before reaching target path we want to make sure to compute the obs
+                    # in order to update the replay memory. We need to be careful if the agent can't reach new path because of another agent blocking the cell.
+                    # when agent speed is 1 we reach the target in 1 step
+                    if len(self.agent_action_buffer[a]) == 1 and agent.speed_data["speed"] == 1:
+                        # agent_next_action = agent_action_buffer[a][0]
+                        # assert env.obs_builder.is_agent_exiting_switch(a, agent_next_action)
+                        #update_values[a] = True
+                        self.env.obs_builder.agent_requires_obs.update({a: True})
+
+                    # if speed is less than 1, we need more steps to reach target. So only compute obs if doing last step
+                    elif len(self.agent_action_buffer[a]) == 0:
+                        if self.env.obs_builder.get_track(agent.position) == -2 and agent.speed_data["speed"] < 1 and np.isclose(agent.speed_data["speed"] + agent.speed_data["position_fraction"], 1, rtol=1e-03):
+                            # same check as "if" condition
+                            assert self.agents_speed_timesteps[a] > 0
+                            #update_values[a] = True
+                            self.env.obs_builder.agent_requires_obs.update({a: True})
+                        else:
+                            if self.env.obs_builder.get_track(agent.position) != -2:
+                                if self.env.obs_builder.is_agent_entering_switch(a):
+                                    assert len(next_obs) > 0
+                                    logging.debug("Agent {} just exited switch and ALREADY entering another one".format(a))
+                                    self.agent_obs_buffer[a] = next_obs.copy()
+                                    self.update_values[a] = True
+                                else:
+                                    logging.debug("Agent {} is not at switch anymore".format(a))
+                                    self.agent_at_switch[a] = False
+                                    self.agents_speed_timesteps[a] = 0
+                                    self.agent_obs_buffer[a] = next_obs.copy()
+                                if self.env.obs_builder.is_agent_about_to_finish(a):
+                                    self.env.obs_builder.agent_requires_obs.update(
+                                        {a: True})
+
+        else:  # agent did not move. Check if it stopped on purpose
+            if action == RailEnvActions.STOP_MOVING:
+                self.agents_speed_timesteps[a] -= 1
+                self.env.obs_builder.agent_requires_obs.update({a: True})
+                
+            else:
+                logging.debug("Agent {} cannot move at position {}, fraction {}".format(
+                    a, agent.position, agent.speed_data["position_fraction"]))
+                if self.env.obs_builder.is_agent_in_deadlock(a) and not self.agents_in_deadlock[a]: # agent just got in deadlock
+                    self.env.obs_builder.agent_requires_obs.update({a: True})
+                    logging.debug("Agent {} in DEADLOCK saved as experience with reward of {}".format(
+                        a, self.acc_rewards[a]))
+                    if len(next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
+                        self.agent_obs_buffer[a] = next_obs
+                        self.acc_rewards[a] = args.deadlock_reward
+                        self.agents_in_deadlock[a] = True
+                        step_loss = self.dqn_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], self.agent_obs_buffer[a], done, self.agents_in_deadlock[a], ep=ep)
+                        if step_loss is not None:
+                            self.epoch_loss.append(step_loss)
+                        self.env.obs_builder.agent_requires_obs.update({a: False})
+                    logging.debug("Agent {} is in DEADLOCK, accum. reward: {}, required_obs: {}".format(a, self.acc_rewards[a], self.env.obs_builder.agent_requires_obs[a]))
+        self.agent_old_speed_data.update({a: agent.speed_data.copy()})
+
+    def print_episode_stats(self, ep, args, eps, step):
+        # Metrics
+        num_agents_done = 0  # Num of agents that reached their target
+        num_agents_in_deadlock = 0
+        num_agents_not_started = 0
+        num_agents_in_deadlock_at_switch = 0
+        env_done = 0
+        for a in range(self.env.get_num_agents()):
+            if self.env.agents[a].status in [RailAgentStatus.DONE_REMOVED, RailAgentStatus.DONE]:
+                num_agents_done += 1
+            elif self.env.agents[a].status == RailAgentStatus.READY_TO_DEPART:
+                num_agents_not_started += 1
+            elif self.env.obs_builder.is_agent_in_deadlock(a):
+                num_agents_in_deadlock += 1
+                if self.env.obs_builder.get_track(self.env.agents[a].position) == -2:
+                    num_agents_in_deadlock_at_switch += 1
+        if num_agents_done == self.env.get_num_agents():
+            env_done = 1
+        
+
+        self.scores_window.append(self.score / self.max_steps)  # Save most recent score
+        self.done_window.append(env_done)
+        if len(self.epoch_loss) > 0:
+            self.epoch_mean_loss = (sum(self.epoch_loss)/(len(self.epoch_loss)))
+
+        
+
+
+        # Print training results info
+        episode_stats = '\rEp: {}\t {} Agents on ({},{}).\t Ep score {:.3f}\tAvg Score: {:.3f}\t Env Dones so far: {:.2f}%\t Done Agents in ep: {:.2f}%\t In deadlock {:.2f}%(at switch {})\n\t\t Not started {}\t Eps: {:.2f}\tEP ended at step: {}/{}\tMean state_value: {}\t Epoch avg_loss: {}\n'.format(
+            ep,
+            self.env.get_num_agents(), 
+            args.width, 
+            args.height,
+            self.score,
+            np.mean(self.scores_window),
+            100 * np.mean(self.done_window),
+            100 * (num_agents_done/args.num_agents),
+            100 * (num_agents_in_deadlock/args.num_agents),
+            (num_agents_in_deadlock_at_switch),
+            num_agents_not_started,
+            eps,
+            step+1,
+            self.max_steps,
+            (sum(self.path_values_buffer).detach().numpy()/len(self.path_values_buffer)),
+            self.epoch_mean_loss)
+        print(episode_stats, end=" ")
+
+    def retrieve_wandb_log(self):
+        wandb_log_dict = {"Learning rate value": self.dqn_agent.optimizer_value.param_groups[0]['lr'], 
+                    "Learning rate action": self.dqn_agent.optimizer_action.param_groups[0]['lr']}
+        if self.epoch_mean_loss is not None:
+            wandb_log_dict.update({"mean_loss": self.epoch_mean_loss})
+
+        wandb_log_dict.update({"action_probs": wandb.Histogram(np.array([prob.detach().numpy() for agent_probs in self.probs_buffer for prob in agent_probs]))})
+        wandb_log_dict.update({"stop_go_action": wandb.Histogram(np.array([action for agent_actions in self.stop_go_buffer for action in agent_actions]))})
+        wandb_log_dict.update({"node_values": wandb.Histogram(np.array(self.path_values_buffer))})
+        return wandb_log_dict
+
 
 class GraphObservation(ObservationBuilder):
     '''

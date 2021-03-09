@@ -221,7 +221,7 @@ def main(args):
             for a in range(env.get_num_agents()):
                 agent = env.agents[a]
 
-                # Compute some stats to show
+                # Compute agent position
                 if env.agents[a].status == RailAgentStatus.ACTIVE:
                     num_active_agents += 1
                     if agent.malfunction_data["malfunction"] > 0:

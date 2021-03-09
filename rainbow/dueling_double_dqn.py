@@ -130,7 +130,6 @@ class Agent:
     def step(self, state, reward, next_state, done, deadlock, ep=0, train=True):
         # Save experience in replay memory
         # Logarithmic scaling
-        
         reward = np.log10(abs(reward)) * np.sign(reward)
         if np.isnan(reward):
             return None
