@@ -502,7 +502,7 @@ def main(args):
         print(episode_stats, end=" ")
 
         wandb_log_dict.update({"action_probs": wandb.Histogram(np.array([prob.detach().numpy() for agent_probs in probs_buffer for prob in agent_probs]))})
-        wandb_log_dict.update({"stop_go_action": wandb.Histogram(np.array([action.detach().numpy() for agent_actions in stop_go_buffer for action in agent_actions]))})
+        wandb_log_dict.update({"stop_go_action": wandb.Histogram(np.array([action for agent_actions in stop_go_buffer for action in agent_actions]))})
         
         '''
         with open(args.model_path + 'training_stats.txt', 'a') as f:
