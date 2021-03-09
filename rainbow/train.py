@@ -105,19 +105,19 @@ def main(args):
     if args.observation_builder == 'GraphObsForRailEnv':
         observation_builder = GraphObservation() # custom observation
         state_size = 12
-        dqn_agent = Agent(args=args, state_size=state_size, obs_builder=observation_builder, summary_writer=tb)
+        rl_agent = Agent(args=args, state_size=state_size, obs_builder=observation_builder, summary_writer=tb)
 
-    wandb.watch(dqn_agent.qnetwork_value_local, log='all')
-    wandb.watch(dqn_agent.qnetwork_action, log='all')
+    wandb.watch(rl_agent.qnetwork_value_local, log='all')
+    wandb.watch(rl_agent.qnetwork_action, log='all')
 
-    params = list(dqn_agent.qnetwork_value_local.named_parameters())
+    params = list(rl_agent.qnetwork_value_local.named_parameters())
     for p in params:
         print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
 
     # LR scheduler to reduce learning rate over epochs
-    lr_scheduler = StepLR(dqn_agent.optimizer_value, step_size=25, gamma=args.learning_rate_decay)
-    #lr_scheduler = ReduceLROnPlateau(dqn_agent.optimizer_value, mode='min', factor=args.learning_rate_decay, patience=0, verbose=True, eps=1e-25)
-    lr_scheduler_policy = StepLR(dqn_agent.optimizer_action, step_size=25, gamma=args.learning_rate_decay_policy)
+    lr_scheduler = StepLR(rl_agent.optimizer_value, step_size=25, gamma=args.learning_rate_decay)
+    #lr_scheduler = ReduceLROnPlateau(rl_agent.optimizer_value, mode='min', factor=args.learning_rate_decay, patience=0, verbose=True, eps=1e-25)
+    lr_scheduler_policy = StepLR(rl_agent.optimizer_action, step_size=25, gamma=args.learning_rate_decay_policy)
     
     # Construct the environment with the given observation, generators, predictors, and stochastic data
     env = RailEnv(width=args.width,
@@ -141,13 +141,13 @@ def main(args):
    
     # Load previous weight is available
     if args.resume_weights:
-        dqn_agent.load(args.model_path + args.model_name)
+        rl_agent.load(args.model_path + args.model_name)
     
     # load previous saved experience memory if available
     if args.load_memory:
-        dqn_agent.memory.load_memory(args.model_path + "replay_buffer")
+        rl_agent.memory.load_memory(args.model_path + "replay_buffer")
     
-    ep_controller = EpisodeController(env, dqn_agent, max_steps)
+    ep_controller = EpisodeController(env, rl_agent, max_steps)
 
     for ep in range(1+args.start_epoch, args.num_episodes + args.start_epoch + 1):
         
@@ -207,7 +207,7 @@ def main(args):
                 break  
 
         # Learn action STOP/GO only at the end of episode
-        dqn_agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
+        rl_agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
 
         # end of episode
         eps = max(eps_end, eps_decay * eps)  # Decrease epsilon
@@ -218,17 +218,17 @@ def main(args):
         
         if (ep % args.evaluation_interval) == 0:  # Evaluate only at the end of the episodes
 
-            dqn_agent.eval()  # Set DQN (online network) to evaluation mode
+            rl_agent.eval()  # Set DQN (online network) to evaluation mode
             avg_done_agents, avg_reward, avg_norm_reward, avg_deadlock_agents, test_actions = test(
-                args, ep, dqn_agent, metrics, args.model_path)  # Test
+                args, ep, rl_agent, metrics, args.model_path)  # Test
             
-            testing_stats = '\nEpoch ' + str(ep) + ', testing agents on ' + str(args.evaluation_episodes) + ': Avg. done agents: ' + str(avg_done_agents*100) + '% | Avg. reward: ' + str(avg_reward) + ' | Avg. normalized reward: ' + str(avg_norm_reward) + ' | Avg. agents in deadlock: ' + str(avg_deadlock_agents*100) + '%' + '| LR: ' + str(dqn_agent.optimizer_value.param_groups[0]['lr']) + "\n"
+            testing_stats = '\nEpoch ' + str(ep) + ', testing agents on ' + str(args.evaluation_episodes) + ': Avg. done agents: ' + str(avg_done_agents*100) + '% | Avg. reward: ' + str(avg_reward) + ' | Avg. normalized reward: ' + str(avg_norm_reward) + ' | Avg. agents in deadlock: ' + str(avg_deadlock_agents*100) + '%' + '| LR: ' + str(rl_agent.optimizer_value.param_groups[0]['lr']) + "\n"
             print(testing_stats)
             with open(args.model_path + 'training_stats.txt', 'a') as f:
                 print(testing_stats, file=f)
-            dqn_agent.train()  # Set DQN (online network) back to training mode
+            rl_agent.train()  # Set DQN (online network) back to training mode
             # Save replay buffer
-            dqn_agent.memory.save_memory(args.model_path + "replay_buffer")
+            rl_agent.memory.save_memory(args.model_path + "replay_buffer")
 
             wandb_log_dict.update({"avg_reward": avg_reward, "done_agents": avg_done_agents, "deadlock_agents": avg_deadlock_agents})
             
@@ -241,7 +241,7 @@ def main(args):
             checkpoint_path = args.model_path + "checkpoint_" + str(args.num_agents) + "_agents_on_" + str(args.width) + "_" + str(args.height)
             if not os.path.exists(checkpoint_path):
                 os.makedirs(checkpoint_path)
-            dqn_agent.save(checkpoint_path + "/" + "epoch_" + str(ep) + "_" + dt_string + args.model_name)
+            rl_agent.save(checkpoint_path + "/" + "epoch_" + str(ep) + "_" + dt_string + args.model_name)
 
         lr_scheduler.step()
         lr_scheduler_policy.step()

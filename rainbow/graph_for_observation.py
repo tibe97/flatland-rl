@@ -40,7 +40,7 @@ class EpisodeController():
     def __init__(self, env, agent, max_steps):
         super(EpisodeController, self).__init__()
         self.env = env
-        self.dqn_agent = agent
+        self.rl_agent = agent
         self.scores_window = deque(maxlen=100)
         self.done_window = deque(maxlen=100)
         self.score = 0
@@ -138,7 +138,7 @@ class EpisodeController():
                     assert self.agent_obs[handle]["partitioned"]
                     obs_batch = self.env.obs_builder.preprocess_agent_obs(self.agent_obs[handle], handle)
                     # Choose path to take at the current switch
-                    path_values = self.dqn_agent.act(obs_batch, eps=eps)
+                    path_values = self.rl_agent.act(obs_batch, eps=eps)
                     self.log_probs_buffer[handle].append(path_values[handle][2])
                     self.probs_buffer[handle].append(path_values[handle][4])
                     self.stop_go_buffer[handle].append(path_values[handle][1])
@@ -199,7 +199,7 @@ class EpisodeController():
                     else: 
                         logging.debug("Agent reward is {}".format(self.acc_rewards[a]))
                     # step saves experience tuple and can perform learning (every T time steps)
-                    step_loss = self.dqn_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], ep=ep)
+                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], ep=ep)
                     
                     # save stats
                     if step_loss is not None:
@@ -296,7 +296,7 @@ class EpisodeController():
                         self.agent_obs_buffer[a] = next_obs
                         self.acc_rewards[a] = args.deadlock_reward
                         self.agents_in_deadlock[a] = True
-                        step_loss = self.dqn_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], self.agent_obs_buffer[a], done, self.agents_in_deadlock[a], ep=ep)
+                        step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], self.agent_obs_buffer[a], done, self.agents_in_deadlock[a], ep=ep)
                         if step_loss is not None:
                             self.epoch_loss.append(step_loss)
                         self.env.obs_builder.agent_requires_obs.update({a: False})
@@ -352,8 +352,8 @@ class EpisodeController():
         print(episode_stats, end=" ")
 
     def retrieve_wandb_log(self):
-        wandb_log_dict = {"Learning rate value": self.dqn_agent.optimizer_value.param_groups[0]['lr'], 
-                    "Learning rate action": self.dqn_agent.optimizer_action.param_groups[0]['lr']}
+        wandb_log_dict = {"Learning rate value": self.rl_agent.optimizer_value.param_groups[0]['lr'], 
+                    "Learning rate action": self.rl_agent.optimizer_action.param_groups[0]['lr']}
         if self.epoch_mean_loss is not None:
             wandb_log_dict.update({"mean_loss": self.epoch_mean_loss})
 
