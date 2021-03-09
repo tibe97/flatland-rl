@@ -131,6 +131,8 @@ class Agent:
         # Save experience in replay memory
         # Logarithmic scaling
         reward = np.log10(abs(reward)) * np.sign(reward)
+        if np.isnan(reward):
+            return None
         if reward is None:
             return None
         self.memory.add(state, reward, next_state, done, deadlock)
@@ -220,7 +222,7 @@ class Agent:
         states, rewards, next_states, dones, deadlocks = experiences
 
         Q_expected = self.compute_Q_values(states, "local")
-
+   
         # Choose best paths with local network, then compute value with target network
         selected_next_states = []
         for i, state in enumerate(next_states):
@@ -250,17 +252,17 @@ class Agent:
         loss_to_return = loss.item()
         # Minimize the loss
         self.optimizer_value.zero_grad()
-        try:
-            loss.backward()
-        except:
-            pdb.set_trace()
-
+       
+        loss.backward()
         # Clip gradients - https://stackoverflow.com/questions/47036246/dqn-q-loss-not-converging
         for param in self.qnetwork_value_local.parameters():
             param.grad.data.clamp_(-1, 1)
         
         self.optimizer_value.step()
-
+        '''
+        for param in self.qnetwork_value_local.parameters():
+            print(param.data)
+        '''
         # ------------------- update target network ------------------- #
         self.soft_update(self.qnetwork_value_local, self.qnetwork_value_target, TAU)
         

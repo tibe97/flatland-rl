@@ -119,24 +119,21 @@ class GAT_value(nn.Module):
         # for now all layers have same input and output size, except first attention layer 
         for l in range(nlayers):
             input_size = nfeat if l==0 else nhid * nheads
-            self.attentions.append([GATConv(input_size, nhid, dropout=dropout, negative_slope=alpha, concat=True) for _ in range(nheads)])
-            for i, attention in enumerate(self.attentions[l]):
-                self.add_module('attention_{}_head_{}'.format(l, i), attention)
-            if l > 0:
-                self.batch_norms.append(BatchNorm1d(num_features=input_size))
+            self.attentions.append(GATConv(input_size, nhid, heads=nheads, dropout=dropout, negative_slope=alpha, concat=True, flow="target_to_source"))
+            self.batch_norms.append(BatchNorm1d(num_features=nhid*nheads))
 
-        self.out_att = GATConv(nhid * nheads, nclass, dropout=dropout, negative_slope=alpha, concat=False)
+        self.out_att = GATConv(nhid * nheads, nclass, negative_slope=alpha, concat=False, flow="target_to_source", add_self_loops=False)
 
     def forward(self, x, adj):
-        x = F.dropout(x, self.dropout, training=self.training)
+        #x = F.dropout(x, self.dropout, training=self.training)
         for l in range(self.nlayers):
             if l > 0: 
                 residual = x
-            x = self.batch_norms[l-1](torch.cat([att(x, adj) for att in self.attentions[l]], dim=1))
+            x = self.attentions[l](x, adj)
+            x = self.batch_norms[l](x)
             if l > 0:
                 x += residual # residual connection
             x = F.elu(x) 
-        x = F.dropout(x, self.dropout, training=self.training)
         x = F.elu(self.out_att(x, adj))
         return x
 
@@ -153,24 +150,21 @@ class GAT_action(nn.Module):
         # for now all layers have same input and output size, except first attention layer 
         for l in range(nlayers):
             input_size = nfeat if l==0 else nhid * nheads
-            self.attentions.append([GATConv(input_size, nhid, dropout=dropout, negative_slope=alpha, concat=True) for _ in range(nheads)])
-            for i, attention in enumerate(self.attentions[l]):
-                self.add_module('attention_{}_head_{}'.format(l, i), attention)
-            if l > 0:
-                self.batch_norms.append(BatchNorm1d(num_features=input_size))
+            self.attentions.append(GATConv(input_size, nhid, heads=nheads, dropout=dropout, negative_slope=alpha, concat=True, flow="target_to_source"))
+            self.batch_norms.append(BatchNorm1d(num_features=nhid*nheads))
 
-        #self.out_att = GraphAttentionLayer(nhid * nheads, nclass, dropout=dropout, alpha=alpha, concat=False)
-        self.out_att = GATConv(nhid * nheads, nclass, dropout=dropout, negative_slope=alpha, concat=False)
+        
+        self.out_att = GATConv(nhid * nheads, nclass, negative_slope=alpha, concat=False, flow="target_to_source")
 
     def forward(self, x, adj):
-        x = F.dropout(x, self.dropout, training=self.training)
+        #x = F.dropout(x, self.dropout, training=self.training)
         for l in range(self.nlayers):
             if l > 0: 
                 residual = x
-            x = self.batch_norms[l-1](torch.cat([att(x, adj) for att in self.attentions[l]], dim=1))
+            x = self.attentions[l](x, adj)
+            x = self.batch_norms[l](x)
             if l > 0:
                 x += residual # residual connection
             x = F.elu(x) 
-        x = F.dropout(x, self.dropout, training=self.training)
         x = F.elu(self.out_att(x, adj))
         return F.log_softmax(x, dim=1)
