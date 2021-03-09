@@ -548,7 +548,7 @@ if __name__ == '__main__':
                         help='Environment width')
     parser.add_argument('--height', type=int, default=25,
                         help='Environment height')
-    parser.add_argument('--num-agents', type=int, default=1,
+    parser.add_argument('--num-agents', type=int, default=2,
                         help='Number of agents in the environment')
     parser.add_argument('--max-num-cities', type=int, default=2,
                         help='Maximum number of cities where agents can start or end')
