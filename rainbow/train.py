@@ -109,6 +109,10 @@ def main(args):
 
     wandb.watch(dqn_agent.qnetwork_value_local, log='all')
     wandb.watch(dqn_agent.qnetwork_action, log='all')
+
+    params = list(dqn_agent.qnetwork_value_local.named_parameters())
+    for p in params:
+        print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
     # LR scheduler to reduce learning rate over epochs
     lr_scheduler = StepLR(dqn_agent.optimizer_value, step_size=25, gamma=args.learning_rate_decay)
     #lr_scheduler = ReduceLROnPlateau(dqn_agent.optimizer_value, mode='min', factor=args.learning_rate_decay, patience=0, verbose=True, eps=1e-25)

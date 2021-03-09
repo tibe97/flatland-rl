@@ -121,7 +121,9 @@ class GAT_value(nn.Module):
             input_size = nfeat if l==0 else nhid * nheads
             self.attentions.append(GATConv(input_size, nhid, heads=nheads, dropout=dropout, negative_slope=alpha, concat=True, flow="target_to_source"))
             self.batch_norms.append(BatchNorm1d(num_features=nhid*nheads))
-
+            
+        for i, attention in enumerate(self.attentions):
+            self.add_module('attention_{}'.format(i), attention)
         self.out_att = GATConv(nhid * nheads, nclass, negative_slope=alpha, concat=False, flow="target_to_source", add_self_loops=False)
 
     def forward(self, x, adj):
@@ -148,11 +150,13 @@ class GAT_action(nn.Module):
         self.batch_norms = []
 
         # for now all layers have same input and output size, except first attention layer 
-        for l in range(nlayers):
+        for l in range(self.nlayers):
             input_size = nfeat if l==0 else nhid * nheads
             self.attentions.append(GATConv(input_size, nhid, heads=nheads, dropout=dropout, negative_slope=alpha, concat=True, flow="target_to_source"))
             self.batch_norms.append(BatchNorm1d(num_features=nhid*nheads))
 
+        for i, attention in enumerate(self.attentions):
+            self.add_module('attention_{}'.format(i), attention)
         
         self.out_att = GATConv(nhid * nheads, nclass, negative_slope=alpha, concat=False, flow="target_to_source")
 
