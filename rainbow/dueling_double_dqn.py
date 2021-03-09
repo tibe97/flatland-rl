@@ -248,27 +248,12 @@ class Agent:
         loss = F.smooth_l1_loss(Q_expected, Q_targets) # Huber loss
         loss_to_return = loss.item()
         # Minimize the loss
-        self.optimizer_action.zero_grad()
+        self.optimizer_value.zero_grad()
         loss.backward()
         # Clip gradients - https://stackoverflow.com/questions/47036246/dqn-q-loss-not-converging
         for param in self.qnetwork_value_local.parameters():
             param.grad.data.clamp_(-1, 1)
         
-        # plot gradients
-        step = (ep//100)*100 + 100
-        '''
-        self.summary_writer.add_histogram("value.conv1.weights.gradients", self.qnetwork_value_local.conv1.mlp[0].weight.grad, step)
-        self.summary_writer.add_histogram("value.conv1.bias.gradients", self.qnetwork_value_local.conv1.mlp[0].bias.grad, step)
-        self.summary_writer.add_histogram("value.conv2.weights.gradients", self.qnetwork_value_local.conv2.mlp[0].weight.grad, step)
-        self.summary_writer.add_histogram("value.conv2.bias.gradients", self.qnetwork_value_local.conv2.mlp[0].bias.grad, step)
-        self.summary_writer.add_histogram("value.conv3.weights.gradients", self.qnetwork_value_local.conv3.mlp[0].weight.grad, step)
-        self.summary_writer.add_histogram("value.conv3.bias.gradients", self.qnetwork_value_local.conv3.mlp[0].bias.grad, step)
-        self.summary_writer.add_histogram("value.linear1.weights.gradients", self.qnetwork_value_local.linear1.weight.grad, step)
-        self.summary_writer.add_histogram("value.linear1.bias.gradients", self.qnetwork_value_local.linear1.bias.grad, step)
-        self.summary_writer.add_histogram("value.out.weights.gradients", self.qnetwork_value_local.out.weight.grad, step)
-        self.summary_writer.add_histogram("value.out.bias.gradients", self.qnetwork_value_local.out.bias.grad, step)
-        self.summary_writer.close()
-        '''
         self.optimizer_value.step()
 
         # ------------------- update target network ------------------- #
