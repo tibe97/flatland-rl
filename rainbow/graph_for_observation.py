@@ -1051,10 +1051,10 @@ class GraphObservation(ObservationBuilder):
             waypoint_path = [Waypoint(agent_position, agent_orientation)] + waypoint_path_dict[track_ID][index]
 
             return self.convert_waypoints_to_railenvactions(waypoint_path)
-        '''
+        
         elif action == 0:
             return [RailEnvActions.STOP_MOVING]
-        '''
+        
         else: 
             raise Exception("Error: Track_ID can't be negative")
 

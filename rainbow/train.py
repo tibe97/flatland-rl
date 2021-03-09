@@ -271,7 +271,7 @@ def main(args):
                             agent_path_obs_buffer[a] = agent_obs[a]["partitioned"][path_values[a][0]]
                             logging.debug("Agent {} choses path {} with value {} at position {}. Num actions to take: {}".format(
                                 a, path_values[a][0][0], path_values[a][3], agent.position, len(agent_action_buffer[a])))
-                            path_values_buffer.append(path_values[a][1]) # for debug 
+                            path_values_buffer.append(path_values[a][3]) # for debug 
                             # tb.add_histogram("Path values", path_values[a][3].item(), (ep//100)*100 + 100)
                             logging.debug(
                                 "Agent {} actions: {}".format(a, railenv_action))
@@ -503,7 +503,7 @@ def main(args):
 
         wandb_log_dict.update({"action_probs": wandb.Histogram(np.array([prob.detach().numpy() for agent_probs in probs_buffer for prob in agent_probs]))})
         wandb_log_dict.update({"stop_go_action": wandb.Histogram(np.array([action for agent_actions in stop_go_buffer for action in agent_actions]))})
-        
+        wandb_log_dict.update({"node_values": wandb.Histogram(np.array(path_values_buffer))})
         '''
         with open(args.model_path + 'training_stats.txt', 'a') as f:
             print(episode_stats, file=f, end=" ")
