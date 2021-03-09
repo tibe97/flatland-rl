@@ -195,7 +195,6 @@ class EpisodeController():
                         self.agent_done_removed[a] = True
                         self.acc_rewards[a] = args.done_reward
                         self.agent_ending_timestep[a] = step
-                        #acc_rewards[a] += args.done_reward # Explicit individual reward of reaching target
                         logging.debug("Agent {} DONE! It has been removed and experience saved with reward of {}!".format(a, self.acc_rewards[a]))
                     else: 
                         logging.debug("Agent reward is {}".format(self.acc_rewards[a]))
