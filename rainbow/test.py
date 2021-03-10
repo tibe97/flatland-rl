@@ -42,7 +42,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
     speed_ration_map = {1.0: 1.0}
     schedule_generator = sparse_schedule_generator(speed_ration_map)
 
-    observation_builder = GraphObservation()
+    observation_builder = GraphObservation(args.depth)
     max_num_cities_adaptive = (args.num_agents//10)+2
     max_steps = int(4 * 2 * (args.width + args.height + args.num_agents / max_num_cities_adaptive))
 
