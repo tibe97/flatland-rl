@@ -127,6 +127,8 @@ class GAT_value(nn.Module):
 
         for i, attention in enumerate(self.attentions):
             self.add_module('attention_{}'.format(i), attention)
+            if self.use_bn:
+                self.add_module('bn_{}'.format(i), self.batch_norms[i])
         
         '''
         for l in range(nlayers):
@@ -176,6 +178,8 @@ class GAT_action(nn.Module):
 
         for i, attention in enumerate(self.attentions):
             self.add_module('attention_{}'.format(i), attention)
+            if self.use_bn:
+                self.add_module('bn_{}'.format(i), self.batch_norms[i])
         
         '''
         for l in range(nlayers):
