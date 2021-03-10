@@ -1361,7 +1361,7 @@ class GraphObservation(ObservationBuilder):
         '''
         target_track, action, _, _, _ = track
         track_ID, index = target_track
-        if action == 1 or action == 0: # ignore STOP action for now
+        if action == 1: 
             agents = self.env.agents
             agent = agents[handle]
             agent_orientation = agent.direction
