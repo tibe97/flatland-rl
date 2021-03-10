@@ -105,7 +105,7 @@ def main(args):
         rl_agent = Agent(args=args, state_size=state_size, obs_builder=observation_builder)
 
     wandb.watch(rl_agent.qnetwork_value_local, log_freq=1, log='all')
-    wandb.watch(rl_agent.qnetwork_action, log_freq=1, log='all')
+    #wandb.watch(rl_agent.qnetwork_action, log_freq=1, log='all')
 
     params = list(rl_agent.qnetwork_value_local.named_parameters())
     for p in params:
