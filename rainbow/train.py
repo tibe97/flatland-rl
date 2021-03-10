@@ -204,7 +204,8 @@ def main(args):
                 break  
 
         # Learn action STOP/GO only at the end of episode
-        rl_agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
+        # For now let's just use value network
+        #rl_agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
 
         # end of episode
         eps = max(eps_end, eps_decay * eps)  # Decrease epsilon
