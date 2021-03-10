@@ -306,6 +306,8 @@ if __name__ == '__main__':
                         help='Name to use to save the model .pth')
     parser.add_argument('--gat-layers', type=int, default=3,
                         help='Number of GAT layers for the model')
+    parser.add_argument('--flow', type=str, default="source_to_target",
+                        help='Message passing flow for graph neural networks')
     parser.add_argument('--resume-weights', type=bool, default=True,
                         help='True if load previous weights')
     parser.add_argument('--debug-print', type=bool, default=False,
