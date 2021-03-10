@@ -117,7 +117,7 @@ class GAT_value(nn.Module):
         self.batch_norms = []
         
         # for now all layers have same input and output size, except first attention layer 
-        '''
+    
         for l in range(nlayers):
             input_size = nfeat if l==0 else nhid * nheads
             self.attentions.append(GATConv(input_size, nhid, heads=nheads, dropout=dropout, negative_slope=alpha, concat=True, flow="target_to_source"))
@@ -125,6 +125,7 @@ class GAT_value(nn.Module):
 
         for i, attention in enumerate(self.attentions):
             self.add_module('attention_{}'.format(i), attention)
+        
         '''
         for l in range(nlayers):
             input_size = nfeat if l==0 else nhid * nheads
@@ -133,7 +134,7 @@ class GAT_value(nn.Module):
         for i, attention in enumerate(self.attentions):
             for j, att_head in enumerate(attention):
                 self.add_module('attention_{}_head_{}'.format(i, j), att_head)
-
+        '''
         self.out_att = GATConv(nhid * nheads, nclass, negative_slope=alpha, concat=False)
 
     def forward(self, x, adj):
@@ -141,8 +142,8 @@ class GAT_value(nn.Module):
         for l in range(self.nlayers):
             if l > 0: 
                 residual = x
-            #x = self.attentions[l](x, adj)
-            x = torch.cat([att(x, adj) for att in self.attentions[l]], dim=1)
+            x = self.attentions[l](x, adj)
+            #x = torch.cat([att(x, adj) for att in self.attentions[l]], dim=1)
             x = self.batch_norms[l](x)
             if l > 0:
                 x += residual # residual connection
@@ -162,7 +163,7 @@ class GAT_action(nn.Module):
         self.batch_norms = []
 
         # for now all layers have same input and output size, except first attention layer 
-        '''
+        
         for l in range(self.nlayers):
             input_size = nfeat if l==0 else nhid * nheads
             self.attentions.append(GATConv(input_size, nhid, heads=nheads, dropout=dropout, negative_slope=alpha, concat=True, flow="target_to_source"))
@@ -170,6 +171,7 @@ class GAT_action(nn.Module):
 
         for i, attention in enumerate(self.attentions):
             self.add_module('attention_{}'.format(i), attention)
+        
         '''
         for l in range(nlayers):
             input_size = nfeat if l==0 else nhid * nheads
@@ -178,7 +180,7 @@ class GAT_action(nn.Module):
         for i, attention in enumerate(self.attentions):
             for j, att_head in enumerate(attention):
                 self.add_module('attention_{}_head_{}'.format(i, j), att_head)
-        
+        '''
         self.out_att = GATConv(nhid * nheads, nclass, negative_slope=alpha, concat=False)
 
     def forward(self, x, adj):
@@ -186,8 +188,8 @@ class GAT_action(nn.Module):
         for l in range(self.nlayers):
             if l > 0: 
                 residual = x
-            #x = self.attentions[l](x, adj)
-            x = torch.cat([att(x, adj) for att in self.attentions[l]], dim=1)
+            x = self.attentions[l](x, adj)
+            #x = torch.cat([att(x, adj) for att in self.attentions[l]], dim=1)
             x = self.batch_norms[l](x)
             if l > 0:
                 x += residual # residual connection
