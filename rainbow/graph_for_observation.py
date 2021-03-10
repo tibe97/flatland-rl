@@ -1362,7 +1362,7 @@ class GraphObservation(ObservationBuilder):
         '''
         target_track, action, _, _, _ = track
         track_ID, index = target_track
-        if action == 1: 
+        if action == 1 or action == 0: 
             agents = self.env.agents
             agent = agents[handle]
             agent_orientation = agent.direction
@@ -1371,8 +1371,7 @@ class GraphObservation(ObservationBuilder):
             elif agent.status == RailAgentStatus.ACTIVE:
                 agent_position = agent.position
 
-            current_track_ID = self.track_map[agent_position[0],
-                agent_position[1]]
+        
             valid_move_action = get_valid_move_actions_(agent_orientation, agent_position, self.env.rail)
             switch_position, switch_orientation = get_new_position_for_action(agent_position, agent_orientation, valid_move_action.popitem()[0].action, self.env.rail)
             _, waypoint_path_dict = self._get_reachable_paths(switch_position, switch_orientation)
