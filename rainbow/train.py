@@ -336,6 +336,8 @@ if __name__ == '__main__':
                         help='True if load previous weights')
     parser.add_argument('--dropout-rate', type=float, default=0.8,
                         help='Dropout rate for the model layers')
+    parser.add_argument('--attention-heads', type=int, default=4,
+                        help='Attention heads of GAT layer')       
     
 
 

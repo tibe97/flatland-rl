@@ -21,7 +21,6 @@ BATCH_SIZE = 128
 GAMMA = 0.99  # discount factor 0.99
 TAU = 1e-3  # for soft update of target parameters
 # LR = 0.001  # learning rate 0.5e-4 works
-LR = 0.03  # 30x original LR to use with batch norm
 UPDATE_EVERY = 15  # how often to update the network
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -43,10 +42,10 @@ class Agent:
         self.state_size = state_size
         # Q-Network
         #self.qnetwork_value_local = DQN_value(state_size).to(device)
-        self.qnetwork_value_local = GAT_value(state_size, 8, 1, args.gat_layers, args.dropout_rate, 0.2, 4, args.flow, args.batch_norm).to(device)
+        self.qnetwork_value_local = GAT_value(state_size, 8, 1, args.gat_layers, args.dropout_rate, 0.2, args.attention_heads, args.flow, args.batch_norm).to(device)
         self.qnetwork_value_target = copy.deepcopy(self.qnetwork_value_local)
         #self.qnetwork_action = DQN_action(state_size).to(device)
-        self.qnetwork_action = GAT_action(state_size, 8, 2, args.gat_layers, args.dropout_rate, 0.2, 4, args.flow, args.batch_norm).to(device)
+        self.qnetwork_action = GAT_action(state_size, 8, 2, args.gat_layers, args.dropout_rate, 0.2, args.attention_heads, args.flow, args.batch_norm).to(device)
         self.learning_rate = args.learning_rate
         self.optimizer_value = optim.Adam(self.qnetwork_value_local.parameters(), lr=self.learning_rate)
         self.optimizer_action = optim.Adam(self.qnetwork_action.parameters(), lr=self.learning_rate)
