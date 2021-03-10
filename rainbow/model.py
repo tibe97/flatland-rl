@@ -137,7 +137,7 @@ class GAT_value(nn.Module):
         self.out_att = GATConv(nhid * nheads, nclass, negative_slope=alpha, concat=False, flow="target_to_source")
 
     def forward(self, x, adj):
-        #x = F.dropout(x, self.dropout, training=self.training)
+        x = F.dropout(x, self.dropout, training=self.training)
         for l in range(self.nlayers):
             if l > 0: 
                 residual = x
@@ -147,6 +147,7 @@ class GAT_value(nn.Module):
             if l > 0:
                 x += residual # residual connection
             x = F.elu(x) 
+        x = F.dropout(x, self.dropout, training=self.training)
         x = F.elu(self.out_att(x, adj))
         return x
 
@@ -181,7 +182,7 @@ class GAT_action(nn.Module):
         self.out_att = GATConv(nhid * nheads, nclass, negative_slope=alpha, concat=False, flow="target_to_source")
 
     def forward(self, x, adj):
-        #x = F.dropout(x, self.dropout, training=self.training)
+        x = F.dropout(x, self.dropout, training=self.training)
         for l in range(self.nlayers):
             if l > 0: 
                 residual = x
@@ -191,5 +192,6 @@ class GAT_action(nn.Module):
             if l > 0:
                 x += residual # residual connection
             x = F.elu(x) 
+        x = F.dropout(x, self.dropout, training=self.training)
         x = F.elu(self.out_att(x, adj))
         return F.log_softmax(x, dim=1)
