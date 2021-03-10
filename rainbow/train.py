@@ -247,7 +247,8 @@ def main(args):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Flatland')
-    # Flatland parameters
+    
+    # Flatland env parameters
     parser.add_argument('--width', type=int, default=25,
                         help='Environment width')
     parser.add_argument('--height', type=int, default=25,
@@ -280,6 +281,7 @@ if __name__ == '__main__':
                         help='Height of the field view for agent in local obs')
     parser.add_argument('--offset', type=int, default=25,
                         help='Offset of agent in local obs')
+
     # Training parameters
     parser.add_argument('--num-episodes', type=int, default=1000,
                         help='Number of episodes on which to train the agents')
@@ -289,27 +291,6 @@ if __name__ == '__main__':
                         help='Maximum number of steps for each episode')
     parser.add_argument('--eps', type=float, default=1,
                         help='epsilon value for e-greedy')
-    parser.add_argument('--run-title', type=str, default="first_run",
-                        help='title for tensorboard run')
-    parser.add_argument('--wandb-project-name', type=str, default="wandb_default",
-                        help='title for wandb run')
-    parser.add_argument('--eps-decay', type=float, default=0.999,
-                        help='epsilon decay value')
-    parser.add_argument('--learning-rate', type=float, default=0.005,
-                        help='LR for DQN agent')
-    parser.add_argument('--learning-rate-decay', type=float, default=0.5,
-                        help='LR decay for DQN agent')
-    parser.add_argument('--learning-rate-decay-policy', type=float, default=0.5,
-                        help='LR decay for policy network')
-    parser.add_argument('--model-path', type=str, default='test_results/', help="result directory")
-    parser.add_argument('--model-name', type=str, default='weights/best_model_8_agents_on_25_25',
-                        help='Name to use to save the model .pth')
-    parser.add_argument('--gat-layers', type=int, default=3,
-                        help='Number of GAT layers for the model')
-    parser.add_argument('--flow', type=str, default="source_to_target",
-                        help='Message passing flow for graph neural networks')
-    parser.add_argument('--resume-weights', type=bool, default=True,
-                        help='True if load previous weights')
     parser.add_argument('--debug-print', type=bool, default=False,
                         help='requires debug printing')
     parser.add_argument('--load-memory', type=bool, default=True,
@@ -323,6 +304,36 @@ if __name__ == '__main__':
                         help='Save models every tot episodes')
     parser.add_argument('--start-lr-decay', type=int, default=150,
                         help='Save models every tot episodes')
+    parser.add_argument('--eps-decay', type=float, default=0.999,
+                        help='epsilon decay value')
+    parser.add_argument('--learning-rate', type=float, default=0.005,
+                        help='LR for DQN agent')
+    parser.add_argument('--learning-rate-decay', type=float, default=0.5,
+                        help='LR decay for DQN agent')
+    parser.add_argument('--learning-rate-decay-policy', type=float, default=0.5,
+                        help='LR decay for policy network')
+
+    # WANDB Logging
+    parser.add_argument('--run-title', type=str, default="first_run",
+                        help='title for tensorboard run')
+    parser.add_argument('--wandb-project-name', type=str, default="wandb_default",
+                        help='title for wandb run')
+    
+
+    # Model arguments
+    parser.add_argument('--model-path', type=str, default='test_results/', help="result directory")
+    parser.add_argument('--model-name', type=str, default='weights/best_model_8_agents_on_25_25',
+                        help='Name to use to save the model .pth')
+    parser.add_argument('--gat-layers', type=int, default=3,
+                        help='Number of GAT layers for the model')
+    parser.add_argument('--flow', type=str, default="source_to_target",
+                        help='Message passing flow for graph neural networks')
+    parser.add_argument('--resume-weights', type=bool, default=True,
+                        help='True if load previous weights')
+
+    
+    
+    # Rewards
     parser.add_argument('--done-reward', type=int, default=1000,
                         help='Reward given to agent when it reaches target')
     parser.add_argument('--deadlock-reward', type=int, default=-1000,
