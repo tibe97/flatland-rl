@@ -332,6 +332,12 @@ if __name__ == '__main__':
                         help='Message passing flow for graph neural networks')
     parser.add_argument('--resume-weights', type=bool, default=True,
                         help='True if load previous weights')
+    parser.add_argument('--batch-norm', type=bool, default=False,
+                        help='True if load previous weights')
+    parser.add_argument('--dropout-rate', type=float, default=0.8,
+                        help='Dropout rate for the model layers')
+    
+
 
     
     

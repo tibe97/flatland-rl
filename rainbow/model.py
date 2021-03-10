@@ -108,12 +108,13 @@ class DQN_action(nn.Module):
 
 
 class GAT_value(nn.Module):
-    def __init__(self, nfeat, nhid, nclass, nlayers, dropout, alpha, nheads, flow):
+    def __init__(self, nfeat, nhid, nclass, nlayers, dropout, alpha, nheads, flow, use_bn):
         """Dense version of GAT."""
         super(GAT_value, self).__init__()
         self.dropout = dropout
         self.nlayers = nlayers
         self.attentions = []
+        self.use_bn = use_bn
         self.batch_norms = []
         
         # for now all layers have same input and output size, except first attention layer 
@@ -121,7 +122,8 @@ class GAT_value(nn.Module):
         for l in range(nlayers):
             input_size = nfeat if l==0 else nhid * nheads
             self.attentions.append(GATConv(input_size, nhid, heads=nheads, dropout=dropout, negative_slope=alpha, concat=True, flow=flow))
-            self.batch_norms.append(BatchNorm1d(num_features=nhid*nheads))
+            if self.use_bn:
+                self.batch_norms.append(BatchNorm1d(num_features=nhid*nheads))
 
         for i, attention in enumerate(self.attentions):
             self.add_module('attention_{}'.format(i), attention)
@@ -144,7 +146,8 @@ class GAT_value(nn.Module):
                 residual = x
             x = self.attentions[l](x, adj)
             #x = torch.cat([att(x, adj) for att in self.attentions[l]], dim=1)
-            x = self.batch_norms[l](x)
+            if self.use_bn:
+                x = self.batch_norms[l](x)
             if l > 0:
                 x += residual # residual connection
             x = F.elu(x) 
@@ -154,12 +157,13 @@ class GAT_value(nn.Module):
 
 
 class GAT_action(nn.Module):
-    def __init__(self, nfeat, nhid, nclass, nlayers, dropout, alpha, nheads, flow):
+    def __init__(self, nfeat, nhid, nclass, nlayers, dropout, alpha, nheads, flow, use_bn):
         """Dense version of GAT."""
         super(GAT_action , self).__init__()
         self.dropout = dropout
         self.nlayers = nlayers
         self.attentions = []
+        self.use_bn = use_bn
         self.batch_norms = []
 
         # for now all layers have same input and output size, except first attention layer 
@@ -167,7 +171,8 @@ class GAT_action(nn.Module):
         for l in range(self.nlayers):
             input_size = nfeat if l==0 else nhid * nheads
             self.attentions.append(GATConv(input_size, nhid, heads=nheads, dropout=dropout, negative_slope=alpha, concat=True, flow=flow))
-            self.batch_norms.append(BatchNorm1d(num_features=nhid*nheads))
+            if self.use_bn:
+                self.batch_norms.append(BatchNorm1d(num_features=nhid*nheads))
 
         for i, attention in enumerate(self.attentions):
             self.add_module('attention_{}'.format(i), attention)
@@ -190,7 +195,8 @@ class GAT_action(nn.Module):
                 residual = x
             x = self.attentions[l](x, adj)
             #x = torch.cat([att(x, adj) for att in self.attentions[l]], dim=1)
-            x = self.batch_norms[l](x)
+            if self.use_bn:
+                x = self.batch_norms[l](x)
             if l > 0:
                 x += residual # residual connection
             x = F.elu(x) 
