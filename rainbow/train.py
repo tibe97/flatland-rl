@@ -304,6 +304,8 @@ if __name__ == '__main__':
     parser.add_argument('--model-path', type=str, default='test_results/', help="result directory")
     parser.add_argument('--model-name', type=str, default='weights/best_model_8_agents_on_25_25',
                         help='Name to use to save the model .pth')
+    parser.add_argument('--gat-layers', type=int, default=3,
+                        help='Number of GAT layers for the model')
     parser.add_argument('--resume-weights', type=bool, default=True,
                         help='True if load previous weights')
     parser.add_argument('--debug-print', type=bool, default=False,
