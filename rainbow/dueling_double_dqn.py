@@ -31,7 +31,7 @@ print("Available device is " + str(device))
 class Agent:
     """Interacts with and learns from the environment."""
 
-    def __init__(self, args, state_size, obs_builder, summary_writer):
+    def __init__(self, args, state_size, obs_builder):
         """Initialize an Agent object.
 
         Params
@@ -56,7 +56,7 @@ class Agent:
         # Initialize time step (for updating every UPDATE_EVERY steps)
         self.t_step = 0
         self.obs_builder = obs_builder
-        self.summary_writer = summary_writer
+     
 
 
     def eval(self):

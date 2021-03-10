@@ -37,11 +37,8 @@ def main(args):
         logging.basicConfig(level=logging.NOTSET)
         logging.getLogger().disabled = True
     
-    # initialize tensorboard 
-    tb = SummaryWriter(args.model_path + 'runs/{}_{}_agents_on_{}_{}_start_epoch_{}'.format(args.tb_title, args.num_agents, args.width, args.height, args.start_epoch))
-    tb_path = "agents_{}_on_{}_{}_start_{}_LR_{}".format(args.num_agents, args.width, args.height, args.start_epoch, args.learning_rate)
-
-    wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_agents_on_({}, {})_{}".format(args.num_agents, args.width, args.height, datetime.now().strftime("%d/%m/%Y %H:%M:%S")), config=args)
+    # initialize Weight and Biases for logging results
+    wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_{}_agents_on_({}, {})_{}".format(args.run_title, args.num_agents, args.width, args.height, datetime.now().strftime("%d/%m/%Y %H:%M:%S")), config=args)
     
 
     # ADAPTIVE parameters according to official configurations of tests 
@@ -105,7 +102,7 @@ def main(args):
     if args.observation_builder == 'GraphObsForRailEnv':
         observation_builder = GraphObservation() # custom observation
         state_size = 12
-        rl_agent = Agent(args=args, state_size=state_size, obs_builder=observation_builder, summary_writer=tb)
+        rl_agent = Agent(args=args, state_size=state_size, obs_builder=observation_builder)
 
     wandb.watch(rl_agent.qnetwork_value_local, log='all')
     wandb.watch(rl_agent.qnetwork_action, log='all')
@@ -292,7 +289,7 @@ if __name__ == '__main__':
                         help='Maximum number of steps for each episode')
     parser.add_argument('--eps', type=float, default=1,
                         help='epsilon value for e-greedy')
-    parser.add_argument('--tb-title', type=str, default="no_title",
+    parser.add_argument('--run-title', type=str, default="first_run",
                         help='title for tensorboard run')
     parser.add_argument('--wandb-project-name', type=str, default="wandb_default",
                         help='title for wandb run')
