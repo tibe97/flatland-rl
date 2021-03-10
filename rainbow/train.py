@@ -100,7 +100,7 @@ def main(args):
         max_duration=args.max_duration)  # Max duration of malfunction
 
     if args.observation_builder == 'GraphObsForRailEnv':
-        observation_builder = GraphObservation() # custom observation
+        observation_builder = GraphObservation(args.observation_depth) # custom observation
         state_size = 12
         rl_agent = Agent(args=args, state_size=state_size, obs_builder=observation_builder)
 
@@ -247,7 +247,7 @@ def main(args):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Flatland')
-    
+
     # Flatland env parameters
     parser.add_argument('--width', type=int, default=25,
                         help='Environment width')
@@ -281,6 +281,8 @@ if __name__ == '__main__':
                         help='Height of the field view for agent in local obs')
     parser.add_argument('--offset', type=int, default=25,
                         help='Offset of agent in local obs')
+    parser.add_argument('--observation-depth', type=int, default=3,
+                        help='Depth of observation graph of each agent')
 
     # Training parameters
     parser.add_argument('--num-episodes', type=int, default=1000,

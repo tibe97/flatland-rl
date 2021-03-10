@@ -371,9 +371,10 @@ class GraphObservation(ObservationBuilder):
     So we should pass in a subgraph for performance reasons.
     '''
 
-    def __init__(self):
+    def __init__(self, depth):
         super(GraphObservation, self).__init__()
         # self.bfs_depth = bfs_depth
+        self.depth = depth
         self.track_map = [] # matrix used to build the graph of nodes
         self.switches = []
         self.switch_paths_dict = {}
@@ -414,7 +415,7 @@ class GraphObservation(ObservationBuilder):
                     agent_pos = self.env.agents[handle].target 
             if self.track_map[agent_pos[0], agent_pos[1]] != -2: # not at switch
                 unified, partitioned = self._get_graph_observation(
-                    depth=3, handle=handle)
+                    depth=self.depth, handle=handle)
                 obs = {
                     "unified": unified,
                     "partitioned": partitioned
