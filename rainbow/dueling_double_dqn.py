@@ -192,7 +192,7 @@ class Agent:
                 log_prob = m.log_prob(action)
                 agents_best_path_values.update({handle: [best_path[0], action.item(), log_prob, best_path[1][0], m.probs[action]]})
             else:
-                if random.random() > eps:
+                if random.random() >= eps:
                     best_path = max(paths, key=lambda item: item[1][0])
                     m = Categorical(action_prob[1])
                     action = m.sample()
