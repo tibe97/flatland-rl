@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Categorical
 from torch_geometric.data import Batch, Data
+from prioritized_memory import Memory
 import pdb
 # import torchsummary
 
@@ -51,7 +52,8 @@ class Agent:
         self.optimizer_action = optim.Adam(self.qnetwork_action.parameters(), lr=self.learning_rate)
         self.evaluation_mode = False
         # Replay memory
-        self.memory = ReplayBuffer("fc", BUFFER_SIZE, BATCH_SIZE)
+        #self.memory = ReplayBuffer("fc", BUFFER_SIZE, BATCH_SIZE)
+        self.memory = Memory(BUFFER_SIZE)
         # Initialize time step (for updating every UPDATE_EVERY steps)
         self.t_step = 0
         self.obs_builder = obs_builder
@@ -129,14 +131,17 @@ class Agent:
     def step(self, state, reward, next_state, done, deadlock, ep=0, train=True):
         # Save experience in replay memory
         # Logarithmic scaling
-        if reward<0:
-            reward = np.log10(abs(reward)) * np.sign(reward)
+        
+        reward = np.log10(abs(reward+1)) * np.sign(reward)
         if np.isnan(reward):
             return None
         if reward is None:
             return None
         
-        self.memory.add(state, reward, next_state, done, deadlock)
+        #self.memory.add(state, reward, next_state, done, deadlock)
+        self._append_sample(state, reward, next_state, done, deadlock)
+
+        '''
         # Learn every UPDATE_EVERY time steps.
         self.t_step = (self.t_step + 1) % UPDATE_EVERY
         if self.t_step == 0:
@@ -146,6 +151,12 @@ class Agent:
                 experiences = self.memory.sample()
                 if train:
                     return self.learn(experiences, GAMMA, ep)
+        '''
+        self.t_step = (self.t_step + 1) % UPDATE_EVERY
+        if self.t_step == 0:
+            if self.memory.tree.n_entries >= 1000: # hyperparam
+                return self.learn(GAMMA, ep)
+
         return None
         
     def act(self, state, eps=0.0, eval=True):
@@ -213,8 +224,28 @@ class Agent:
         self.qnetwork_action.train()
 
         return agents_best_path_values
+    
+    def _append_sample(self, state, reward, next_state, done, deadlock):
+        with torch.no_grad():
+            Q_expected = self.compute_Q_values([state], "local")
 
-    def learn(self, experiences, gamma, ep):
+        # Choose best paths with local network, then compute value with target network
+        if not deadlock and not done:
+            preprocessed_next_state = self.obs_builder.preprocess_agent_obs(
+                next_state, 0)  # 0 is just a placeholder value for the agent (we don't care which one here)
+            # Choose path to take at the current switch
+            path_values = self.act(preprocessed_next_state, eps=0)
+            S_value = path_values[0][3] # selected node value, which is the path with max value
+            Q_target = reward + GAMMA * S_value
+        else: # if agent is done or is in deadlock, we don't need to compute any value. Value is reward at the end
+            Q_target = torch.tensor([reward]) # append random value,it won't be considered
+
+        error = abs(Q_expected - Q_target)
+
+        self.memory.add(error, (state, reward, next_state, done, deadlock))
+        
+
+    def learn(self, gamma, ep):
         """Update value parameters using given batch of experience tuples.
 
         Params
@@ -222,8 +253,14 @@ class Agent:
             experiences (Tuple[torch.Tensor]):
             gamma (float): discount factor
         """
-        states, rewards, next_states, dones, deadlocks = experiences
-
+        batch, idxs, is_weights = self.memory.sample(BATCH_SIZE)
+        batch = np.array(batch).transpose()
+        states = list(batch[0])
+        rewards = list(batch[1])
+        next_states = list(batch[2])
+        dones = list(batch[3])
+        deadlocks = list(batch[4])
+        
         Q_expected = self.compute_Q_values(states, "local")
    
         # Choose best paths with local network, then compute value with target network
@@ -238,25 +275,37 @@ class Agent:
                 S_value = path_values[0][3] # selected node value, which is the path with max value
                 Q_targets_next.append(S_value)
             else: # if agent is done or is in deadlock, we don't need to compute any value. Value is reward at the end
-                Q_targets_next.append(torch.tensor([0.0])) # append random value,it won't be considered
+                Q_targets_next.append(torch.tensor([rewards[i]])) # append random value,it won't be considered
             
         # Double DQN
         Q_targets_next = torch.stack(Q_targets_next).squeeze()
 
+        '''
         rewards = torch.tensor(rewards).to(device)
         # convert true/false in integers
         dones = torch.tensor([1 if done else 0 for done in dones]).to(device)
         deadlocks = torch.tensor([1 if deadlock else 0 for deadlock in deadlocks]).to(device)
+        '''
+        rewards = torch.tensor(rewards)
+        dones = torch.tensor([1 if done else 0 for done in dones])
+        deadlocks = torch.tensor([1 if deadlock else 0 for deadlock in deadlocks])
 
         # Compute Q targets for current states
         Q_targets = rewards + (gamma * Q_targets_next * (1 - dones) * (1 - deadlocks))
 
-        # Compute loss
-        loss = F.smooth_l1_loss(Q_expected, Q_targets) # Huber loss
-        loss_to_return = loss.item()
-        # Minimize the loss
+
+        errors = torch.abs(Q_expected - Q_targets).data.numpy()
+        # update priority
+        for i in range(BATCH_SIZE):
+            idx = idxs[i]
+            self.memory.update(idx, errors[i])
+    
         self.optimizer_value.zero_grad()
-       
+        # Compute loss
+        #loss = F.mse_loss(Q_expected, Q_targets)
+        #loss = F.smooth_l1_loss(Q_expected, Q_targets) # Huber loss
+        loss = (torch.FloatTensor(is_weights) * F.mse_loss(Q_targets, Q_expected)).mean()
+        loss_to_return = loss.item() 
         loss.backward()
         # Clip gradients - https://stackoverflow.com/questions/47036246/dqn-q-loss-not-converging
         for param in self.qnetwork_value_local.parameters():
@@ -452,6 +501,3 @@ class ReplayBuffer:
             print(e)
 
  
-
-
-  

@@ -296,7 +296,7 @@ if __name__ == '__main__':
                         help='epsilon value for e-greedy')
     parser.add_argument('--debug-print', type=bool, default=False,
                         help='requires debug printing')
-    parser.add_argument('--load-memory', type=bool, default=True,
+    parser.add_argument('--load-memory', type=bool, default=False,
                         help='if load saved memory')
     parser.add_argument('--evaluation-episodes', type=int, default=15,
                         metavar='N', help='Number of evaluation episodes to average over')

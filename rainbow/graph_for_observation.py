@@ -1148,7 +1148,7 @@ class GraphObservation(ObservationBuilder):
         return False
 
     def _log10_normalize_node_feature(self, feature):
-        return np.log10(feature) if feature > 0 else 0
+        return np.log10(feature+1) 
 
     def _compute_node_features(self, handle: int, track_ID: int, orientation: int, path_cell: Tuple[int, int], switch_cells=None):
         '''
