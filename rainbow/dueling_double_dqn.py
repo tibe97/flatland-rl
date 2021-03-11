@@ -132,7 +132,8 @@ class Agent:
         # Save experience in replay memory
         # Logarithmic scaling
         
-        reward = np.log10(abs(reward+1)) * np.sign(reward)
+        reward = np.log10(abs(reward)+1) * np.sign(reward)
+
         if np.isnan(reward):
             return None
         if reward is None:
@@ -152,6 +153,7 @@ class Agent:
                 if train:
                     return self.learn(experiences, GAMMA, ep)
         '''
+        # Learn every UPDATE_EVERY time steps.
         self.t_step = (self.t_step + 1) % UPDATE_EVERY
         if self.t_step == 0:
             if self.memory.tree.n_entries >= 1000: # hyperparam
@@ -226,6 +228,10 @@ class Agent:
         return agents_best_path_values
     
     def _append_sample(self, state, reward, next_state, done, deadlock):
+        '''
+            Compute error for prioritized experience buffer and append to buffer
+        '''
+
         with torch.no_grad():
             Q_expected = self.compute_Q_values([state], "local")
 
