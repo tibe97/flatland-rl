@@ -1,6 +1,7 @@
 import random
 import numpy as np
 from SumTree import SumTree
+import pickle
 
 class Memory:  # stored as ( s, a, r, s_ ) in SumTree
     e = 0.01
