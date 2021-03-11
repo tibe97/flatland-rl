@@ -1127,7 +1127,7 @@ class GraphObservation(ObservationBuilder):
                     partitioned_node_features[path][new_to_old_map[new_node_index]])
 
             #new_node_features = torch.FloatTensor(minmax_scaler.transform(torch.FloatTensor(new_node_features)))
-            new_node_features = torch.FloatTensor(torch.FloatTensor(new_node_features) * 0.1)
+            new_node_features = torch.FloatTensor(torch.FloatTensor(new_node_features))
             new_graph_edges = torch.LongTensor(
                 new_graph_edges).t().contiguous()
             partitioned_observation[path] = {
@@ -1146,6 +1146,9 @@ class GraphObservation(ObservationBuilder):
         if next_switch_from_position1 == next_switch_from_position2:
             return True
         return False
+
+    def _log10_normalize_node_feature(self, feature):
+        return np.log10(feature) if feature > 0 else 0
 
     def _compute_node_features(self, handle: int, track_ID: int, orientation: int, path_cell: Tuple[int, int], switch_cells=None):
         '''
@@ -1224,14 +1227,6 @@ class GraphObservation(ObservationBuilder):
             if target_distance == float('inf'):
                 target_distance = np.count_nonzero(track_map != 0) # penalize if shortest path can't be computed
             #print("target distance: {}".format(target_distance))
-            '''
-            shortest_path = get_k_shortest_paths(
-                self.env, agent_position, agent_orientation, agent_target)
-            if len(shortest_path) > 0:
-                target_distance = len(shortest_path[0])
-            else:
-                target_distance = np.count_nonzero(track_map != 0)
-            '''
             malfunction_agent = agent.malfunction_data["malfunction"]
             agent_speed = agent.speed_data["speed"] if agent.moving else 0
            
@@ -1255,22 +1250,6 @@ class GraphObservation(ObservationBuilder):
                 target_distance = np.count_nonzero(track_map != 0) # penalize if shortest path can't be computed
             #print("target distance: {}".format(target_distance))
 
-            '''
-            shortest_path = get_k_shortest_paths(
-                self.env, mid_cell, orientation, agent_target)  # agent_direction could not work
-            if len(shortest_path) > 0:
-                shortest_path = shortest_path[0]
-                target_distance = len(shortest_path)
-            else:
-                logging.debug("Error: shortest path from mid cell to target does not exist")
-                logging.debug("Computing node features for track {}".format(track_ID))
-                logging.debug("Shortest path is: {}".format(shortest_path))
-                logging.debug("mid_cell: {}, track_id: {}".format(
-                    mid_cell, self.get_track(mid_cell)))
-                logging.debug("agent_target: {}, track_id: {}".format(
-                    agent_target, self.get_track(agent_target)))
-                target_distance = np.count_nonzero(track_map != 0) # penalize if shortest path can't be computed
-            '''
             
         agents_blocking_steps = []
         agents_speeds = []
@@ -1331,8 +1310,8 @@ class GraphObservation(ObservationBuilder):
 
 
         return (
-            track_length,
-            target_distance,
+            self._log10_normalize_node_feature(track_length),
+            self._log10_normalize_node_feature(target_distance),
             num_agents_same_dir,
             num_agents_opp_dir,
             target_on_track,
