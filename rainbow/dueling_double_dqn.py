@@ -148,8 +148,8 @@ class Agent:
                     return self.learn(experiences, GAMMA, ep)
         return None
         
-    def act(self, state, eps=0.):
-        """ Returns the path to take and whether to stop or go.
+    def act(self, state, eps=0.0, eval=True):
+        """ Returns for each agent the path to take and whether to stop or go.
             2 separate networks (we should try to unify)
 
         Params
@@ -161,26 +161,29 @@ class Agent:
         =======
             pair of (path, value)
         """
-        # state = torch.from_numpy(state).float().unsqueeze(0).to(device)
+        # the batch groups together the nodes of different paths
         batch = state.to(device)
         batch_list = batch.to_data_list()
-        self.qnetwork_value_local.eval()
         agents_best_path_values = dict()
-        
-        with torch.no_grad():
+        if eval:
+            self.qnetwork_value_local.eval()
+            with torch.no_grad():
+                out_value = self.qnetwork_value_local(batch.x, batch.edge_index) 
+        else:
             out_value = self.qnetwork_value_local(batch.x, batch.edge_index) 
+
         out_action = self.qnetwork_action(batch.x, batch.edge_index)
         out_mapped = defaultdict(lambda: defaultdict(list))
-        for i, res in enumerate(zip(out_value, out_action)):
-            batch_index = batch.batch[i]
+        for i, res in enumerate(zip(out_value, out_action)): # RES = (node_value, (value_stop, value_go))
+            batch_index = batch.batch[i] # batch array tells you to which graph each feature belongs to 
             handle, path = batch_list[batch_index].graph_info
-            out_mapped[handle][(path[0], path[1])].append(res) # path[0] = path ID, path[1] = path variation(through a switch)
+            out_mapped[handle][(path[0], path[1])].append(res) # path[0] = path_ID, path[1] = path_variation (through the switch)
 
         for handle in out_mapped.keys():
             paths = []
             action_prob = None
             for path in out_mapped[handle].keys():
-                if path[0] != 0: # Skip STOP action
+                if path[0] != 0: # Skip current node, i.e. skip STOP action
                     paths.append([path, out_mapped[handle][path][0]])
                 else:
                     action_prob = out_mapped[handle][path][0]
@@ -189,7 +192,6 @@ class Agent:
                 best_path = max(paths, key=lambda item: item[1][0])
                 m = Categorical(action_prob[1])
                 action = m.sample()
-                #action = torch.argmax(m.probs) # take maximum prob
                 log_prob = m.log_prob(action)
                 agents_best_path_values.update({handle: [best_path[0], action.item(), log_prob, best_path[1][0], m.probs[action]]})
             else:
@@ -225,20 +227,21 @@ class Agent:
         Q_expected = self.compute_Q_values(states, "local")
    
         # Choose best paths with local network, then compute value with target network
-        selected_next_states = []
+        #selected_next_states = []
+        Q_targets_next = []
         for i, state in enumerate(next_states):
             if not deadlocks[i] and not dones[i]:
                 preprocessed_next_state = self.obs_builder.preprocess_agent_obs(
-                    state, 0)  # 0 is just a placeholder value
+                    state, 0)  # 0 is just a placeholder value for the agent (we don't care which one here)
                 # Choose path to take at the current switch
-                path_values = self.act(preprocessed_next_state, eps=0)
-                next_state = state["partitioned"][path_values[0][0]]
-            else:
-                next_state = state["partitioned"][(0, 0)]
-            selected_next_states.append(next_state)
-
+                path_values = self.act(preprocessed_next_state, eps=0, eval=False)
+                S_value = path_values[0][3] # selected node value, which is the path with max value
+                Q_targets_next.append(S_value)
+            else: # if agent is done or is in deadlock, we don't need to compute any value. Value is reward at the end
+                Q_targets_next.append(torch.tensor([0.0])) # append random value,it won't be considered
+            
         # Double DQN
-        Q_targets_next = self.compute_Q_values(selected_next_states, "target")
+        Q_targets_next = torch.stack(Q_targets_next).squeeze()
 
         rewards = torch.tensor(rewards).to(device)
         # convert true/false in integers
@@ -271,12 +274,12 @@ class Agent:
 
     def learn_actions(self, log_probs, ending_step, dones, max_steps, ep, gamma=1.0):
         '''
-            Network to learn STOP/GO action for each reachable path
+            Network to learn STOP/GO action for each reachable path.
+            Compute the rewards to assign to each trajectory (between -1 and 1).
+            If agent reaches destination, the reward is inversely proportional to time taken.
+            Faster the agent, higher the reward.
+            -1 if agent in deadlock or doesn't finish.
         '''
-        # Compute the rewards to assign to each trajectory (between -1 and 1)
-        # If agent reaches destination, the reward is inversely proportional to time taken.
-        # Faster the agent, higher the reward
-        # -1 if agent in deadlock or doesn't finish
         for a in range(len(log_probs)):
             policy_loss = []
             if dones[a]:
@@ -294,11 +297,14 @@ class Agent:
 
     def compute_Q_values(self, states, net):
         ''' 
-            Used at learning time to compute values of states 
+            Used at learning time to compute values of states/paths.
+            The value of each single path is represented by the value of the first node, so the first output
+            for that graph. 
         '''
         network = self.qnetwork_value_local if net == "local" else self.qnetwork_value_target
         network.train()
         batch_list = []
+        # create batch with all the states
         for i, state in enumerate(states):
             data = Data(x=state["node_features"],
                         edge_index=state["graph_edges"])
@@ -310,12 +316,15 @@ class Agent:
         out_q_expected = network(batch.x, batch.edge_index).flatten()
         
         out_mapped = defaultdict(list)
+        # TODO: Da sistemare, è buggato. per ora non scelgo il max tra i nodi vicini ma il max tra tutti i nodi
+        # Inoltre, per q_expected devo prendere solo il nodo attuale, ma per q_next devo prendere il max tra i vicini.
+        # SCEMO!
         for i, res in enumerate(out_q_expected):
             batch_index = int(batch.batch[i])
             out_mapped[batch_index].append(res)
         Q_expected = []
         for i in out_mapped.keys():
-            Q_expected.append(max(out_mapped[i]))
+            Q_expected.append(out_mapped[i][0])
         Q_expected = torch.stack(Q_expected)
         return Q_expected
 

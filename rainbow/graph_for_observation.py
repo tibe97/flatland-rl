@@ -175,6 +175,10 @@ class EpisodeController():
         return next_action
     
     def save_experience_and_train(self, a, action, reward, next_obs, done, step, args, ep):
+        '''
+            In the first part we perform an agent step (save experience and possibly learn) only if agent 
+            was able to move (no agent blocked his action).
+        '''
         agent = self.env.agents[a]
         if not self.agent_done_removed[a]:
             logging.debug("Agent {} at position {}, fraction {}, speed Timesteps {}, reward {}".format(a, agent.position, agent.speed_data["position_fraction"], self.agents_speed_timesteps[a], self.acc_rewards[a]))
@@ -222,7 +226,7 @@ class EpisodeController():
                 
             """
                 We want to optimize computation of observations only when it's needed, i.e. before 
-                making a decision.
+                making a decision, to accelerate simulation.
                 We update the dictionary AGENT_REQUIRED_OBS to tell the ObservationBuilder for which agent to compute obs.
                 We compute observations only in these cases:
                 1. Agent is entering switch (obs for last cell of current path): we need obs to evaluate which path
@@ -280,14 +284,14 @@ class EpisodeController():
                                     self.env.obs_builder.agent_requires_obs.update(
                                         {a: True})
 
-        else:  # agent did not move. Check if it stopped on purpose
+        else:  # agent did not move. Check if it stopped on purpose or it's in deadlock
             if action == RailEnvActions.STOP_MOVING:
                 self.agents_speed_timesteps[a] -= 1
                 self.env.obs_builder.agent_requires_obs.update({a: True})
-                
             else:
                 logging.debug("Agent {} cannot move at position {}, fraction {}".format(
                     a, agent.position, agent.speed_data["position_fraction"]))
+                # check if agent is in deadlock
                 if self.env.obs_builder.is_agent_in_deadlock(a) and not self.agents_in_deadlock[a]: # agent just got in deadlock
                     self.env.obs_builder.agent_requires_obs.update({a: True})
                     logging.debug("Agent {} in DEADLOCK saved as experience with reward of {}".format(
@@ -360,6 +364,7 @@ class EpisodeController():
         wandb_log_dict.update({"action_probs": wandb.Histogram(np.array([prob.detach().numpy() for agent_probs in self.probs_buffer for prob in agent_probs]))})
         wandb_log_dict.update({"stop_go_action": wandb.Histogram(np.array([action for agent_actions in self.stop_go_buffer for action in agent_actions]))})
         wandb_log_dict.update({"node_values": wandb.Histogram(np.array(self.path_values_buffer))})
+        wandb_log_dict.update({"episode_rewards": wandb.Histogram(self.rewards_buffer)})
         return wandb_log_dict
 
 

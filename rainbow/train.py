@@ -66,6 +66,7 @@ def main(args):
         args.deadlock_reward
     )
     print(start_print)
+    os.makedirs(args.model_path, exist_ok=True) 
     with open(args.model_path + 'training_stats.txt', 'a') as f:
         print(start_print, file=f, end=" ")
 
@@ -195,7 +196,6 @@ def main(args):
             # Environment step
             next_obs, all_rewards, done, info = env.step(railenv_action_dict)
 
-           
             # Update replay buffer and train agent
             for a in range(env.get_num_agents()):
                 ep_controller.save_experience_and_train(a, railenv_action_dict[a], all_rewards[a], next_obs[a], done[a], step, args, ep)
@@ -311,9 +311,9 @@ if __name__ == '__main__':
                         help='epsilon decay value')
     parser.add_argument('--learning-rate', type=float, default=0.005,
                         help='LR for DQN agent')
-    parser.add_argument('--learning-rate-decay', type=float, default=0.5,
+    parser.add_argument('--learning-rate-decay', type=float, default=1.0,
                         help='LR decay for DQN agent')
-    parser.add_argument('--learning-rate-decay-policy', type=float, default=0.5,
+    parser.add_argument('--learning-rate-decay-policy', type=float, default=1.0,
                         help='LR decay for policy network')
 
     # WANDB Logging
@@ -325,7 +325,7 @@ if __name__ == '__main__':
 
     # Model arguments
     parser.add_argument('--model-path', type=str, default='test_results/', help="result directory")
-    parser.add_argument('--model-name', type=str, default='weights/best_model_8_agents_on_25_25',
+    parser.add_argument('--model-name', type=str, default='',
                         help='Name to use to save the model .pth')
     parser.add_argument('--gat-layers', type=int, default=3,
                         help='Number of GAT layers for the model')
@@ -339,13 +339,9 @@ if __name__ == '__main__':
                         help='Dropout rate for the model layers')
     parser.add_argument('--attention-heads', type=int, default=4,
                         help='Attention heads of GAT layer')       
-    
-
-
-    
-    
+                        
     # Rewards
-    parser.add_argument('--done-reward', type=int, default=1000,
+    parser.add_argument('--done-reward', type=int, default=0,
                         help='Reward given to agent when it reaches target')
     parser.add_argument('--deadlock-reward', type=int, default=-1000,
                         help='Reward given to agent when it reaches deadlock')
