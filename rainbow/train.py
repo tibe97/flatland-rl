@@ -338,7 +338,10 @@ if __name__ == '__main__':
     parser.add_argument('--dropout-rate', type=float, default=0.8,
                         help='Dropout rate for the model layers')
     parser.add_argument('--attention-heads', type=int, default=4,
-                        help='Attention heads of GAT layer')       
+                        help='Attention heads of GAT layer') 
+    parser.add_argument('--batch-size', type=int, default=128,
+                        help='Batch size for training')       
+
                         
     # Rewards
     parser.add_argument('--done-reward', type=int, default=0,

@@ -18,7 +18,6 @@ from model import DQN_action, DQN_value, GAT_action, GAT_value
 
 BUFFER_SIZE = int(1e4)  # replay buffer size
 # BATCH_SIZE = 512  # minibatch size
-BATCH_SIZE = 128
 GAMMA = 0.99  # discount factor 0.99
 TAU = 1e-3  # for soft update of target parameters
 # LR = 0.001  # learning rate 0.5e-4 works
@@ -57,6 +56,7 @@ class Agent:
         # Initialize time step (for updating every UPDATE_EVERY steps)
         self.t_step = 0
         self.obs_builder = obs_builder
+        self.batch_size = args.batch_size
      
 
 
@@ -259,7 +259,7 @@ class Agent:
             experiences (Tuple[torch.Tensor]):
             gamma (float): discount factor
         """
-        batch, idxs, is_weights = self.memory.sample(BATCH_SIZE)
+        batch, idxs, is_weights = self.memory.sample(self.batch_size)
         batch = np.array(batch).transpose()
         states = list(batch[0])
         rewards = list(batch[1])
@@ -302,7 +302,7 @@ class Agent:
 
         errors = torch.abs(Q_expected - Q_targets).data.numpy()
         # update priority
-        for i in range(BATCH_SIZE):
+        for i in range(self.batch_size):
             idx = idxs[i]
             self.memory.update(idx, errors[i])
     
@@ -443,7 +443,7 @@ class ReplayBuffer:
         dones = []
         deadlocks = []
 
-        if len(self.memory_dones) > BATCH_SIZE//10*2 and len(self.memory_deadlocks) > BATCH_SIZE//10*3 and len(self.memory_other) > BATCH_SIZE//10*5:
+        if len(self.memory_dones) > self.batch_size//10*2 and len(self.memory_deadlocks) > self.batch_size//10*3 and len(self.memory_other) > self.batch_size//10*5:
             dones_size = self.batch_size//10*2
             deadlocks_size = self.batch_size//10*3
             others_size = self.batch_size - dones_size - deadlocks_size
