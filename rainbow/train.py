@@ -282,7 +282,7 @@ if __name__ == '__main__':
                         help='Height of the field view for agent in local obs')
     parser.add_argument('--offset', type=int, default=25,
                         help='Offset of agent in local obs')
-    parser.add_argument('--observation-depth', type=int, default=5,
+    parser.add_argument('--observation-depth', type=int, default=3,
                         help='Depth of observation graph of each agent')
 
     # Training parameters

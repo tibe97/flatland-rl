@@ -12,6 +12,7 @@ from torch_geometric.nn.conv import GATConv
 
 
 # TODO Check hidsizes and pass them as params
+"""
 class DQN_value(nn.Module):
     '''
     DQN with Rainbow but without dueling networks (we don't have actions, but just state values)
@@ -56,6 +57,31 @@ class DQN_value(nn.Module):
         out = self.out(x_value)
         
         return out
+"""
+class DQN_value(nn.Module):
+    '''
+    DQN with Rainbow but without dueling networks (we don't have actions, but just state values)
+    '''
+    def __init__(self, feature_size, hidsizes=[12,9,7], out_size=1):
+        super(DQN_value, self).__init__()
+        self.conv1 = VRSPConv(2*feature_size, hidsizes[0])
+        self.conv2 = VRSPConv(6*hidsizes[0], hidsizes[1])
+        self.gat = GATConv(6*hidsizes[1], hidsizes[2], negative_slope=alpha, heads=8, concat=True, flow='target_to_source')
+
+        self.out = Linear(hidsizes[2] * 8, out_size)
+
+        
+       
+    def forward(self, x, edge_index, agents_messages=None, log=False):
+        '''
+        If in training mode, we need to pass the agent handle and its position, so we can store its message
+        at the different levels.
+        When doing forward pass we need to gather the messages of the other agents present on the track we encounter.
+        '''
+        x = F.elu(self.conv1(x, edge_index, agents_messages))
+        x = F.elu(self.conv2(x, edge_index, agents_messages))
+        x = F.elu(self.gat(x, edge_index))
+        return self.out(x)
 
 
 class DQN_action(nn.Module):
