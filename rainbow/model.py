@@ -66,7 +66,7 @@ class DQN_value(nn.Module):
         super(DQN_value, self).__init__()
         self.conv1 = VRSPConv(2*feature_size, hidsizes[0])
         self.conv2 = VRSPConv(6*hidsizes[0], hidsizes[1])
-        self.gat = GATConv(6*hidsizes[1], hidsizes[2], negative_slope=0.2, heads=8, concat=True, flow='target_to_source')
+        self.gat = GATConv(3*hidsizes[1], hidsizes[2], negative_slope=0.2, heads=8, concat=True, flow='target_to_source')
 
         self.out = Linear(hidsizes[2] * 8, out_size)
 

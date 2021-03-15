@@ -250,9 +250,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Flatland')
 
     # Flatland env parameters
-    parser.add_argument('--width', type=int, default=250,
+    parser.add_argument('--width', type=int, default=25,
                         help='Environment width')
-    parser.add_argument('--height', type=int, default=250,
+    parser.add_argument('--height', type=int, default=25,
                         help='Environment height')
     parser.add_argument('--num-agents', type=int, default=1,
                         help='Number of agents in the environment')
