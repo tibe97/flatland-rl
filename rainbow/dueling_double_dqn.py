@@ -41,11 +41,11 @@ class Agent:
         self.args = args
         self.state_size = state_size
         # Q-Network
-        #self.qnetwork_value_local = DQN_value(state_size).to(device)
-        self.qnetwork_value_local = GAT_value(state_size, 8, 1, args.gat_layers, args.dropout_rate, 0.2, args.attention_heads, args.flow, args.batch_norm).to(device)
+        self.qnetwork_value_local = DQN_value(state_size).to(device)
+        #self.qnetwork_value_local = GAT_value(state_size, 8, 1, args.gat_layers, args.dropout_rate, 0.2, args.attention_heads, args.flow, args.batch_norm).to(device)
         self.qnetwork_value_target = copy.deepcopy(self.qnetwork_value_local)
-        #self.qnetwork_action = DQN_action(state_size).to(device)
-        self.qnetwork_action = GAT_action(state_size, 8, 2, args.gat_layers, args.dropout_rate, 0.2, args.attention_heads, args.flow, args.batch_norm).to(device)
+        self.qnetwork_action = DQN_action(state_size).to(device)
+        #self.qnetwork_action = GAT_action(state_size, 8, 2, args.gat_layers, args.dropout_rate, 0.2, args.attention_heads, args.flow, args.batch_norm).to(device)
         self.learning_rate = args.learning_rate
         self.optimizer_value = optim.Adam(self.qnetwork_value_local.parameters(), lr=self.learning_rate)
         self.optimizer_action = optim.Adam(self.qnetwork_action.parameters(), lr=self.learning_rate)
@@ -57,6 +57,7 @@ class Agent:
         self.t_step = 0
         self.obs_builder = obs_builder
         self.batch_size = args.batch_size
+        self.use_stop_action = args.use_stop_action
      
 
 
@@ -196,10 +197,13 @@ class Agent:
             paths = []
             action_prob = None
             for path in out_mapped[handle].keys():
-                if path[0] != 0: # Skip current node, i.e. skip STOP action
-                    paths.append([path, out_mapped[handle][path][0]])
-                else:
+                if self.use_stop_action: # current node where the agent is represents STOP action
                     action_prob = out_mapped[handle][path][0]
+                else: 
+                    if path[0] != 0: # Skip current node, i.e. skip STOP action
+                        paths.append([path, out_mapped[handle][path][0]])
+                    else:
+                        action_prob = out_mapped[handle][path][0]
                 
             if self.evaluation_mode: # test time
                 best_path = max(paths, key=lambda item: item[1][0])

@@ -192,7 +192,7 @@ class EpisodeController():
             self.acc_rewards[a] += reward
             if ((self.update_values[a] and agent.speed_data["position_fraction"] == 0) or agent.status == RailAgentStatus.DONE_REMOVED) and not self.agent_done_removed[a]:
                 logging.debug("Update=True: agent {}".format(a))
-                # next state is the complete state, with all the possible path choices
+                # next_obs is the complete state, with all the possible path choices
                 if len(next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
                     # if agent reaches target
                     if agent.status == RailAgentStatus.DONE_REMOVED or agent.status == RailAgentStatus.DONE:
@@ -288,6 +288,9 @@ class EpisodeController():
             if action == RailEnvActions.STOP_MOVING:
                 self.agents_speed_timesteps[a] -= 1
                 self.env.obs_builder.agent_requires_obs.update({a: True})
+                if len(next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
+                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], ep=ep)
+                    self.agent_obs[a] = next_obs.copy()
             else:
                 logging.debug("Agent {} cannot move at position {}, fraction {}".format(
                     a, agent.position, agent.speed_data["position_fraction"]))
@@ -1345,6 +1348,8 @@ class GraphObservation(ObservationBuilder):
         Compute the action/s required to reach the next track represented by track_ID
         '''
         target_track, action, _, _, _ = track
+        if target_track == 0:
+            return [RailEnvActions.STOP_MOVING]
         track_ID, index = target_track
         if action == 1 or action == 0: 
             agents = self.env.agents

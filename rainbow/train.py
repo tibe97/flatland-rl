@@ -250,11 +250,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Flatland')
 
     # Flatland env parameters
-    parser.add_argument('--width', type=int, default=25,
+    parser.add_argument('--width', type=int, default=250,
                         help='Environment width')
-    parser.add_argument('--height', type=int, default=25,
+    parser.add_argument('--height', type=int, default=250,
                         help='Environment height')
-    parser.add_argument('--num-agents', type=int, default=2,
+    parser.add_argument('--num-agents', type=int, default=1,
                         help='Number of agents in the environment')
     parser.add_argument('--max-num-cities', type=int, default=2,
                         help='Maximum number of cities where agents can start or end')
@@ -282,7 +282,7 @@ if __name__ == '__main__':
                         help='Height of the field view for agent in local obs')
     parser.add_argument('--offset', type=int, default=25,
                         help='Offset of agent in local obs')
-    parser.add_argument('--observation-depth', type=int, default=3,
+    parser.add_argument('--observation-depth', type=int, default=5,
                         help='Depth of observation graph of each agent')
 
     # Training parameters
@@ -340,7 +340,9 @@ if __name__ == '__main__':
     parser.add_argument('--attention-heads', type=int, default=4,
                         help='Attention heads of GAT layer') 
     parser.add_argument('--batch-size', type=int, default=128,
-                        help='Batch size for training')       
+                        help='Batch size for training')    
+    parser.add_argument('--use-stop-action', type=bool, default=False,
+                        help='Whether to use STOP action')               
 
                         
     # Rewards
