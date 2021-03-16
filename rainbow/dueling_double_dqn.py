@@ -51,7 +51,7 @@ class Agent:
         self.optimizer_action = optim.Adam(self.qnetwork_action.parameters(), lr=self.learning_rate)
         self.evaluation_mode = False
         # Replay memory
-        #self.memory = ReplayBuffer("fc", BUFFER_SIZE, BATCH_SIZE)
+        #self.memory = ReplayBuffer("fc", BUFFER_SIZE, args.batch_size)
         self.memory = Memory(BUFFER_SIZE)
         # Initialize time step (for updating every UPDATE_EVERY steps)
         self.t_step = 0
@@ -159,6 +159,7 @@ class Agent:
         if self.t_step == 0:
             if self.memory.tree.n_entries >= 1000: # hyperparam
                 return self.learn(GAMMA, ep)
+      
 
         return None
         

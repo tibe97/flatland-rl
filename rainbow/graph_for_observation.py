@@ -6,7 +6,6 @@ from collections import defaultdict, namedtuple, deque
 import math
 import torch
 import matplotlib.pyplot as plt
-import seaborn as sns;
 import logging
 import itertools
 from copy import copy
@@ -347,8 +346,8 @@ class EpisodeController():
             self.score,
             np.mean(self.scores_window),
             100 * np.mean(self.done_window),
-            100 * (num_agents_done/args.num_agents),
-            100 * (num_agents_in_deadlock/args.num_agents),
+            100 * (num_agents_done/self.env.get_num_agents()),
+            100 * (num_agents_in_deadlock/self.env.get_num_agents()),
             (num_agents_in_deadlock_at_switch),
             num_agents_not_started,
             eps,

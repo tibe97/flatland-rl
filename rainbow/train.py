@@ -127,6 +127,20 @@ def main(args):
                   malfunction_generator_and_process_data=malfunction_from_params(
                       stochastic_data),
                   remove_agents_at_target=True)
+    envs = [RailEnv(width=args.width,
+                    height=args.height,
+                    rail_generator=sparse_rail_generator(max_num_cities=(num_agents//10)+2,
+                                           seed=args.seed,
+                                           grid_mode=args.grid_mode,
+                                           max_rails_between_cities=args.max_rails_between_cities,
+                                           max_rails_in_city=args.max_rails_in_city,
+                                           ),
+                    schedule_generator=schedule_generator,
+                    number_of_agents=num_agents,
+                    obs_builder_object=observation_builder,
+                    malfunction_generator_and_process_data=malfunction_from_params(stochastic_data),
+                    remove_agents_at_target=True) 
+            for num_agents in [1,2,3,4,5,6,7,8]]
     env.reset()
     
 
@@ -148,11 +162,17 @@ def main(args):
     ep_controller = EpisodeController(env, rl_agent, max_steps)
 
     for ep in range(1+args.start_epoch, args.num_episodes + args.start_epoch + 1):
+        env = envs[ep%8]
         
         logging.debug("Episode {} of {}".format(ep, args.num_episodes))
+        ep_controller = EpisodeController(env, rl_agent, max_steps)
         ep_controller.reset()
+        
+        #ep_controller.reset()
         obs, info = env.reset()
-
+        ep_controller.reset()
+        max_num_cities_adaptive = (env.get_num_agents()//10)+2
+        max_steps = int(4 * 2 * (args.width + args.height + env.get_num_agents() / max_num_cities_adaptive))
         
         # first action
         for a in range(env.get_num_agents()):
@@ -169,9 +189,7 @@ def main(args):
         # env step returns next observations, rewards
         next_obs, all_rewards, done, info = env.step(railenv_action_dict)
 
-        score = 0
-        env_done = 0
-
+      
         # Main loop
         for step in range(max_steps):
             logging.debug(
@@ -298,11 +316,11 @@ if __name__ == '__main__':
                         help='requires debug printing')
     parser.add_argument('--load-memory', type=bool, default=False,
                         help='if load saved memory')
-    parser.add_argument('--evaluation-episodes', type=int, default=15,
+    parser.add_argument('--evaluation-episodes', type=int, default=3,
                         metavar='N', help='Number of evaluation episodes to average over')
     parser.add_argument('--render', action='store_true',
                         default=False, help='Display screen (testing only)')
-    parser.add_argument('--evaluation-interval', type=int, default=50, metavar='EPISODES', help='Number of episodes between evaluations')
+    parser.add_argument('--evaluation-interval', type=int, default=10, metavar='EPISODES', help='Number of episodes between evaluations')
     parser.add_argument('--save-model-interval', type=int, default=50,
                         help='Save models every tot episodes')
     parser.add_argument('--start-lr-decay', type=int, default=150,
