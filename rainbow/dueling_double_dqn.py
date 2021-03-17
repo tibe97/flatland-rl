@@ -199,13 +199,11 @@ class Agent:
             action_prob = None
             for path in out_mapped[handle].keys():
                 if self.use_stop_action: # current node where the agent is represents STOP action
-                    action_prob = out_mapped[handle][path][0]
+                    paths.append([path, out_mapped[handle][path][0]])
                 else: 
                     if path[0] != 0: # Skip current node, i.e. skip STOP action
-                        paths.append([path, out_mapped[handle][path][0]])
-                    else:
-                        action_prob = out_mapped[handle][path][0]
-                
+                        paths.append([path, out_mapped[handle][path][0]])   
+                action_prob = out_mapped[handle][(0,0)][0]
             if self.evaluation_mode: # test time
                 best_path = max(paths, key=lambda item: item[1][0])
                 m = Categorical(action_prob[1])

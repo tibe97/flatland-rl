@@ -127,6 +127,8 @@ def main(args):
                   malfunction_generator_and_process_data=malfunction_from_params(
                       stochastic_data),
                   remove_agents_at_target=True)
+
+    # create multiple envs with different number of agents
     envs = [RailEnv(width=args.width,
                     height=args.height,
                     rail_generator=sparse_rail_generator(max_num_cities=(num_agents//10)+2,
@@ -159,7 +161,7 @@ def main(args):
     if args.load_memory:
         rl_agent.memory.load_memory(args.model_path + "replay_buffer")
     
-    ep_controller = EpisodeController(env, rl_agent, max_steps)
+    #ep_controller = EpisodeController(env, rl_agent, max_steps)
 
     for ep in range(1+args.start_epoch, args.num_episodes + args.start_epoch + 1):
         env = envs[ep%8]
@@ -167,8 +169,7 @@ def main(args):
         logging.debug("Episode {} of {}".format(ep, args.num_episodes))
         ep_controller = EpisodeController(env, rl_agent, max_steps)
         ep_controller.reset()
-        
-        #ep_controller.reset()
+       
         obs, info = env.reset()
         ep_controller.reset()
         max_num_cities_adaptive = (env.get_num_agents()//10)+2
@@ -178,7 +179,7 @@ def main(args):
         for a in range(env.get_num_agents()):
             agent = env.agents[a]
             ep_controller.agent_obs[a] = obs[a].copy()
-            ep_controller.agent_obs_buffer[a] = obs[a].copy()
+
             #agent_action = ep_controller.compute_agent_action(a, info, eps)
             agent_action = RailEnvActions.STOP_MOVING  # TODO
             railenv_action_dict.update({a: agent_action})
