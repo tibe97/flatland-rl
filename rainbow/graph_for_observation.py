@@ -166,6 +166,7 @@ class EpisodeController():
                 else:
                     # speed is a fractionary value between 0 and 1
                     self.agents_speed_timesteps[handle] = int(round(1 / info["speed"][handle]))
+                    self.acc_rewards[handle] = 0
 
         # if agent is not at switch just go straight
         elif agent.status != RailAgentStatus.DONE_REMOVED:  
@@ -219,7 +220,7 @@ class EpisodeController():
                     else:
                         self.rewards_buffer[a].append(self.acc_rewards[a])
 
-                    self.acc_rewards[a] = 0
+                    #self.acc_rewards[a] = 0
                     self.update_values[a] = False
                     
                     
@@ -295,7 +296,7 @@ class EpisodeController():
                 self.agents_speed_timesteps[a] -= 1
                 self.env.obs_builder.agent_requires_obs.update({a: True})
                 if len(next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
-                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], -1, next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], ep=ep)
+                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], ep=ep)
                     self.agent_obs[a] = next_obs.copy()
             else:
                 logging.debug("Agent {} cannot move at position {}, fraction {}".format(
