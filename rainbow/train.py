@@ -360,7 +360,7 @@ if __name__ == '__main__':
                         help='Attention heads of GAT layer') 
     parser.add_argument('--batch-size', type=int, default=128,
                         help='Batch size for training')    
-    parser.add_argument('--use-stop-action', type=bool, default=True,
+    parser.add_argument('--use-stop-action', type=bool, default=False,
                         help='Whether to use STOP action')               
 
                         
