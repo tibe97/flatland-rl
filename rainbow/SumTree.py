@@ -2,7 +2,8 @@ import numpy
 
 
 # SumTree
-# a binary tree data structure where the parent’s value is the sum of its children
+# a binary tree data structure where the parent’s value is the sum of its
+# children
 class SumTree:
     write = 0
 

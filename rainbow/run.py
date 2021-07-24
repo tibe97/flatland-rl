@@ -102,10 +102,11 @@ if USE_FAST_TREEOBS:
     def check_is_observation_valid(observation):
         return True
 
-
-    def get_normalized_observation(observation, tree_depth: int, observation_radius=0):
+    def get_normalized_observation(
+            observation,
+            tree_depth: int,
+            observation_radius=0):
         return observation
-
 
     tree_observation = FastTreeObs(max_depth=observation_tree_depth)
     state_size = tree_observation.observation_dim
@@ -113,13 +114,18 @@ else:
     def check_is_observation_valid(observation):
         return observation
 
+    def get_normalized_observation(
+            observation,
+            tree_depth: int,
+            observation_radius=0):
+        return normalize_observation(
+            observation, tree_depth, observation_radius)
 
-    def get_normalized_observation(observation, tree_depth: int, observation_radius=0):
-        return normalize_observation(observation, tree_depth, observation_radius)
-
-
-    tree_observation = TreeObsForRailEnv(max_depth=observation_tree_depth, predictor=predictor)
-    # Calculate the state size given the depth of the tree observation and the number of features
+    tree_observation = TreeObsForRailEnv(
+        max_depth=observation_tree_depth,
+        predictor=predictor)
+    # Calculate the state size given the depth of the tree observation and the
+    # number of features
     n_features_per_node = tree_observation.observation_dim
     n_nodes = sum([np.power(4, i) for i in range(observation_tree_depth + 1)])
     state_size = n_features_per_node * n_nodes
@@ -160,19 +166,26 @@ while True:
 
     # Creates the policy. No GPU on evaluation server.
     if load_policy == "DDDQN":
-        policy = DDDQNPolicy(state_size, get_action_size(), Namespace(**{'use_gpu': False}), evaluation_mode=True)
+        policy = DDDQNPolicy(state_size, get_action_size(), Namespace(
+            **{'use_gpu': False}), evaluation_mode=True)
     elif load_policy == "PPO":
         policy = PPOPolicy(state_size, get_action_size())
     elif load_policy == "DeadLockAvoidance":
-        policy = DeadLockAvoidanceAgent(local_env, get_action_size(), enable_eps=False)
+        policy = DeadLockAvoidanceAgent(
+            local_env, get_action_size(), enable_eps=False)
     elif load_policy == "DeadLockAvoidanceWithDecision":
         # inter_policy = PPOPolicy(state_size, get_action_size(), use_replay_buffer=False, in_parameters=train_params)
-        inter_policy = DDDQNPolicy(state_size, get_action_size(), Namespace(**{'use_gpu': False}), evaluation_mode=True)
-        policy = DeadLockAvoidanceWithDecisionAgent(local_env, state_size, get_action_size(), inter_policy)
+        inter_policy = DDDQNPolicy(state_size, get_action_size(), Namespace(
+            **{'use_gpu': False}), evaluation_mode=True)
+        policy = DeadLockAvoidanceWithDecisionAgent(
+            local_env, state_size, get_action_size(), inter_policy)
     elif load_policy == "MultiDecision":
-        policy = MultiDecisionAgent(state_size, get_action_size(), Namespace(**{'use_gpu': False}))
+        policy = MultiDecisionAgent(
+            state_size, get_action_size(), Namespace(**{'use_gpu': False}))
     else:
-        policy = PPOPolicy(state_size, get_action_size(), use_replay_buffer=False,
+        policy = PPOPolicy(state_size,
+                           get_action_size(),
+                           use_replay_buffer=False,
                            in_parameters=Namespace(**{'use_gpu': False}))
 
     policy.load(checkpoint)
@@ -180,7 +193,12 @@ while True:
     policy.reset(local_env)
     observation = tree_observation.get_many(list(range(nb_agents)))
 
-    print("Evaluation {}: {} agents in {}x{}".format(evaluation_number, nb_agents, local_env.width, local_env.height))
+    print(
+        "Evaluation {}: {} agents in {}x{}".format(
+            evaluation_number,
+            nb_agents,
+            local_env.width,
+            local_env.height))
 
     # Now we enter into another infinite loop where we
     # compute the actions for all the individual steps in this episode
@@ -200,9 +218,9 @@ while True:
     policy.start_episode(train=False)
     while True:
         try:
-            #####################################################################
+            ###################################################################
             # Evaluation of a single episode
-            #####################################################################
+            ###################################################################
             steps += 1
             obs_time, agent_time, step_time = 0.0, 0.0, 0.0
             no_ops_mode = False
@@ -219,11 +237,13 @@ while True:
                             action = agent_last_action[agent_handle]
                             nb_hit += 1
                         else:
-                            normalized_observation = get_normalized_observation(observation[agent_handle],
-                                                                                observation_tree_depth,
-                                                                                observation_radius=observation_radius)
+                            normalized_observation = get_normalized_observation(
+                                observation[agent_handle],
+                                observation_tree_depth,
+                                observation_radius=observation_radius)
 
-                            action = policy.act(agent_handle, normalized_observation, eps=EPSILON)
+                            action = policy.act(
+                                agent_handle, normalized_observation, eps=EPSILON)
 
                     action_dict[agent_handle] = action
 
@@ -236,7 +256,8 @@ while True:
                 time_taken_by_controller.append(agent_time)
 
                 time_start = time.time()
-                _, all_rewards, done, info = remote_client.env_step(map_actions(action_dict))
+                _, all_rewards, done, info = remote_client.env_step(
+                    map_actions(action_dict))
                 step_time = time.time() - time_start
                 time_taken_per_step.append(step_time)
 
@@ -255,8 +276,10 @@ while True:
 
             nb_agents_done = 0
             for i_agent, agent in enumerate(local_env.agents):
-                # manage the boolean flag to check if all agents are indeed done (or done_removed)
-                if (agent.status in [RailAgentStatus.DONE, RailAgentStatus.DONE_REMOVED]):
+                # manage the boolean flag to check if all agents are indeed
+                # done (or done_removed)
+                if (agent.status in [RailAgentStatus.DONE,
+                                     RailAgentStatus.DONE_REMOVED]):
                     nb_agents_done += 1
 
             if VERBOSE or done['__all__']:
@@ -282,7 +305,8 @@ while True:
         except TimeoutException as err:
             # A timeout occurs, won't get any reward for this episode :-(
             # Skip to next episode as further actions in this one will be ignored.
-            # The whole evaluation will be stopped if there are 10 consecutive timeouts.
+            # The whole evaluation will be stopped if there are 10 consecutive
+            # timeouts.
             print("Timeout! Will skip this episode and go to the next.", err)
             break
 
@@ -290,9 +314,14 @@ while True:
 
     np_time_taken_by_controller = np.array(time_taken_by_controller)
     np_time_taken_per_step = np.array(time_taken_per_step)
-    print("Mean/Std of Time taken by Controller : ", np_time_taken_by_controller.mean(),
-          np_time_taken_by_controller.std())
-    print("Mean/Std of Time per Step : ", np_time_taken_per_step.mean(), np_time_taken_per_step.std())
+    print(
+        "Mean/Std of Time taken by Controller : ",
+        np_time_taken_by_controller.mean(),
+        np_time_taken_by_controller.std())
+    print(
+        "Mean/Std of Time per Step : ",
+        np_time_taken_per_step.mean(),
+        np_time_taken_per_step.std())
     print("=" * 100)
 
 print("Evaluation of all environments complete!")

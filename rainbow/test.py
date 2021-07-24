@@ -44,8 +44,9 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
     schedule_generator = sparse_schedule_generator(speed_ration_map)
 
     observation_builder = GraphObservation(args.observation_depth)
-    max_num_cities_adaptive = (args.num_agents//10)+2
-    max_steps = int(4 * 2 * (args.width + args.height + args.num_agents / max_num_cities_adaptive))
+    max_num_cities_adaptive = (args.num_agents // 10) + 2
+    max_steps = int(4 * 2 * (args.width + args.height +
+                    args.num_agents / max_num_cities_adaptive))
 
     env = RailEnv(
         width=args.width,
@@ -60,7 +61,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
         schedule_generator=schedule_generator,
         number_of_agents=args.num_agents,
         obs_builder_object=observation_builder,
-        malfunction_generator_and_process_data= malfunction_from_params(MalfunctionParameters(
+        malfunction_generator_and_process_data=malfunction_from_params(MalfunctionParameters(
             malfunction_rate=args.malfunction_rate,
             min_duration=args.min_duration,
             max_duration=args.max_duration
@@ -70,13 +71,12 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
     if args.render:
         env_renderer = RenderTool(
             env,
-            #gl="PILSVG",
-            #agent_render_variant=AgentRenderVariant.AGENT_SHOWS_OPTIONS_AND_BOX,
+            # gl="PILSVG",
+            # agent_render_variant=AgentRenderVariant.AGENT_SHOWS_OPTIONS_AND_BOX,
             show_debug=False,
             screen_height=1080,
             screen_width=1920)
 
-    
     # metrics['steps'].append(T)
     metrics['episodes'].append(ep)
     T_rewards = []  # List of episodes rewards
@@ -87,30 +87,42 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
     network_action_dict = dict()
     railenv_action_dict = dict()
 
-    envs = [RailEnv(width=args.width,
-                    height=args.height,
-                    rail_generator=sparse_rail_generator(max_num_cities=(num_agents//10)+2,
-                                           seed=args.seed,
-                                           grid_mode=args.grid_mode,
-                                           max_rails_between_cities=args.max_rails_between_cities,
-                                           max_rails_in_city=args.max_rails_in_city,
-                                           ),
-                    schedule_generator=schedule_generator,
-                    number_of_agents=num_agents,
-                    obs_builder_object=observation_builder,
-                    malfunction_generator_and_process_data=malfunction_from_params(MalfunctionParameters(
-                malfunction_rate=args.malfunction_rate,
-                min_duration=args.min_duration,
-                max_duration=args.max_duration
-            )),
-                    remove_agents_at_target=True) 
-            for num_agents in [1,2,3,4,5,6,7,8]]
-    
+    envs = [
+        RailEnv(
+            width=args.width,
+            height=args.height,
+            rail_generator=sparse_rail_generator(
+                max_num_cities=(
+                    num_agents // 10) + 2,
+                seed=args.seed,
+                grid_mode=args.grid_mode,
+                max_rails_between_cities=args.max_rails_between_cities,
+                max_rails_in_city=args.max_rails_in_city,
+            ),
+            schedule_generator=schedule_generator,
+            number_of_agents=num_agents,
+            obs_builder_object=observation_builder,
+            malfunction_generator_and_process_data=malfunction_from_params(
+                MalfunctionParameters(
+                    malfunction_rate=args.malfunction_rate,
+                    min_duration=args.min_duration,
+                    max_duration=args.max_duration)),
+            remove_agents_at_target=True) for num_agents in [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8]]
+
     print("--------------- TESTING STARTED ------------------")
     # Test performance over several episodes
     for env in envs:
         for ep in range(args.evaluation_episodes):
-            # reward_sum contains the cumulative reward obtained as sum during the steps
+            # reward_sum contains the cumulative reward obtained as sum during
+            # the steps
             reward_sum, all_done = 0, False
             num_done_agents = 0
             if args.render:
@@ -127,7 +139,8 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
             agents_speed_timesteps = [0] * env.get_num_agents()
             agent_at_switch = [False] * env.get_num_agents()
             agent_path_obs_buffer = [None] * env.get_num_agents()
-            # Used to check if agent with fractionary speed could move at current cell
+            # Used to check if agent with fractionary speed could move at
+            # current cell
             agent_old_speed_data = {}
             agent_done_removed = [False] * env.get_num_agents()
             agents_in_deadlock = [False] * env.get_num_agents()
@@ -146,10 +159,12 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
 
             next_obs, all_rewards, done, info = env.step(railenv_action_dict)
 
-            reward_sum += sum([all_rewards[a] for a in range(env.get_num_agents())])
+            reward_sum += sum([all_rewards[a]
+                              for a in range(env.get_num_agents())])
 
-            max_num_cities_adaptive = (env.get_num_agents()//10)+2
-            max_steps = int(4 * 2 * (args.width + args.height + env.get_num_agents() / max_num_cities_adaptive))
+            max_num_cities_adaptive = (env.get_num_agents() // 10) + 2
+            max_steps = int(4 * 2 * (args.width + args.height +
+                            env.get_num_agents() / max_num_cities_adaptive))
 
             score = 0
 
@@ -173,8 +188,11 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                     elif agent.status in [RailAgentStatus.DONE, RailAgentStatus.DONE_REMOVED]:
                         num_agents_done += 1
 
-                    if info['action_required'][a] and agent_at_switch[a] and agent.status in [RailAgentStatus.ACTIVE, RailAgentStatus.READY_TO_DEPART] and agent.malfunction_data["malfunction"] == 0:
-                        # if we finish previous action (action may take more than 1 timestep)
+                    if info['action_required'][a] and agent_at_switch[a] and agent.status in [
+                            RailAgentStatus.ACTIVE,
+                            RailAgentStatus.READY_TO_DEPART] and agent.malfunction_data["malfunction"] == 0:
+                        # if we finish previous action (action may take more
+                        # than 1 timestep)
                         if agents_speed_timesteps[a] == 0:
                             # if we arrive before a switch we compute the next path to reach and the actions required
                             # (this is due to the switch being eventually composed of more cells)
@@ -189,7 +207,8 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                                 railenv_action = env.obs_builder.choose_railenv_actions(
                                     a, path_values[a])
                                 agent_action_buffer[a] = railenv_action
-                                # as state to save we take the path chosen by agent
+                                # as state to save we take the path chosen by
+                                # agent
                                 agent_path_obs_buffer[a] = agent_obs[a]["partitioned"][path_values[a][0]]
 
                             next_action = agent_action_buffer[a].pop(0)
@@ -207,21 +226,25 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
 
                     elif agent.status != RailAgentStatus.DONE_REMOVED:  # When going straight
                         next_action = 0
-                        if agent.status == RailAgentStatus.READY_TO_DEPART or (not agent.moving and agent.malfunction_data["malfunction"] == 0):
+                        if agent.status == RailAgentStatus.READY_TO_DEPART or (
+                                not agent.moving and agent.malfunction_data["malfunction"] == 0):
                             valid_move_actions = get_valid_move_actions_(
                                 agent.direction, agent_position, env.rail)
-                            # agent could be at switch, so more actions possible
+                            # agent could be at switch, so more actions
+                            # possible
                             assert len(valid_move_actions) >= 1
-                            next_action = valid_move_actions.popitem()[0].action
+                            next_action = valid_move_actions.popitem()[
+                                0].action
 
                     # Update action dicts
                     railenv_action_dict.update({a: next_action})
 
                 # Environment step
-                next_obs, all_rewards, done, info = env.step(railenv_action_dict)
+                next_obs, all_rewards, done, info = env.step(
+                    railenv_action_dict)
 
                 reward_sum += sum([all_rewards[a]
-                                for a in range(env.get_num_agents())])
+                                   for a in range(env.get_num_agents())])
 
                 # Update replay buffer and train agent
                 for a in range(env.get_num_agents()):
@@ -232,18 +255,19 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                     # if agent didn't move do nothing: agent couldn't perform action because another agent
                     # occupied next cell or agent's action was STOP
                     # print("Agent {}, old_fraction {}, new fraction {}".format(a, agent_old_speed_data[a]["position_fraction"], agent.speed_data["position_fraction"]))
-                    score += all_rewards[a] / env.get_num_agents()  # Update score
+                    score += all_rewards[a] / \
+                        env.get_num_agents()  # Update score
 
                     # if agent didn't move don't do anything
-                    if env.obs_builder.agent_could_move(a, railenv_action_dict[a], agent_old_speed_data[a]):
+                    if env.obs_builder.agent_could_move(
+                            a, railenv_action_dict[a], agent_old_speed_data[a]):
 
                         if len(next_obs[a]) > 0:
                             agent_obs[a] = next_obs[a].copy()
 
-                        if agent_at_switch[a]:   
+                        if agent_at_switch[a]:
                             agents_speed_timesteps[a] -= 1
                             # accumulate when passing a switch
-                            
 
                         # At next step we compute observations only in these cases:
                         # 1. Agent is entering switch (obs for last cell of current path)
@@ -254,9 +278,11 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                         if agent.status == RailAgentStatus.ACTIVE:
                             # Compute when agent is about to enter a switch and when it's about to leave a switch
                             # PURPOSE: to compute observations only when needed, i.e. before a switch and after, also before and
-                            # after making an action that leads to the target of an agent
+                            # after making an action that leads to the target
+                            # of an agent
                             if not agent_at_switch[a]:
-                                if env.obs_builder.is_agent_entering_switch(a) and agent.speed_data["position_fraction"] == 0:
+                                if env.obs_builder.is_agent_entering_switch(
+                                        a) and agent.speed_data["position_fraction"] == 0:
                                     agent_at_switch[a] = True
                                     agents_speed_timesteps[a] = 0
                                     # env.obs_builder.agent_requires_obs.update({a: False})
@@ -268,19 +294,27 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                                         {a: True})
                             else:  # Agent at SWITCH. In the step before reaching target path we want to make sure to compute the obs
                                 # in order to update the replay memory. We need to be careful if the agent can't reach new path because of another agent blocking the cell
-                                # when agent speed is 1 we reach the target in 1 step
-                                if len(agent_action_buffer[a]) == 1 and agent.speed_data["speed"] == 1:
+                                # when agent speed is 1 we reach the target in
+                                # 1 step
+                                if len(
+                                        agent_action_buffer[a]) == 1 and agent.speed_data["speed"] == 1:
                                     env.obs_builder.agent_requires_obs.update(
                                         {a: True})
-                                # if speed is less than 1, we need more steps to reach target. So only compute obs if doing last step
+                                # if speed is less than 1, we need more steps
+                                # to reach target. So only compute obs if doing
+                                # last step
                                 elif len(agent_action_buffer[a]) == 0:
-                                    if env.obs_builder.get_track(agent.position) == -2 and agent.speed_data["speed"] < 1 and np.isclose(agent.speed_data["speed"] + agent.speed_data["position_fraction"], 1, rtol=1e-03):
+                                    if env.obs_builder.get_track(
+                                            agent.position) == -2 and agent.speed_data["speed"] < 1 and np.isclose(
+                                            agent.speed_data["speed"] + agent.speed_data["position_fraction"], 1, rtol=1e-03):
                                         # same check as "if" condition
                                         env.obs_builder.agent_requires_obs.update(
                                             {a: True})
                                     else:
-                                        if env.obs_builder.get_track(agent.position) != -2:
-                                            if env.obs_builder.is_agent_entering_switch(a):
+                                        if env.obs_builder.get_track(
+                                                agent.position) != -2:
+                                            if env.obs_builder.is_agent_entering_switch(
+                                                    a):
                                                 agent_obs_buffer[a] = next_obs[a].copy(
                                                 )
                                             else:
@@ -288,23 +322,21 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                                                 agents_speed_timesteps[a] = 0
                                                 agent_obs_buffer[a] = next_obs[a].copy(
                                                 )
-                                            
 
                     else:  # agent did not move. Check if it stopped on purpose
                         if railenv_action_dict[a] == RailEnvActions.STOP_MOVING:
                             agents_speed_timesteps[a] -= 1
-                            
+
                         else:
-                            if agents_in_deadlock[a] or env.obs_builder.is_agent_in_deadlock(a):
+                            if agents_in_deadlock[a] or env.obs_builder.is_agent_in_deadlock(
+                                    a):
                                 agents_in_deadlock[a] = True
 
                     agent_old_speed_data.update({a: agent.speed_data.copy()})
 
-                
                 if args.render:
                     env_renderer.render_env(
                         show=True, show_observations=False, show_predictions=False)
-                
 
                 if agent_done_removed.count(True) == env.get_num_agents():
                     break
@@ -327,17 +359,19 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
             # In proportion to total
             T_num_done_agents.append(num_agents_done / env.get_num_agents())
             T_all_done.append(all_done)
-            T_agents_deadlock.append(num_agents_in_deadlock / env.get_num_agents())
+            T_agents_deadlock.append(
+                num_agents_in_deadlock /
+                env.get_num_agents())
             # Print training results info
             episode_stats = '\rEp: {}\t {} Agents on ({},{}).\t Ep score {:.3f}\t Done Agents in ep: {:.2f}%\t In deadlock {:.2f}%(at switch {})\t Not started {}\tEP ended at step: {}/{}\n'.format(
                 ep,
                 env.get_num_agents(), args.width, args.height,
                 score,
-                100 * (num_agents_done/env.get_num_agents()),
-                100 * (num_agents_in_deadlock/env.get_num_agents()),
+                100 * (num_agents_done / env.get_num_agents()),
+                100 * (num_agents_in_deadlock / env.get_num_agents()),
                 (num_agents_in_deadlock_at_switch),
                 num_agents_not_started,
-                step+1,
+                step + 1,
                 max_steps)
             print(episode_stats)
 
@@ -352,7 +386,12 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
         # Save model parameters if improved
         if avg_reward > metrics['best_avg_reward']:
             metrics['best_avg_reward'] = avg_reward
-            dqn_agent.save(args.model_path + "best_model_{}_agents_on_{}_{}".format(args.num_agents, args.width, args.height))
+            dqn_agent.save(
+                args.model_path +
+                "best_model_{}_agents_on_{}_{}".format(
+                    args.num_agents,
+                    args.width,
+                    args.height))
 
         # Append to results and save metrics
         metrics['rewards'].append(T_rewards)
@@ -364,7 +403,8 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                    'Reward', path=results_dir)  # Plot rewards in episodes
         """
     # Return average number of done agents (in proportion) and average reward
-    return avg_done_agents, avg_reward, avg_norm_reward, avg_deadlock_agents, np.array(all_actions, dtype=int)
+    return avg_done_agents, avg_reward, avg_norm_reward, avg_deadlock_agents, np.array(
+        all_actions, dtype=int)
 
 
 # Plots min, max and mean + standard deviation bars of a population over time
@@ -380,11 +420,22 @@ def _plot_line(xs, ys_population, title, path=''):
         color=max_colour, dash='dash'), name='Max')
     trace_upper = Scatter(x=xs, y=ys_upper.numpy(), line=Line(
         color=transparent), name='+1 Std. Dev.', showlegend=False)
-    trace_mean = Scatter(x=xs, y=ys_mean.numpy(), fill='tonexty',
-                         fillcolor=std_colour, line=Line(color=mean_colour), name='Mean')
-    trace_lower = Scatter(x=xs, y=ys_lower.numpy(), fill='tonexty', fillcolor=std_colour, line=Line(
-        color=transparent), name='-1 Std. Dev.', showlegend=False)
+    trace_mean = Scatter(
+        x=xs,
+        y=ys_mean.numpy(),
+        fill='tonexty',
+        fillcolor=std_colour,
+        line=Line(
+            color=mean_colour),
+        name='Mean')
+    trace_lower = Scatter(
+        x=xs,
+        y=ys_lower.numpy(),
+        fill='tonexty',
+        fillcolor=std_colour,
+        line=Line(
+            color=transparent),
+        name='-1 Std. Dev.',
+        showlegend=False)
     trace_min = Scatter(x=xs, y=ys_min.numpy(), line=Line(
         color=max_colour, dash='dash'), name='Min')
-
-  

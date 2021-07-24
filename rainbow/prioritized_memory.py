@@ -3,6 +3,7 @@ import numpy as np
 from SumTree import SumTree
 import pickle
 
+
 class Memory:  # stored as ( s, a, r, s_ ) in SumTree
     e = 0.01
     a = 0.6
@@ -39,20 +40,19 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
             idxs.append(idx)
 
         sampling_probabilities = priorities / self.tree.total()
-        is_weight = np.power(self.tree.n_entries * sampling_probabilities, -self.beta)
+        is_weight = np.power(
+            self.tree.n_entries * sampling_probabilities, -self.beta)
         is_weight /= is_weight.max()
 
-        
         return batch, idxs, is_weight
 
     def update(self, idx, error):
         p = self._get_priority(error)
         self.tree.update(idx, p)
 
-    
     def save_memory(self, memory_path):
         try:
-            with open(memory_path+"prioritized_buffer.pickle", 'wb') as pickle_file:
+            with open(memory_path + "prioritized_buffer.pickle", 'wb') as pickle_file:
                 pickle.dump(self.tree, pickle_file)
             print("Replay memory saved")
         except Exception as e:
@@ -61,7 +61,7 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
 
     def load_memory(self, memory_path):
         try:
-            with open(memory_path+"prioritized_buffer.pickle", 'rb') as pickle_file:
+            with open(memory_path + "prioritized_buffer.pickle", 'rb') as pickle_file:
                 self.tree = pickle.load(pickle_file)
             print("Replay memory loaded")
         except Exception as e:

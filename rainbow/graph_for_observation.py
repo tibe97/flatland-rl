@@ -35,6 +35,7 @@ import wandb
 
 IntersectionBranch = namedtuple("IntersectionBranch", "track_id, orientation")
 
+
 class EpisodeController():
     def __init__(self, env, agent, max_steps):
         super(EpisodeController, self).__init__()
@@ -44,9 +45,10 @@ class EpisodeController():
         self.done_window = deque(maxlen=100)
         self.score = 0
         self.max_steps = max_steps
-        self.path_values_buffer = [] # to compute mean path value for debugging
+        self.path_values_buffer = []  # to compute mean path value for debugging
         self.agent_obs = [None] * self.env.get_num_agents()
-        #self.agent_obs_buffer = [None] * self.env.get_num_agents()  # updated twice
+        # self.agent_obs_buffer = [None] * self.env.get_num_agents()  # updated
+        # twice
         self.agent_action_buffer = defaultdict(list)
         # some switches are long so we have to accumulate reward or penalty
         self.acc_rewards = defaultdict(lambda: 0)
@@ -54,7 +56,8 @@ class EpisodeController():
         self.agents_speed_timesteps = [0] * self.env.get_num_agents()
         self.agent_at_switch = [False] * self.env.get_num_agents()
         self.agent_path_obs_buffer = [None] * self.env.get_num_agents()
-        # Used to check if agent with fractionary speed could move at current cell
+        # Used to check if agent with fractionary speed could move at current
+        # cell
         self.agent_old_speed_data = {}
         self.agent_done_removed = [False] * self.env.get_num_agents()
         self.update_values = [False] * self.env.get_num_agents()
@@ -64,16 +67,18 @@ class EpisodeController():
         self.log_probs_buffer = [list()] * self.env.get_num_agents()
         self.probs_buffer = [list()] * self.env.get_num_agents()
         self.stop_go_buffer = [list()] * self.env.get_num_agents()
-        self.agent_ending_timestep = [self.max_steps] * self.env.get_num_agents()
-        self.num_agents_at_switch = 0 # number of agents at switches
+        self.agent_ending_timestep = [
+            self.max_steps] * self.env.get_num_agents()
+        self.num_agents_at_switch = 0  # number of agents at switches
         self.stats = defaultdict(list)
         self.epoch_mean_loss = None
 
     def reset(self):
         self.score = 0
-        self.path_values_buffer = [] # to compute mean path value for debugging
+        self.path_values_buffer = []  # to compute mean path value for debugging
         self.agent_obs = [None] * self.env.get_num_agents()
-        #self.agent_obs_buffer = [None] * self.env.get_num_agents()  # updated twice
+        # self.agent_obs_buffer = [None] * self.env.get_num_agents()  # updated
+        # twice
         self.agent_action_buffer = defaultdict(list)
         # some switches are long so we have to accumulate reward or penalty
         self.acc_rewards = defaultdict(lambda: 0)
@@ -81,7 +86,8 @@ class EpisodeController():
         self.agents_speed_timesteps = [0] * self.env.get_num_agents()
         self.agent_at_switch = [False] * self.env.get_num_agents()
         self.agent_path_obs_buffer = [None] * self.env.get_num_agents()
-        # Used to check if agent with fractionary speed could move at current cell
+        # Used to check if agent with fractionary speed could move at current
+        # cell
         self.agent_old_speed_data = {}
         self.agent_done_removed = [False] * self.env.get_num_agents()
         self.update_values = [False] * self.env.get_num_agents()
@@ -91,16 +97,17 @@ class EpisodeController():
         self.log_probs_buffer = [list()] * self.env.get_num_agents()
         self.probs_buffer = [list()] * self.env.get_num_agents()
         self.stop_go_buffer = [list()] * self.env.get_num_agents()
-        self.agent_ending_timestep = [self.max_steps] * self.env.get_num_agents()
-        self.num_agents_at_switch = 0 # number of agents at switches
+        self.agent_ending_timestep = [
+            self.max_steps] * self.env.get_num_agents()
+        self.num_agents_at_switch = 0  # number of agents at switches
         self.stats = defaultdict(list)
         self.epoch_mean_loss = None
-    
+
     def is_episode_done(self):
         return self.agent_done_removed.count(True) == self.env.get_num_agents()
 
     def compute_agent_action(self, handle, info, eps):
-        ''' 
+        '''
             If agent is arriving at switch we need to compute the next path to reach in advance.
             The agent computes a sequence of actions because the switch could be composed of more cells.
             Each action (e.g. MOVE_FORWARD) could take more than 1 timestep if speed is not 1.
@@ -120,98 +127,147 @@ class EpisodeController():
         elif agent.status == RailAgentStatus.READY_TO_DEPART:
             agent_position = agent.initial_position
 
-        if agent.status in [RailAgentStatus.DONE, RailAgentStatus.DONE_REMOVED]:
+        if agent.status in [
+                RailAgentStatus.DONE,
+                RailAgentStatus.DONE_REMOVED]:
             logging.debug("Agent {} is done".format(handle))
         else:
             logging.debug("Agent {} at position {}, fraction {}, status {}".format(
                 handle, agent.position, agent.speed_data["position_fraction"], agent.status))
 
-
         # If the agent arrives at a switch
-        if info['action_required'][handle] and self.agent_at_switch[handle] and agent.status in [RailAgentStatus.ACTIVE, RailAgentStatus.READY_TO_DEPART] and agent.malfunction_data["malfunction"] == 0:
-            # if we finish previous action (action may take more than 1 timestep)
+        if info['action_required'][handle] and self.agent_at_switch[handle] and agent.status in [
+                RailAgentStatus.ACTIVE,
+                RailAgentStatus.READY_TO_DEPART] and agent.malfunction_data["malfunction"] == 0:
+            # if we finish previous action (action may take more than 1
+            # timestep)
             if self.agents_speed_timesteps[handle] == 0:
                 # if we arrive before a switch we compute the next path to reach and the actions required
                 # (this is due to the switch being eventually composed of more cells)
                 # We are about to enter the switch, one cell away
                 if len(self.agent_action_buffer[handle]) == 0:
-                    assert self.agent_obs[handle]["partitioned"] # Check that obs dict is not empty
-                    obs_batch = self.env.obs_builder.preprocess_agent_obs(self.agent_obs[handle], handle)
+                    # Check that obs dict is not empty
+                    assert self.agent_obs[handle]["partitioned"]
+                    obs_batch = self.env.obs_builder.preprocess_agent_obs(
+                        self.agent_obs[handle], handle)
                     # Choose path to take at the current switch
                     path_values = self.rl_agent.act(obs_batch, eps=eps)
                     # save some stats
-                    self.log_probs_buffer[handle].append(path_values[handle][2])
+                    self.log_probs_buffer[handle].append(
+                        path_values[handle][2])
                     self.probs_buffer[handle].append(path_values[handle][4])
                     self.stop_go_buffer[handle].append(path_values[handle][1])
-                    railenv_action = self.env.obs_builder.choose_railenv_actions(handle, path_values[handle])
+                    railenv_action = self.env.obs_builder.choose_railenv_actions(
+                        handle, path_values[handle])
                     self.agent_action_buffer[handle] = railenv_action
-                    # as state to save we take the path (with its children) chosen by agent
+                    # as state to save we take the path (with its children)
+                    # chosen by agent
                     self.agent_path_obs_buffer[handle] = self.agent_obs[handle]["partitioned"][path_values[handle][0]]
-                    logging.debug("Agent {} choses path {} with value {} at position {}. Num actions to take: {}".format(
-                        handle, path_values[handle][0][0], path_values[handle][3], agent.position, len(self.agent_action_buffer[handle])))
-                    self.path_values_buffer.append(path_values[handle][3]) # for debug 
-                    
+                    logging.debug(
+                        "Agent {} choses path {} with value {} at position {}. Num actions to take: {}".format(
+                            handle, path_values[handle][0][0], path_values[handle][3], agent.position, len(
+                                self.agent_action_buffer[handle])))
+                    self.path_values_buffer.append(
+                        path_values[handle][3])  # for debug
+
                     logging.debug(
                         "Agent {} actions: {}".format(handle, railenv_action))
 
                 next_action = self.agent_action_buffer[handle].pop(0)
-                
-                logging.debug("Agent {} at: {}. Action is: {}. Speed: {}. Fraction {}. Remaining actions: {}. SpeedTimesteps: {}".format(
-                    handle, agent.position, next_action, agent.speed_data["speed"], agent.speed_data["position_fraction"], len(self.agent_action_buffer[handle]), self.agents_speed_timesteps[handle]))
-                
+
+                logging.debug(
+                    "Agent {} at: {}. Action is: {}. Speed: {}. Fraction {}. Remaining actions: {}. SpeedTimesteps: {}".format(
+                        handle, agent.position, next_action, agent.speed_data["speed"], agent.speed_data["position_fraction"], len(
+                            self.agent_action_buffer[handle]), self.agents_speed_timesteps[handle]))
+
                 # if agent has to stop, do it for 1 timestep
                 if (next_action == RailEnvActions.STOP_MOVING):
                     self.agents_speed_timesteps[handle] = 1
-                    self.env.obs_builder.agent_requires_obs.update({handle: True})
+                    self.env.obs_builder.agent_requires_obs.update(
+                        {handle: True})
                 else:
                     # speed is a fractionary value between 0 and 1
-                    self.agents_speed_timesteps[handle] = int(round(1 / info["speed"][handle]))
+                    self.agents_speed_timesteps[handle] = int(
+                        round(1 / info["speed"][handle]))
                     self.acc_rewards[handle] = 0
 
         # if agent is not at switch just go straight
-        elif agent.status != RailAgentStatus.DONE_REMOVED:  
+        elif agent.status != RailAgentStatus.DONE_REMOVED:
             next_action = 0
-            if agent.status == RailAgentStatus.READY_TO_DEPART or (not agent.moving and agent.malfunction_data["malfunction"] == 0):
-                valid_move_actions = get_valid_move_actions_(agent.direction, agent_position, self.env.rail)
+            if agent.status == RailAgentStatus.READY_TO_DEPART or (
+                    not agent.moving and agent.malfunction_data["malfunction"] == 0):
+                valid_move_actions = get_valid_move_actions_(
+                    agent.direction, agent_position, self.env.rail)
                 # agent could be at switch, so more actions possible
                 assert len(valid_move_actions) >= 1
                 next_action = valid_move_actions.popitem()[0].action
 
         return next_action
-    
-    def save_experience_and_train(self, a, action, reward, next_obs, done, step, args, ep):
+
+    def save_experience_and_train(
+            self,
+            a,
+            action,
+            reward,
+            next_obs,
+            done,
+            step,
+            args,
+            ep):
         '''
-            In the first part we perform an agent step (save experience and possibly learn) only if agent 
+            In the first part we perform an agent step (save experience and possibly learn) only if agent
             was able to move (no agent blocked his action).
         '''
         agent = self.env.agents[a]
         if not self.agent_done_removed[a]:
-            logging.debug("Agent {} at position {}, fraction {}, speed Timesteps {}, reward {}".format(a, agent.position, agent.speed_data["position_fraction"], self.agents_speed_timesteps[a], self.acc_rewards[a]))
+            logging.debug(
+                "Agent {} at position {}, fraction {}, speed Timesteps {}, reward {}".format(
+                    a,
+                    agent.position,
+                    agent.speed_data["position_fraction"],
+                    self.agents_speed_timesteps[a],
+                    self.acc_rewards[a]))
 
         self.score += reward / self.env.get_num_agents()  # Update score
 
         # if agent didn't move do nothing: agent couldn't perform action because another agent
         # occupied next cell or agent's action was STOP
-        if self.env.obs_builder.agent_could_move(a, action, self.agent_old_speed_data[a]):
+        if self.env.obs_builder.agent_could_move(
+                a, action, self.agent_old_speed_data[a]):
             # update replay memory
             self.acc_rewards[a] += reward
-            # If agent has to make a step, i.e. agent finished or agent is about to make a decision (UPDATE_VALUE = TRUE)
-            if ((self.update_values[a] and agent.speed_data["position_fraction"] == 0) or agent.status == RailAgentStatus.DONE_REMOVED) and not self.agent_done_removed[a]:
+            # If agent has to make a step, i.e. agent finished or agent is
+            # about to make a decision (UPDATE_VALUE = TRUE)
+            if ((self.update_values[a] and agent.speed_data["position_fraction"] == 0)
+                    or agent.status == RailAgentStatus.DONE_REMOVED) and not self.agent_done_removed[a]:
                 logging.debug("Update=True: agent {}".format(a))
                 # next_obs is the complete state, with all the possible path choices
-                # we check we can store (STATE, NEXT_STATE) in the experience replay
-                if len(next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
+                # we check we can store (STATE, NEXT_STATE) in the experience
+                # replay
+                if len(
+                        next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
                     # if agent reaches target
                     if agent.status == RailAgentStatus.DONE_REMOVED or agent.status == RailAgentStatus.DONE:
                         self.agent_done_removed[a] = True
                         self.acc_rewards[a] = args.done_reward
                         self.agent_ending_timestep[a] = step
-                        logging.debug("Agent {} DONE! It has been removed and experience saved with reward of {}!".format(a, self.acc_rewards[a]))
-                    else: 
-                        logging.debug("Agent reward is {}".format(self.acc_rewards[a]))
-                    # step saves experience tuple and can perform learning (every T time steps)
-                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], ep=ep)
-                    
+                        logging.debug(
+                            "Agent {} DONE! It has been removed and experience saved with reward of {}!".format(
+                                a, self.acc_rewards[a]))
+                    else:
+                        logging.debug(
+                            "Agent reward is {}".format(
+                                self.acc_rewards[a]))
+                    # step saves experience tuple and can perform learning
+                    # (every T time steps)
+                    step_loss = self.rl_agent.step(
+                        self.agent_path_obs_buffer[a],
+                        self.acc_rewards[a],
+                        next_obs,
+                        self.agent_done_removed[a],
+                        self.agents_in_deadlock[a],
+                        ep=ep)
+
                     # save stats
                     if step_loss is not None:
                         self.epoch_loss.append(step_loss)
@@ -222,18 +278,18 @@ class EpisodeController():
 
                     #self.acc_rewards[a] = 0
                     self.update_values[a] = False
-                    
-                    
+
             if len(next_obs) > 0:
                 # prepare agent obs for next timestep
                 self.agent_obs[a] = next_obs.copy()
 
             if self.agent_at_switch[a]:
-                # we descrease timestep if agent is performing actions at switch
+                # we descrease timestep if agent is performing actions at
+                # switch
                 self.agents_speed_timesteps[a] -= 1
-                
+
             """
-                We want to optimize computation of observations only when it's needed, i.e. before 
+                We want to optimize computation of observations only when it's needed, i.e. before
                 making a decision, to accelerate simulation.
                 We update the dictionary AGENT_REQUIRED_OBS to tell the ObservationBuilder for which agent to compute obs.
                 We compute observations only in these cases:
@@ -250,71 +306,114 @@ class EpisodeController():
                 if not self.agent_at_switch[a]:
                     agent_pos = agent.position
                     assert self.env.obs_builder.get_track(agent_pos) != -2
-                    if self.env.obs_builder.is_agent_entering_switch(a) and agent.speed_data["position_fraction"] == 0:
-                        logging.debug("Agent {} arrived at 1 cell before switch".format(a))
+                    if self.env.obs_builder.is_agent_entering_switch(
+                            a) and agent.speed_data["position_fraction"] == 0:
+                        logging.debug(
+                            "Agent {} arrived at 1 cell before switch".format(a))
                         self.agent_at_switch[a] = True
                         self.agents_speed_timesteps[a] = 0
                         # env.obs_builder.agent_requires_obs.update({a: False})
                     elif self.env.obs_builder.is_agent_2_steps_from_switch(a):
-                        self.env.obs_builder.agent_requires_obs.update({a: True})
+                        self.env.obs_builder.agent_requires_obs.update({
+                                                                       a: True})
                         self.update_values[a] = True
                     if self.env.obs_builder.is_agent_about_to_finish(a):
-                        self.env.obs_builder.agent_requires_obs.update({a: True})
+                        self.env.obs_builder.agent_requires_obs.update({
+                                                                       a: True})
                 else:  # Agent at SWITCH. In the step before reaching target path we want to make sure to compute the obs
                     # in order to update the replay memory. We need to be careful if the agent can't reach new path because of another agent blocking the cell.
                     # when agent speed is 1 we reach the target node in 1 step
-                    if len(self.agent_action_buffer[a]) == 1 and agent.speed_data["speed"] == 1:
-                        # compute obs in case we meet another switch immediately after completing this switch
-                        self.env.obs_builder.agent_requires_obs.update({a: True})
+                    if len(
+                            self.agent_action_buffer[a]) == 1 and agent.speed_data["speed"] == 1:
+                        # compute obs in case we meet another switch
+                        # immediately after completing this switch
+                        self.env.obs_builder.agent_requires_obs.update({
+                                                                       a: True})
 
-                    # if speed is less than 1, we need more steps to reach target node. So only compute obs if doing last step
+                    # if speed is less than 1, we need more steps to reach
+                    # target node. So only compute obs if doing last step
                     elif len(self.agent_action_buffer[a]) == 0:
-                        if self.env.obs_builder.get_track(agent.position) == -2 and agent.speed_data["speed"] < 1 and np.isclose(agent.speed_data["speed"] + agent.speed_data["position_fraction"], 1, rtol=1e-03):
+                        if self.env.obs_builder.get_track(
+                                agent.position) == -2 and agent.speed_data["speed"] < 1 and np.isclose(
+                                agent.speed_data["speed"] + agent.speed_data["position_fraction"], 1, rtol=1e-03):
                             # same check as "if" condition
                             assert self.agents_speed_timesteps[a] > 0
-                            # compute obs in case we meet another switch immediately after completing this switch
-                            self.env.obs_builder.agent_requires_obs.update({a: True})
-                        else: # agent just exited the switch, obs already computed
-                            if self.env.obs_builder.get_track(agent.position) != -2:
-                                if self.env.obs_builder.is_agent_entering_switch(a):
+                            # compute obs in case we meet another switch
+                            # immediately after completing this switch
+                            self.env.obs_builder.agent_requires_obs.update({
+                                                                           a: True})
+                        else:  # agent just exited the switch, obs already computed
+                            if self.env.obs_builder.get_track(
+                                    agent.position) != -2:
+                                if self.env.obs_builder.is_agent_entering_switch(
+                                        a):
                                     assert len(next_obs) > 0
-                                    logging.debug("Agent {} just exited switch and ALREADY entering another one".format(a))
+                                    logging.debug(
+                                        "Agent {} just exited switch and ALREADY entering another one".format(a))
                                     #self.agent_obs_buffer[a] = next_obs.copy()
-                                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], ep=ep)
+                                    step_loss = self.rl_agent.step(
+                                        self.agent_path_obs_buffer[a],
+                                        self.acc_rewards[a],
+                                        next_obs,
+                                        self.agent_done_removed[a],
+                                        self.agents_in_deadlock[a],
+                                        ep=ep)
                                     if step_loss is not None:
                                         self.epoch_loss.append(step_loss)
                                 else:
-                                    logging.debug("Agent {} is not at switch anymore".format(a))
+                                    logging.debug(
+                                        "Agent {} is not at switch anymore".format(a))
                                     self.agent_at_switch[a] = False
                                     self.agents_speed_timesteps[a] = 0
                                     #self.agent_obs_buffer[a] = next_obs.copy()
-                                if self.env.obs_builder.is_agent_about_to_finish(a):
-                                    self.env.obs_builder.agent_requires_obs.update({a: True})
+                                if self.env.obs_builder.is_agent_about_to_finish(
+                                        a):
+                                    self.env.obs_builder.agent_requires_obs.update({
+                                                                                   a: True})
 
         else:  # agent did not move. Check if it stopped on purpose or it's in deadlock
             if action == RailEnvActions.STOP_MOVING:
                 self.agents_speed_timesteps[a] -= 1
                 self.env.obs_builder.agent_requires_obs.update({a: True})
-                if len(next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
-                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], ep=ep)
+                if len(
+                        next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
+                    step_loss = self.rl_agent.step(
+                        self.agent_path_obs_buffer[a],
+                        self.acc_rewards[a],
+                        next_obs,
+                        self.agent_done_removed[a],
+                        self.agents_in_deadlock[a],
+                        ep=ep)
                     self.agent_obs[a] = next_obs.copy()
             else:
                 logging.debug("Agent {} cannot move at position {}, fraction {}".format(
                     a, agent.position, agent.speed_data["position_fraction"]))
                 # check if agent is in deadlock
-                if self.env.obs_builder.is_agent_in_deadlock(a) and not self.agents_in_deadlock[a]: # agent just got in deadlock
+                if self.env.obs_builder.is_agent_in_deadlock(
+                        a) and not self.agents_in_deadlock[a]:  # agent just got in deadlock
                     self.env.obs_builder.agent_requires_obs.update({a: True})
-                    logging.debug("Agent {} in DEADLOCK saved as experience with reward of {}".format(
-                        a, self.acc_rewards[a]))
-                    if len(next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
+                    logging.debug(
+                        "Agent {} in DEADLOCK saved as experience with reward of {}".format(
+                            a, self.acc_rewards[a]))
+                    if len(
+                            next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
                         #self.agent_obs_buffer[a] = next_obs
                         self.acc_rewards[a] = args.deadlock_reward
                         self.agents_in_deadlock[a] = True
-                        step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, done, self.agents_in_deadlock[a], ep=ep)
+                        step_loss = self.rl_agent.step(
+                            self.agent_path_obs_buffer[a],
+                            self.acc_rewards[a],
+                            next_obs,
+                            done,
+                            self.agents_in_deadlock[a],
+                            ep=ep)
                         if step_loss is not None:
                             self.epoch_loss.append(step_loss)
-                        self.env.obs_builder.agent_requires_obs.update({a: False})
-                    logging.debug("Agent {} is in DEADLOCK, accum. reward: {}, required_obs: {}".format(a, self.acc_rewards[a], self.env.obs_builder.agent_requires_obs[a]))
+                        self.env.obs_builder.agent_requires_obs.update({
+                                                                       a: False})
+                    logging.debug(
+                        "Agent {} is in DEADLOCK, accum. reward: {}, required_obs: {}".format(
+                            a, self.acc_rewards[a], self.env.obs_builder.agent_requires_obs[a]))
         self.agent_old_speed_data.update({a: agent.speed_data.copy()})
 
     def print_episode_stats(self, ep, args, eps, step):
@@ -325,56 +424,62 @@ class EpisodeController():
         num_agents_in_deadlock_at_switch = 0
         env_done = 0
         for a in range(self.env.get_num_agents()):
-            if self.env.agents[a].status in [RailAgentStatus.DONE_REMOVED, RailAgentStatus.DONE]:
+            if self.env.agents[a].status in [
+                    RailAgentStatus.DONE_REMOVED,
+                    RailAgentStatus.DONE]:
                 num_agents_done += 1
             elif self.env.agents[a].status == RailAgentStatus.READY_TO_DEPART:
                 num_agents_not_started += 1
             elif self.env.obs_builder.is_agent_in_deadlock(a):
                 num_agents_in_deadlock += 1
-                if self.env.obs_builder.get_track(self.env.agents[a].position) == -2:
+                if self.env.obs_builder.get_track(
+                        self.env.agents[a].position) == -2:
                     num_agents_in_deadlock_at_switch += 1
         if num_agents_done == self.env.get_num_agents():
             env_done = 1
-        
 
-        self.scores_window.append(self.score / self.max_steps)  # Save most recent score
+        self.scores_window.append(self.score /
+                                  self.max_steps)  # Save most recent score
         self.done_window.append(env_done)
         if len(self.epoch_loss) > 0:
-            self.epoch_mean_loss = (sum(self.epoch_loss)/(len(self.epoch_loss)))
-
-        
-
+            self.epoch_mean_loss = (
+                sum(self.epoch_loss) / (len(self.epoch_loss)))
 
         # Print training results info
         episode_stats = '\rEp: {}\t {} Agents on ({},{}).\t Ep score {:.3f}\tAvg Score: {:.3f}\t Env Dones so far: {:.2f}%\t Done Agents in ep: {:.2f}%\t In deadlock {:.2f}%(at switch {})\n\t\t Not started {}\t Eps: {:.2f}\tEP ended at step: {}/{}\tMean state_value: {}\t Epoch avg_loss: {}\n'.format(
             ep,
-            self.env.get_num_agents(), 
-            args.width, 
+            self.env.get_num_agents(),
+            args.width,
             args.height,
             self.score,
             np.mean(self.scores_window),
             100 * np.mean(self.done_window),
-            100 * (num_agents_done/self.env.get_num_agents()),
-            100 * (num_agents_in_deadlock/self.env.get_num_agents()),
+            100 * (num_agents_done / self.env.get_num_agents()),
+            100 * (num_agents_in_deadlock / self.env.get_num_agents()),
             (num_agents_in_deadlock_at_switch),
             num_agents_not_started,
             eps,
-            step+1,
+            step + 1,
             self.max_steps,
-            (sum(self.path_values_buffer).detach().numpy()/len(self.path_values_buffer)),
+            (sum(self.path_values_buffer).detach().numpy() / len(self.path_values_buffer)),
             self.epoch_mean_loss)
         print(episode_stats, end=" ")
 
     def retrieve_wandb_log(self):
-        wandb_log_dict = {"Learning rate value": self.rl_agent.optimizer_value.param_groups[0]['lr'], 
-                    "Learning rate action": self.rl_agent.optimizer_action.param_groups[0]['lr']}
+        wandb_log_dict = {
+            "Learning rate value": self.rl_agent.optimizer_value.param_groups[0]['lr'],
+            "Learning rate action": self.rl_agent.optimizer_action.param_groups[0]['lr']}
         if self.epoch_mean_loss is not None:
             wandb_log_dict.update({"mean_loss": self.epoch_mean_loss})
 
-        wandb_log_dict.update({"action_probs": wandb.Histogram(np.array([prob.detach().numpy() for agent_probs in self.probs_buffer for prob in agent_probs]))})
-        wandb_log_dict.update({"stop_go_action": wandb.Histogram(np.array([action for agent_actions in self.stop_go_buffer for action in agent_actions]))})
-        wandb_log_dict.update({"node_values": wandb.Histogram(np.array(self.path_values_buffer))})
-        wandb_log_dict.update({"episode_rewards": wandb.Histogram(self.rewards_buffer)})
+        wandb_log_dict.update({"action_probs": wandb.Histogram(np.array([prob.detach(
+        ).numpy() for agent_probs in self.probs_buffer for prob in agent_probs]))})
+        wandb_log_dict.update({"stop_go_action": wandb.Histogram(np.array(
+            [action for agent_actions in self.stop_go_buffer for action in agent_actions]))})
+        wandb_log_dict.update(
+            {"node_values": wandb.Histogram(np.array(self.path_values_buffer))})
+        wandb_log_dict.update(
+            {"episode_rewards": wandb.Histogram(self.rewards_buffer)})
         return wandb_log_dict
 
 
@@ -390,16 +495,17 @@ class GraphObservation(ObservationBuilder):
         super(GraphObservation, self).__init__()
         # self.bfs_depth = bfs_depth
         self.depth = depth
-        self.track_map = [] # matrix used to build the graph of nodes
+        self.track_map = []  # matrix used to build the graph of nodes
         self.switches = []
         self.switch_paths_dict = {}
         self.path_switches_dict = {}
         self.agents_messages = {}
         # dict of bools to indicate whether an agent needs observation
-        self.agent_requires_obs = {} # to optimize computing obs to speed up learning
+        self.agent_requires_obs = {}  # to optimize computing obs to speed up learning
         self.intersections_dict = defaultdict(list)
         self.track_to_intersection_dict = defaultdict(list)
-        self.agents_path_at_switch = dict() # store the agents path at switch to compute target track section
+        # store the agents path at switch to compute target track section
+        self.agents_path_at_switch = dict()
 
     def _initGraphObservation(self):
         self.track_map = []
@@ -418,17 +524,18 @@ class GraphObservation(ObservationBuilder):
         self.path_switches_dict = path_switches_dict
         self.agents_path_at_switch = dict()
 
-
     def get(self, handle: int) -> {}:
         obs = {}
-        if len(self.agent_requires_obs) == 0 or self.agent_requires_obs[handle]:
+        if len(
+                self.agent_requires_obs) == 0 or self.agent_requires_obs[handle]:
             agent_pos = self.env.agents[handle].position
-            if agent_pos is None: 
+            if agent_pos is None:
                 if self.env.agents[handle].status == RailAgentStatus.READY_TO_DEPART:
                     agent_pos = self.env.agents[handle].initial_position
-                else: # agent done
-                    agent_pos = self.env.agents[handle].target 
-            if self.track_map[agent_pos[0], agent_pos[1]] != -2: # not at switch
+                else:  # agent done
+                    agent_pos = self.env.agents[handle].target
+            if self.track_map[agent_pos[0],
+                              agent_pos[1]] != -2:  # not at switch
                 unified, partitioned = self._get_graph_observation(
                     depth=self.depth, handle=handle)
                 obs = {
@@ -467,12 +574,12 @@ class GraphObservation(ObservationBuilder):
         switch_paths_dict = defaultdict(
             set)  # for each switch, store the adjacent paths
         path_switches_dict = defaultdict(set)
-    
 
         for switch in self.switches:
             orientations = self._get_cell_orientations(switch)
             for orientation in orientations:
-                # we need to skip -2 values because these are still part of switches
+                # we need to skip -2 values because these are still part of
+                # switches
                 reachable_paths, _ = self._get_reachable_paths(
                     switch, orientation)
                 for path in reachable_paths:
@@ -493,7 +600,8 @@ class GraphObservation(ObservationBuilder):
         track_map = np.zeros((self.env.height, self.env.width))
         switches = []
         current_track_ID = 1  # progressive ID to assign to a track section
-        # we start from a cell belonging to the railway, so just take position of agent 0
+        # we start from a cell belonging to the railway, so just take position
+        # of agent 0
         handle = 0
         agent = self.env.agents[handle]
 
@@ -515,10 +623,8 @@ class GraphObservation(ObservationBuilder):
         branch_directions = self._get_cell_orientations(current_cell_position)
 
         for current_direction in branch_directions:
-            tmp_track_map, switch_position, last_is_dead_end, intersections = self._explore_path(current_cell_position,
-                                                                                                 current_direction,
-                                                                                                 current_track_ID,
-                                                                                                 track_map)
+            tmp_track_map, switch_position, last_is_dead_end, intersections = self._explore_path(
+                current_cell_position, current_direction, current_track_ID, track_map)
             bfs_queue += intersections
             track_map = tmp_track_map
             if not last_is_dead_end:
@@ -544,19 +650,26 @@ class GraphObservation(ObservationBuilder):
                     if switch_type == "intersection":
                         if not intersection_branch_explored:
                             current_track_ID += 1  # update track ID
-                            # we find the already assigned orientations to compute the missing ones (4 in total, 2 for each path)
-                            if len(self.intersections_dict[switch_position]) != 1:
-                                print("Intersection_dict entry has {} elements, not 1!".format(len(self.intersections_dict[switch_position])))
+                            # we find the already assigned orientations to
+                            # compute the missing ones (4 in total, 2 for each
+                            # path)
+                            if len(
+                                    self.intersections_dict[switch_position]) != 1:
+                                print("Intersection_dict entry has {} elements, not 1!".format(
+                                    len(self.intersections_dict[switch_position])))
                                 raise Exception("INTERSECTION_DICT error")
-                            already_found_orientations = self.intersections_dict[switch_position][0].orientation
-                            missing_orientations = set([0, 1, 2, 3]) - set(already_found_orientations)
+                            already_found_orientations = self.intersections_dict[
+                                switch_position][0].orientation
+                            missing_orientations = set(
+                                [0, 1, 2, 3]) - set(already_found_orientations)
                             assert len(missing_orientations) == 2
-                            self.intersections_dict[switch_position].append(IntersectionBranch(current_track_ID, list(missing_orientations)))
+                            self.intersections_dict[switch_position].append(
+                                IntersectionBranch(current_track_ID, list(missing_orientations)))
                             intersection_branch_explored = True
                     else:
                         current_track_ID += 1  # update track ID
-                    tmp_track_map, adj_switch, last_is_dead_end, intersections = self._explore_path(new_path_cell,
-                                                                                                    branch_direction, current_track_ID, track_map)
+                    tmp_track_map, adj_switch, last_is_dead_end, intersections = self._explore_path(
+                        new_path_cell, branch_direction, current_track_ID, track_map)
                     track_map = tmp_track_map
                     bfs_queue += intersections  # add intersections
                     if not last_is_dead_end and not (adj_switch in switches):
@@ -564,57 +677,67 @@ class GraphObservation(ObservationBuilder):
                         bfs_queue.append((adj_switch, "switch"))
                         switches.append(adj_switch)
                 elif track_map[new_path_cell[0]][new_path_cell[1]] == -1:
-                    try: 
-                        self.resolve_intersection_cell(new_path_cell, branch_direction)
-                    except: # if the current direction is not explored yet
+                    try:
+                        self.resolve_intersection_cell(
+                            new_path_cell, branch_direction)
+                    except BaseException:  # if the current direction is not explored yet
                         if switch_type == "intersection":
                             if not intersection_branch_explored:
                                 current_track_ID += 1  # update track ID
-                                # we find the already assigned orientations to compute the missing ones (4 in total, 2 for each path)
-                                if len(self.intersections_dict[switch_position]) != 1:
-                                    print("Intersection_dict entry has {} elements, not 1!".format(len(self.intersections_dict[switch_position])))
+                                # we find the already assigned orientations to
+                                # compute the missing ones (4 in total, 2 for
+                                # each path)
+                                if len(
+                                        self.intersections_dict[switch_position]) != 1:
+                                    print("Intersection_dict entry has {} elements, not 1!".format(
+                                        len(self.intersections_dict[switch_position])))
                                     raise Exception("INTERSECTION_DICT error")
-                                already_found_orientations = self.intersections_dict[switch_position][0].orientation
-                                missing_orientations = set([0, 1, 2, 3]) - set(already_found_orientations)
+                                already_found_orientations = self.intersections_dict[
+                                    switch_position][0].orientation
+                                missing_orientations = set(
+                                    [0, 1, 2, 3]) - set(already_found_orientations)
                                 assert len(missing_orientations) == 2
-                                self.intersections_dict[switch_position].append(IntersectionBranch(current_track_ID, list(missing_orientations)))
+                                self.intersections_dict[switch_position].append(
+                                    IntersectionBranch(current_track_ID, list(missing_orientations)))
                                 intersection_branch_explored = True
                         else:
                             current_track_ID += 1  # update track ID
-                        tmp_track_map, adj_switch, last_is_dead_end, intersections = self._explore_path(new_path_cell,
-                                                                                                        branch_direction, current_track_ID, track_map)
+                        tmp_track_map, adj_switch, last_is_dead_end, intersections = self._explore_path(
+                            new_path_cell, branch_direction, current_track_ID, track_map)
                         track_map = tmp_track_map
                         bfs_queue += intersections  # add intersections
-                        if not last_is_dead_end and not (adj_switch in switches):
+                        if not last_is_dead_end and not (
+                                adj_switch in switches):
                             # add new found switch at the end of the path
                             bfs_queue.append((adj_switch, "switch"))
                             switches.append(adj_switch)
-
 
         self.track_map = track_map.astype(int)
 
         for key in self.intersections_dict.keys():
             if len(self.intersections_dict[key]) == 1:
-                new_intersection_branch = self._complete_intersections_dict(key)
+                new_intersection_branch = self._complete_intersections_dict(
+                    key)
                 if new_intersection_branch is not None:
-                    self.intersections_dict[key].append(new_intersection_branch)
+                    self.intersections_dict[key].append(
+                        new_intersection_branch)
                 else:
                     # both directions lead to a switch, so we have a single cell between two switches
                     # We assign a new track ID to this cell/path
                     current_track_ID += 1
-                    missing_orientations = list(set([0, 1, 2, 3]) - set(self.intersections_dict[key][0].orientation))
-                    self.intersections_dict[key].append(IntersectionBranch(current_track_ID, missing_orientations))
+                    missing_orientations = list(
+                        set([0, 1, 2, 3]) - set(self.intersections_dict[key][0].orientation))
+                    self.intersections_dict[key].append(
+                        IntersectionBranch(current_track_ID, missing_orientations))
             assert len(self.intersections_dict[key]) != 0
-            
-            # Create a dict that maps each track section to the switches on their way
+
+            # Create a dict that maps each track section to the switches on
+            # their way
             for branch in self.intersections_dict[key]:
                 self.track_to_intersection_dict[branch.track_id].append(key)
-    
-        
-                
 
         return track_map.astype(int), switches
-    
+
     def _complete_intersections_dict(self, key, prev_orient=None):
         '''
         Returns the missing IntersectionBranch of intersection
@@ -624,22 +747,31 @@ class GraphObservation(ObservationBuilder):
         if prev_orient is not None:
             missing_orientations = [prev_orient]
         else:
-            missing_orientations = list(set([0, 1, 2, 3]) - set(self.intersections_dict[key][0].orientation))
+            missing_orientations = list(
+                set([0, 1, 2, 3]) - set(self.intersections_dict[key][0].orientation))
         for orientation in missing_orientations:
-            valid_move_action = list(get_valid_move_actions_(orientation, key, self.env.rail).items())[0][0]
+            valid_move_action = list(get_valid_move_actions_(
+                orientation, key, self.env.rail).items())[0][0]
             if self.get_track(valid_move_action[1]) not in [-2, -1]:
-                return IntersectionBranch(self.get_track(valid_move_action[1]), missing_orientations)
+                return IntersectionBranch(
+                    self.get_track(
+                        valid_move_action[1]),
+                    missing_orientations)
             elif self.get_track(valid_move_action[1]) == -1:
                 try:
-                    track_id = self.resolve_intersection_cell(valid_move_action[1], orientation)
-                except:
-                    logging.debug("Can't resolve for intersection {} with orientation: {}, missing_orientations: {}".format(key, orientation, missing_orientations))
-                    res = self._complete_intersections_dict(valid_move_action[1], prev_orient=orientation)
-                    if not res is None:
+                    track_id = self.resolve_intersection_cell(
+                        valid_move_action[1], orientation)
+                except BaseException:
+                    logging.debug(
+                        "Can't resolve for intersection {} with orientation: {}, missing_orientations: {}".format(
+                            key, orientation, missing_orientations))
+                    res = self._complete_intersections_dict(
+                        valid_move_action[1], prev_orient=orientation)
+                    if res is not None:
                         return res
             elif self.get_track(valid_move_action[1]) == 0:
-                raise Exception("Branch from intersection hasn't been explored")
-        
+                raise Exception(
+                    "Branch from intersection hasn't been explored")
 
     def _explore_path(self, position, direction, track_ID, track_map):
         """
@@ -653,7 +785,8 @@ class GraphObservation(ObservationBuilder):
         """
 
         # Continue along direction until next switch or
-        # until no transitions are possible along the current direction (i.e., dead-ends)
+        # until no transitions are possible along the current direction (i.e.,
+        # dead-ends)
         last_is_switch = False
         last_is_dead_end = False
         last_is_terminal = False  # wrong cell or cycle
@@ -679,7 +812,8 @@ class GraphObservation(ObservationBuilder):
             total_transitions = cell_transitions_bitmap.count("1")
 
             if total_transitions <= 2:
-                # Check if dead-end (1111111111111111), or if we can go forward along direction
+                # Check if dead-end (1111111111111111), or if we can go forward
+                # along direction
                 if total_transitions == 1:
                     track_map[position[0]][position[1]] = track_ID
                     last_is_dead_end = True
@@ -696,10 +830,18 @@ class GraphObservation(ObservationBuilder):
             elif total_transitions > 2:
                 # Diamond crossing represented with -1
                 # diamond crossing cell is in common to 2 track sections
-                if int(cell_transitions_bitmap, 2) == int('1000010000100001', 2):
+                if int(
+                        cell_transitions_bitmap,
+                        2) == int(
+                        '1000010000100001',
+                        2):
                     track_map[position[0]][position[1]] = -1
                     intersections.append((position, "intersection"))
-                    self.intersections_dict[position].append(IntersectionBranch(track_ID, [direction, (direction+2)%4]))
+                    self.intersections_dict[position].append(
+                        IntersectionBranch(
+                            track_ID, [
+                                direction, (direction + 2) %
+                                4]))
                     direction = np.argmax(cell_transitions)
                     position = get_new_position(position, direction)
                 else:  # switch found
@@ -708,9 +850,13 @@ class GraphObservation(ObservationBuilder):
                     break
 
             elif total_transitions == 0:
-                # Wrong cell type, but let's cover it and treat it as a dead-end, just in case
-                print("WRONG CELL TYPE detected in tree-search (0 transitions possible) at cell", position[0],
-                      position[1], direction)
+                # Wrong cell type, but let's cover it and treat it as a
+                # dead-end, just in case
+                print(
+                    "WRONG CELL TYPE detected in tree-search (0 transitions possible) at cell",
+                    position[0],
+                    position[1],
+                    direction)
                 last_is_terminal = True
                 break
         # Out of while loop - a branching point was found
@@ -763,15 +909,14 @@ class GraphObservation(ObservationBuilder):
         """
         return self.track_map[position[0]][position[1]]
 
-    
-
     def _find_next_switch_from_position(self, position, orientation):
         '''
         Given a position and a orientation of the agent, find the next reachable switch and return the position,
         orientation of the agent at that switch and whether it's deadend
         '''
         # Continue along direction until next switch or
-        # until no transitions are possible along the current direction (i.e., dead-ends)
+        # until no transitions are possible along the current direction (i.e.,
+        # dead-ends)
         last_is_switch = False
         last_is_dead_end = False
         last_is_terminal = False  # wrong cell or cycle
@@ -800,7 +945,8 @@ class GraphObservation(ObservationBuilder):
             total_transitions = cell_transitions_bitmap.count("1")
 
             if total_transitions <= 2:
-                # Check if dead-end (1111111111111111), or if we can go forward along direction
+                # Check if dead-end (1111111111111111), or if we can go forward
+                # along direction
                 if total_transitions == 1:
                     last_is_dead_end = True
                     break
@@ -812,7 +958,11 @@ class GraphObservation(ObservationBuilder):
                     position = get_new_position(position, orientation)
 
             elif total_transitions > 2:
-                if int(cell_transitions_bitmap, 2) == int('1000010000100001', 2):
+                if int(
+                        cell_transitions_bitmap,
+                        2) == int(
+                        '1000010000100001',
+                        2):
                     direction = np.argmax(cell_transitions)
                     position = get_new_position(position, direction)
                 else:
@@ -822,8 +972,11 @@ class GraphObservation(ObservationBuilder):
 
         return position, orientation, last_is_dead_end
 
-
-    def _get_reachable_paths(self, switch_position: Tuple[int, int], current_orientation: int, explored_cells=None):
+    def _get_reachable_paths(self,
+                             switch_position: Tuple[int,
+                                                    int],
+                             current_orientation: int,
+                             explored_cells=None):
         '''
         Given a switch and the orientation, return the next reachable tracks with their ID
         Paths are represented by their track ID and progressive index, because the same track section could be reached
@@ -832,9 +985,11 @@ class GraphObservation(ObservationBuilder):
         if explored_cells is None:
             explored_cells = []
         reachable_paths = []
-        path_dict = defaultdict(list) # dict with switch cells that lead to the track
+        # dict with switch cells that lead to the track
+        path_dict = defaultdict(list)
         orientation = current_orientation
-        valid_move_actions = get_valid_move_actions_(orientation, switch_position, self.env.rail)
+        valid_move_actions = get_valid_move_actions_(
+            orientation, switch_position, self.env.rail)
         for a in valid_move_actions:
             new_direction = a[2]
             new_track_id = self.get_track(a[1])
@@ -847,21 +1002,22 @@ class GraphObservation(ObservationBuilder):
                     reachable_paths += reachable_paths_tmp
                     for key in paths_dict_tmp.keys():
                         for branch_waypoints in paths_dict_tmp[key]:
-                            path_dict[key].append([Waypoint(switch_position, current_orientation)]+branch_waypoints)
-            elif new_track_id==0:
+                            path_dict[key].append(
+                                [Waypoint(switch_position, current_orientation)] + branch_waypoints)
+            elif new_track_id == 0:
                 raise Exception("Error: empty cell can't be reached")
             else:
-                if new_track_id == -1: # Intersection, have to handle which path to consider
-                    new_track_id = self.resolve_intersection_cell(a[1], new_direction)
+                if new_track_id == -1:  # Intersection, have to handle which path to consider
+                    new_track_id = self.resolve_intersection_cell(
+                        a[1], new_direction)
                 reachable_paths.append(
                     (new_track_id, new_direction, a[1]))
-                
-                path_dict[new_track_id].append([Waypoint(switch_position, current_orientation), Waypoint(a[1], new_direction)])
+
+                path_dict[new_track_id].append(
+                    [Waypoint(switch_position, current_orientation), Waypoint(a[1], new_direction)])
         return reachable_paths, path_dict
 
-    #def _get_path_dict_progessive_index(self, path, )
-    
-
+    # def _get_path_dict_progessive_index(self, path, )
 
     def resolve_intersection_cell(self, position, orientation):
         intesection_branches = self.intersections_dict[position]
@@ -870,7 +1026,13 @@ class GraphObservation(ObservationBuilder):
                 return branch.track_id
         raise Exception("Cannot resolve for intersection cell!")
 
-    def _get_graph_observation(self, depth: int, handle: int, consider_joining_paths=False, include_root: bool = True, symmetric_edges: bool = False):
+    def _get_graph_observation(
+            self,
+            depth: int,
+            handle: int,
+            consider_joining_paths=False,
+            include_root: bool = True,
+            symmetric_edges: bool = False):
         '''
         We build the representation feature for each node/track in the computation graph.
         We represent track sections (rail sections delimited by switches) as nodes of the graph.
@@ -883,7 +1045,7 @@ class GraphObservation(ObservationBuilder):
 
         When using pytorch_geometric there is no chance to selectively compute node features
         only for single nodes (our agents), so in order to avoid expensive and useless
-        computations we do graph convolutions on a subgraph. We need to compute the subgraph, given a certain depth, for 
+        computations we do graph convolutions on a subgraph. We need to compute the subgraph, given a certain depth, for
         each agent when required
 
         Parameters
@@ -908,7 +1070,8 @@ class GraphObservation(ObservationBuilder):
         # Add lists of 2 elements (node index) to represent edges
         graph_edges = []
         # Afterwards, call "graph_edges.t().contiguous()" for standard format
-        # edges for single states (each path from root node is a possible state)
+        # edges for single states (each path from root node is a possible
+        # state)
         fist_layer_paths_dict = dict()
         partitioned_graph_edges = defaultdict(list)
         partitioned_computation_graph = defaultdict(lambda: defaultdict(set))
@@ -925,22 +1088,25 @@ class GraphObservation(ObservationBuilder):
         current_direction = agent.direction
         current_track = self.get_track(agent_position)
         if current_track == -1:  # agent is at an intersection
-            current_track = self.resolve_intersection_cell(agent_position, current_direction)
-        elif current_track == -2 and self.is_agent_in_deadlock(handle):  # agent is at switch
+            current_track = self.resolve_intersection_cell(
+                agent_position, current_direction)
+        # agent is at switch
+        elif current_track == -2 and self.is_agent_in_deadlock(handle):
             # TODO: find a way to implement this observation
             # print("Agent {} start position at switch. Need to handle this case".format(handle))
             return {}, {}
-            
+
         # store the nodes at each level of computation graph
         computation_graph = defaultdict(set)
         tracks_queue = []  # list of tuples (TRACK_ID, SWITCH_ORIGIN)
         next_switch, switch_orientation, last_is_deadend = self._find_next_switch_from_position(
             agent_position, current_direction)
         while last_is_deadend:
-            rail_env_next_action = list(get_valid_move_actions_(current_direction,
-                                                                agent_position,
-                                                                self.env.rail)
-                                        .items())[0][0]
+            rail_env_next_action = list(
+                get_valid_move_actions_(
+                    current_direction,
+                    agent_position,
+                    self.env.rail) .items())[0][0]
             agent_position = rail_env_next_action.next_position
             current_direction = rail_env_next_action.next_direction
             next_switch, switch_orientation, last_is_deadend = self._find_next_switch_from_position(
@@ -963,8 +1129,9 @@ class GraphObservation(ObservationBuilder):
             for node in tracks_queue:
                 # Current_direction = orientation
                 current_track, next_switch, current_direction, root_track = node
-                if layer == start_index+1:
-                    # retrieve indexes for PARTITIONED_GRAPH_EDGES (first paths IDs from root node)
+                if layer == start_index + 1:
+                    # retrieve indexes for PARTITIONED_GRAPH_EDGES (first paths
+                    # IDs from root node)
                     root_track = (current_track, 0)
 
                 if consider_joining_paths:
@@ -973,11 +1140,11 @@ class GraphObservation(ObservationBuilder):
                 else:
                     reachable_nodes, paths_dict = self._get_reachable_paths(
                         next_switch, current_direction)
-                    if layer==0:
+                    if layer == 0:
                         fist_layer_paths_dict = paths_dict
 
                 if include_root:
-                    l = layer+1
+                    l = layer + 1
                     if l < depth:
                         computation_graph[l] = computation_graph[l] | set(
                             reachable_nodes)
@@ -989,7 +1156,7 @@ class GraphObservation(ObservationBuilder):
                 for track in reachable_nodes:
                     # compute nodes for next layer
                     new_track_id, new_direction, track_cell = track
-                    if layer+1 < depth:
+                    if layer + 1 < depth:
                         graph_edges.append([current_track, new_track_id])
                         if symmetric_edges:
                             graph_edges.append([new_track_id, current_track])
@@ -1004,7 +1171,7 @@ class GraphObservation(ObservationBuilder):
                             partitioned_graph_edges[root_track].append(
                                 [new_track_id, current_track])
 
-                    if layer+1 < depth:  # we stop accumulating in queue if it's the last layer of depth
+                    if layer + 1 < depth:  # we stop accumulating in queue if it's the last layer of depth
                         new_next_switch, orientation, _ = self._find_next_switch_from_position(
                             track_cell, new_direction)
                         new_direction = orientation
@@ -1015,7 +1182,7 @@ class GraphObservation(ObservationBuilder):
                                 (new_track_id, new_next_switch, new_direction, root_track))
 
             tracks_queue = list(set(layer_queue))
-        
+
         partitioned_node_features_tmp = defaultdict(lambda: defaultdict(list))
         computed_features = dict()
         # Check computation graph and compute node features
@@ -1023,17 +1190,21 @@ class GraphObservation(ObservationBuilder):
             for track in computation_graph[layer]:
                 track_id, current_orientation, origin_switch = track
                 switch_cells = None
-                if layer == 1: # Consider the switch cells for the first path
-                    for i, switch_branch in enumerate(fist_layer_paths_dict[track_id]):
-                        switch_cells = list(map(lambda x: x.position, switch_branch))
+                if layer == 1:  # Consider the switch cells for the first path
+                    for i, switch_branch in enumerate(
+                            fist_layer_paths_dict[track_id]):
+                        switch_cells = list(
+                            map(lambda x: x.position, switch_branch))
                         node_features[(track_id, i)] = self._compute_node_features(
                             handle, track_id, current_orientation, origin_switch, switch_cells)
-                        computed_features.update({(track_id, i): node_features[(track_id, i)]})
+                        computed_features.update(
+                            {(track_id, i): node_features[(track_id, i)]})
                 else:
                     node_features[(track_id, 0)] = self._compute_node_features(
                         handle, track_id, current_orientation, origin_switch)
-                    computed_features.update({(track_id, 0): node_features[(track_id, 0)]})
-                
+                    computed_features.update(
+                        {(track_id, 0): node_features[(track_id, 0)]})
+
             for path in partitioned_computation_graph.keys():
                 for track in partitioned_computation_graph[path][layer]:
                     track_id, current_orientation, origin_switch = track
@@ -1041,8 +1212,10 @@ class GraphObservation(ObservationBuilder):
                     if layer > 0:
                         track_features = self._compute_node_features(
                             handle, track_id, current_orientation, origin_switch)
-                        partitioned_node_features_tmp[path][(track_id, 0)] = track_features
-                        computed_features.update({(track_id, 0): partitioned_node_features_tmp[path][(track_id, 0)]})
+                        partitioned_node_features_tmp[path][(
+                            track_id, 0)] = track_features
+                        computed_features.update(
+                            {(track_id, 0): partitioned_node_features_tmp[path][(track_id, 0)]})
         # Layer 0
         for path in partitioned_node_features_tmp.keys():
             for track in partitioned_computation_graph[path][0]:
@@ -1050,22 +1223,28 @@ class GraphObservation(ObservationBuilder):
                 assert track_id == path[0]
                 track_features = []
                 switch_cells = None
-                for i, switch_branch in enumerate(fist_layer_paths_dict[track_id]):
-                    switch_cells = list(map(lambda x: x.position, switch_branch))
+                for i, switch_branch in enumerate(
+                        fist_layer_paths_dict[track_id]):
+                    switch_cells = list(
+                        map(lambda x: x.position, switch_branch))
                     track_features = self._compute_node_features(
                         handle, track_id, current_orientation, origin_switch, switch_cells)
-                    partitioned_node_features[(track_id, i)][(track_id, i)] = track_features
-                    computed_features.update({(track_id, i): partitioned_node_features[(track_id, i)][(track_id, i)]})
+                    partitioned_node_features[(track_id, i)][(
+                        track_id, i)] = track_features
+                    computed_features.update(
+                        {(track_id, i): partitioned_node_features[(track_id, i)][(track_id, i)]})
                     if i > 0:
-                        partitioned_graph_edges[(track_id, i)] = partitioned_graph_edges[(track_id, 0)]
-                    for k,v in partitioned_node_features_tmp[path].items():
+                        partitioned_graph_edges[(
+                            track_id, i)] = partitioned_graph_edges[(track_id, 0)]
+                    for k, v in partitioned_node_features_tmp[path].items():
                         partitioned_node_features[(track_id, i)][k] = copy(v)
 
-        # Normalize data in computed features and then reassign the normalized features to the nodes
+        # Normalize data in computed features and then reassign the normalized
+        # features to the nodes
         computed_features_tensor = []
-        for k,v in computed_features.items():
+        for k, v in computed_features.items():
             computed_features_tensor.append(torch.FloatTensor(v))
-           
+
         # computed_features_tensor = torch.FloatTensor(computed_features_tensor)
         # loader = D.DataLoader(computed_features_tensor, batch_size=len(computed_features_tensor), num_workers=1)
         # data = next(iter(loader))
@@ -1081,7 +1260,6 @@ class GraphObservation(ObservationBuilder):
         '''
         # scaled_features = minmax_scaler.transform(data)
 
-
         # Now remap the track indexes from old IDs to new ones
         # (ID are the row of the node features in the graph feature matrix)
         old_ids = list(node_features.keys())
@@ -1089,22 +1267,23 @@ class GraphObservation(ObservationBuilder):
         old_to_new_map = dict(zip(old_ids, new_ids))
         new_to_old_map = dict(zip(new_ids, old_ids))
         # Map the new node indexes to the edges
-        new_mapped_graph_edges = [] # Considering multiple ways to reach same track
+        new_mapped_graph_edges = []  # Considering multiple ways to reach same track
         for e in graph_edges:
-            e0_list = list(filter(lambda x: x[0]==e[0], old_ids))
-            e1_list = list(filter(lambda x: x[0]==e[1], old_ids))
+            e0_list = list(filter(lambda x: x[0] == e[0], old_ids))
+            e1_list = list(filter(lambda x: x[0] == e[1], old_ids))
             new_mapped_graph_edges += list(itertools.product(e0_list, e1_list))
 
-        new_graph_edges = [[old_to_new_map[e[0]],
-                            old_to_new_map[e[1]]] for e in new_mapped_graph_edges]
+        new_graph_edges = [[old_to_new_map[e[0]], old_to_new_map[e[1]]]
+                           for e in new_mapped_graph_edges]
         assert len(new_graph_edges) > 0
         new_node_features = []
         for new_node_index in range(len(old_ids)):
-            new_node_features.append(node_features[new_to_old_map[new_node_index]])
-            
+            new_node_features.append(
+                node_features[new_to_old_map[new_node_index]])
 
         # new_node_features = torch.FloatTensor(minmax_scaler.transform(torch.FloatTensor(new_node_features)))
-        new_node_features = torch.FloatTensor(torch.FloatTensor(new_node_features) * 0.1)
+        new_node_features = torch.FloatTensor(
+            torch.FloatTensor(new_node_features) * 0.1)
         new_graph_edges = torch.LongTensor(new_graph_edges).t().contiguous()
         observation = {
             "node_features": new_node_features,
@@ -1122,11 +1301,12 @@ class GraphObservation(ObservationBuilder):
             old_to_new_map = dict(zip(old_ids, new_ids))
             new_to_old_map = dict(zip(new_ids, old_ids))
             # Map the new node indexes to the edges
-            new_mapped_graph_edges = [] # Considering multiple ways to reach same track
+            new_mapped_graph_edges = []  # Considering multiple ways to reach same track
             for e in partitioned_graph_edges[path]:
-                e0_list = list(filter(lambda x: x[0]==e[0], old_ids))
-                e1_list = list(filter(lambda x: x[0]==e[1], old_ids))
-                new_mapped_graph_edges += list(itertools.product(e0_list, e1_list))
+                e0_list = list(filter(lambda x: x[0] == e[0], old_ids))
+                e1_list = list(filter(lambda x: x[0] == e[1], old_ids))
+                new_mapped_graph_edges += list(
+                    itertools.product(e0_list, e1_list))
 
             new_graph_edges = [[old_to_new_map[e[0]], old_to_new_map[e[1]]]
                                for e in new_mapped_graph_edges]
@@ -1137,7 +1317,8 @@ class GraphObservation(ObservationBuilder):
                     partitioned_node_features[path][new_to_old_map[new_node_index]])
 
             #new_node_features = torch.FloatTensor(minmax_scaler.transform(torch.FloatTensor(new_node_features)))
-            new_node_features = torch.FloatTensor(torch.FloatTensor(new_node_features))
+            new_node_features = torch.FloatTensor(
+                torch.FloatTensor(new_node_features))
             new_graph_edges = torch.LongTensor(
                 new_graph_edges).t().contiguous()
             partitioned_observation[path] = {
@@ -1148,7 +1329,12 @@ class GraphObservation(ObservationBuilder):
 
         return observation, partitioned_observation
 
-    def _are_agents_same_direction(self, position1, orientation1, position2, orientation2):
+    def _are_agents_same_direction(
+            self,
+            position1,
+            orientation1,
+            position2,
+            orientation2):
         next_switch_from_position1 = self._find_next_switch_from_position(
             position1, orientation1)[0]
         next_switch_from_position2 = self._find_next_switch_from_position(
@@ -1158,9 +1344,15 @@ class GraphObservation(ObservationBuilder):
         return False
 
     def _log10_normalize_node_feature(self, feature):
-        return np.log10(feature+1) 
+        return np.log10(feature + 1)
 
-    def _compute_node_features(self, handle: int, track_ID: int, orientation: int, path_cell: Tuple[int, int], switch_cells=None):
+    def _compute_node_features(self,
+                               handle: int,
+                               track_ID: int,
+                               orientation: int,
+                               path_cell: Tuple[int,
+                                                int],
+                               switch_cells=None):
         '''
         Given a track section and an agent, compute the node representation for that track w.r.t. to the
         agent's information
@@ -1189,13 +1381,14 @@ class GraphObservation(ObservationBuilder):
         elif agent.status in [RailAgentStatus.DONE_REMOVED, RailAgentStatus.DONE]:
             agent_position = agent.target
 
-
-        track_length = np.count_nonzero(track_map == track_ID) # doesn't count intersections
+        track_length = np.count_nonzero(
+            track_map == track_ID)  # doesn't count intersections
         target_distance = 0  # distance to the agent's target from this track section
         num_agents_same_dir = 0  # agents on this track in the same direction
         num_agents_opp_dir = 0
         avg_speed_agents_same_dir = 0
-        # another_agent = -1 # if other agents are on this track, the mean of distances is considered
+        # another_agent = -1 # if other agents are on this track, the mean of
+        # distances is considered
         target_on_track = 0  # if agent's target is on this track, compute distance
         another_target = 0  # if another agent's target is on this track
         num_intersections = 0  # if there is an intersection on this track take the distance
@@ -1206,9 +1399,10 @@ class GraphObservation(ObservationBuilder):
         agent_not_started = 0  # num agents not started yet
         agent_speed = 0  # speed of current agent
         # remaining cells to complete this track section, before reaching switch.
-        # If the agent is not on this track, consider the path to reach this track
-        
-        node_degree = 0  
+        # If the agent is not on this track, consider the path to reach this
+        # track
+
+        node_degree = 0
         dead_end = 0  # 1 if track section has a dead end
 
         distance_map = self.env.distance_map.get()
@@ -1224,43 +1418,47 @@ class GraphObservation(ObservationBuilder):
         num_intersections = len(intersections)
         track_cells += intersections
 
-        agent_on_this_track = True if (agent_position in track_cells) else False
+        agent_on_this_track = True if (
+            agent_position in track_cells) else False
 
         next_switch_from_origin_switch = self._find_next_switch_from_position(
-                path_cell, orientation)[0]
+            path_cell, orientation)[0]
         # node degree
         node_degree = len(
             self.switch_paths_dict[next_switch_from_origin_switch])
         # TARGET_DISTANCE
         if agent_on_this_track:
-            target_distance = distance_map[(handle, *agent_position, agent_orientation)]
+            target_distance = distance_map[(
+                handle, *agent_position, agent_orientation)]
             if target_distance == float('inf'):
-                target_distance = np.count_nonzero(track_map != 0) # penalize if shortest path can't be computed
+                # penalize if shortest path can't be computed
+                target_distance = np.count_nonzero(track_map != 0)
             #print("target distance: {}".format(target_distance))
             malfunction_agent = agent.malfunction_data["malfunction"]
             agent_speed = agent.speed_data["speed"] if agent.moving else 0
-           
+
         else:
             # count from the middle cell of the track
             # compute the cell in the middle
             track_cells_ordered = track_cells
             track_cells_ordered.sort(key=lambda x: x[0])
-            mid_cell = track_cells_ordered[len(track_cells)//2]
+            mid_cell = track_cells_ordered[len(track_cells) // 2]
             mid_cell_orientations = self._get_cell_orientations(mid_cell)
-            # which orientation to take? coherent with the exploration direction, the that leads to the same switch
+            # which orientation to take? coherent with the exploration
+            # direction, the that leads to the same switch
             for mid_cell_orientation in mid_cell_orientations:
                 next_switch_from_mid_cell = self._find_next_switch_from_position(
                     mid_cell, mid_cell_orientation)[0]
                 if next_switch_from_mid_cell == next_switch_from_origin_switch:
                     orientation = mid_cell_orientation
                     break
-            
+
             target_distance = distance_map[(handle, *mid_cell, orientation)]
             if target_distance == float('inf'):
-                target_distance = np.count_nonzero(track_map != 0) # penalize if shortest path can't be computed
+                # penalize if shortest path can't be computed
+                target_distance = np.count_nonzero(track_map != 0)
             #print("target distance: {}".format(target_distance))
 
-            
         agents_blocking_steps = []
         agents_speeds = []
         for a in agents:
@@ -1277,14 +1475,17 @@ class GraphObservation(ObservationBuilder):
                     else:
                         tmp_position = mid_cell
                         tmp_orientation = mid_cell_orientation
-                    if self._are_agents_same_direction(a.position, a.direction, tmp_position, tmp_orientation):
+                    if self._are_agents_same_direction(
+                            a.position, a.direction, tmp_position, tmp_orientation):
                         # NUM_AGENTS_SAME_DIR
                         num_agents_same_dir += 1
                         agents_speeds.append(a.speed_data["speed"])
                     else:
                         # NUM_AGENTS_OPP_DIR
                         num_agents_opp_dir += 1
-                if a.position and (a.target in track_cells) and (not a == agent):
+                if a.position and (
+                        a.target in track_cells) and (
+                        not a == agent):
                     another_target += 1
         # TARGET_ON_TRACK
         if agent_target in track_cells:
@@ -1297,7 +1498,8 @@ class GraphObservation(ObservationBuilder):
         malfunction_other = max(agents_blocking_steps) if len(
             agents_blocking_steps) > 0 else malfunction_other
 
-        # If there are other agents at switch consider them before entering the switch
+        # If there are other agents at switch consider them before entering the
+        # switch
         if switch_cells is not None:
             track_length += len(switch_cells)
             for cell_position in switch_cells:
@@ -1305,19 +1507,20 @@ class GraphObservation(ObservationBuilder):
                     if agent.status == RailAgentStatus.ACTIVE:
                         if agent.position == cell_position:
                             if agent.handle in self.agents_path_at_switch.keys():
-                                if self.agents_path_at_switch[agent.handle][0] == self.get_track(agent_position):
+                                if self.agents_path_at_switch[agent.handle][0] == self.get_track(
+                                        agent_position):
                                     num_agents_opp_dir += 1
                                 elif self.agents_path_at_switch[agent.handle][0] == track_ID:
                                     num_agents_same_dir += 1
                             else:
                                 num_agents_opp_dir += 1
-                                
-        if self.get_track(agent_position) == track_ID and agent_orientation == orientation:
+
+        if self.get_track(
+                agent_position) == track_ID and agent_orientation == orientation:
             num_agents_same_dir = 0
             num_agents_opp_dir = 0
             malfunction_other = 0
             slowest_speed = 0
-
 
         return (
             self._log10_normalize_node_feature(track_length),
@@ -1339,12 +1542,11 @@ class GraphObservation(ObservationBuilder):
         env_renderer.render_env(show=True, frames=True,
                                 show_observations=False)
 
-
     def choose_railenv_actions(self, handle, track):
         '''
         Parameters
         ----------
-        target_track: tuple (track_id, path_index) where the first value is the track section ID and the 
+        target_track: tuple (track_id, path_index) where the first value is the track section ID and the
                   second indicating which path to reach through the switch
 
         Compute the action/s required to reach the next track represented by track_ID
@@ -1353,8 +1555,8 @@ class GraphObservation(ObservationBuilder):
         track_ID, index = target_track
         if track_ID == 0:
             return [RailEnvActions.STOP_MOVING]
-        
-        if action == 1 or action == 0: 
+
+        if action == 1 or action == 0:
             agents = self.env.agents
             agent = agents[handle]
             agent_orientation = agent.direction
@@ -1363,84 +1565,97 @@ class GraphObservation(ObservationBuilder):
             elif agent.status == RailAgentStatus.ACTIVE:
                 agent_position = agent.position
 
-        
-            valid_move_action = get_valid_move_actions_(agent_orientation, agent_position, self.env.rail)
-            switch_position, switch_orientation = get_new_position_for_action(agent_position, agent_orientation, valid_move_action.popitem()[0].action, self.env.rail)
-            _, waypoint_path_dict = self._get_reachable_paths(switch_position, switch_orientation)
-            self.agents_path_at_switch.update({handle: (track_ID, waypoint_path_dict[track_ID][index])})
-            waypoint_path = [Waypoint(agent_position, agent_orientation)] + waypoint_path_dict[track_ID][index]
+            valid_move_action = get_valid_move_actions_(
+                agent_orientation, agent_position, self.env.rail)
+            switch_position, switch_orientation = get_new_position_for_action(
+                agent_position, agent_orientation, valid_move_action.popitem()[0].action, self.env.rail)
+            _, waypoint_path_dict = self._get_reachable_paths(
+                switch_position, switch_orientation)
+            self.agents_path_at_switch.update(
+                {handle: (track_ID, waypoint_path_dict[track_ID][index])})
+            waypoint_path = [
+                Waypoint(
+                    agent_position,
+                    agent_orientation)] + waypoint_path_dict[track_ID][index]
 
             return self.convert_waypoints_to_railenvactions(waypoint_path)
-        
+
         elif action == 0:
             return [RailEnvActions.STOP_MOVING]
-        
-        else: 
+
+        else:
             raise Exception("Error: Track_ID can't be negative")
 
-    
-
-    def find_closest_track_cell(self, agent_position, agent_orientation, target_track_id):
+    def find_closest_track_cell(
+            self,
+            agent_position,
+            agent_orientation,
+            target_track_id):
         # returns the closest cell to the agent position belonging to the target track section.
-        # Used to compute the shortest path to the track section, during the computation of actions to reach a 
+        # Used to compute the shortest path to the track section, during the computation of actions to reach a
         # certain track section on a switch region
         track_cells = list(zip(*np.where(self.track_map == target_track_id)))
-        if len(track_cells)>0:
+        if len(track_cells) > 0:
             track_cell = track_cells[0]
-        else: # intersection cell
+        else:  # intersection cell
             for key in self.intersections_dict.keys():
-                intersection = self.intersections_dict[key] # list of IntersectionBranch
+                # list of IntersectionBranch
+                intersection = self.intersections_dict[key]
                 if intersection[0].track_id == target_track_id or intersection[1].track_id == target_track_id:
-                    track_cell = key # position of cell belonging to target_track_id
+                    track_cell = key  # position of cell belonging to target_track_id
 
         waypoint_path = list(get_k_shortest_paths(
             self.env, agent_position, agent_orientation, track_cell)[0])
         for waypoint in waypoint_path:  # ugly way to get verify shortest path :(
-            if self.track_map[waypoint.position[0], waypoint.position[1]] == target_track_id:
+            if self.track_map[waypoint.position[0],
+                              waypoint.position[1]] == target_track_id:
                 return waypoint.position  # closest track cell to agent's position
             elif self.track_map[waypoint.position[0], waypoint.position[1]] == -1:
-                if self.resolve_intersection_cell(waypoint.position, waypoint.direction) == target_track_id:
+                if self.resolve_intersection_cell(
+                        waypoint.position, waypoint.direction) == target_track_id:
                     return waypoint.position
                 else:
                     if waypoint != waypoint_path[0]:
-                        raise Exception("Error: unexpected track section crossed.")
+                        raise Exception(
+                            "Error: unexpected track section crossed.")
             elif self.track_map[waypoint.position[0], waypoint.position[1]] != -2:
                 # first waypoint belongs to origin track section
                 if waypoint != waypoint_path[0]:
                     raise Exception("Error: unexpected track section crossed.")
-            
+
         raise Exception("Wrong shortest path to track section")
-    
 
     def convert_waypoints_to_railenvactions(self, waypoints_list):
         railenv_actions = []
-        for i in range(len(waypoints_list)-1):
+        for i in range(len(waypoints_list) - 1):
             waypoint = waypoints_list[i]
-            waypoint_next = waypoints_list[i+1]
-            if i+1 < len(waypoints_list)-1:
-                # if fails, it means that some cells do not belong to switch sections
-                if not self.track_map[waypoint_next.position[0], waypoint_next.position[1]] in [-2]:
+            waypoint_next = waypoints_list[i + 1]
+            if i + 1 < len(waypoints_list) - 1:
+                # if fails, it means that some cells do not belong to switch
+                # sections
+                if not self.track_map[waypoint_next.position[0],
+                                      waypoint_next.position[1]] in [-2]:
                     logging.debug("Waypoint path: {}".format(waypoints_list))
-                    logging.debug("Waypoint is not in switch. Waypoint: {}, track_id: {}".format(waypoint_next.position, self.track_map[waypoint_next.position[0], waypoint_next.position[1]]))
+                    logging.debug("Waypoint is not in switch. Waypoint: {}, track_id: {}".format(
+                        waypoint_next.position, self.track_map[waypoint_next.position[0], waypoint_next.position[1]]))
                     raise Exception("Error: waypoint is not in switch section")
             action = get_action_for_move(
-                        waypoint.position,
-                        waypoint.direction,
-                        waypoint_next.position,
-                        waypoint_next.direction,
-                        self.env.rail)
+                waypoint.position,
+                waypoint.direction,
+                waypoint_next.position,
+                waypoint_next.direction,
+                self.env.rail)
             railenv_actions.append(action)
-            new_position_from_action = get_new_position_for_action(waypoint.position,
-                                                                    waypoint.direction,
-                                                                    action,
-                                                                    self.env.rail)[0]
+            new_position_from_action = get_new_position_for_action(
+                waypoint.position, waypoint.direction, action, self.env.rail)[0]
             assert new_position_from_action == waypoint_next.position
-            if i+1 == len(waypoints_list)-1:
+            if i + 1 == len(waypoints_list) - 1:
                 assert self.track_map[new_position_from_action[0],
-                    new_position_from_action[1]] != -2
-        # always at least 2 actions to take (e.g. when we have one cell switch one action to enter cell and one to exit)
+                                      new_position_from_action[1]] != -2
+        # always at least 2 actions to take (e.g. when we have one cell switch
+        # one action to enter cell and one to exit)
         assert len(railenv_actions) >= 2
-        assert len(railenv_actions) == len(waypoints_list)-1
+        assert len(railenv_actions) == len(waypoints_list) - 1
         return railenv_actions
 
     def is_agent_entering_switch(self, handle):
@@ -1470,7 +1685,6 @@ class GraphObservation(ObservationBuilder):
                     return True
         return False
         '''
-              
 
     def is_agent_2_steps_from_switch(self, handle):
         agents = self.env.agents
@@ -1545,10 +1759,11 @@ class GraphObservation(ObservationBuilder):
 
         if agent_position != agent.old_position:
             return True
-        elif agent.malfunction_data["malfunction"]==0: 
+        elif agent.malfunction_data["malfunction"] == 0:
             if agent.speed_data["speed"] < 1:
-                if agent.speed_data["position_fraction"] < 1 and (agent.speed_data["position_fraction"] != old_speed_data["position_fraction"]) and action != RailEnvActions.STOP_MOVING:
-                # if speed is fractionary then check if agent could move 
+                if agent.speed_data["position_fraction"] < 1 and (
+                        agent.speed_data["position_fraction"] != old_speed_data["position_fraction"]) and action != RailEnvActions.STOP_MOVING:
+                    # if speed is fractionary then check if agent could move
                     return True
         return False
 
@@ -1559,7 +1774,7 @@ class GraphObservation(ObservationBuilder):
         if deadlock_list is None:
             deadlock_list = []
             #print("Deadlock_list was None, now is {}".format(deadlock_list))
-        #else:
+        # else:
             #print("Deadlock_list is {}".format(deadlock_list))
         agents = self.env.agents
         agent = agents[handle]
@@ -1572,12 +1787,11 @@ class GraphObservation(ObservationBuilder):
             return False
         elif agent.status == RailAgentStatus.DONE:
             return False
-        
-        
 
         # logging.debug("DEADLOCK: Agent {}, position {}, old_position {}".format(handle, agent_position, agent.old_position))
-        
-        valid_move_actions = get_valid_move_actions_(agent_orientation, agent_position, self.env.rail)
+
+        valid_move_actions = get_valid_move_actions_(
+            agent_orientation, agent_position, self.env.rail)
         #logging.debug("Len of valid_move_actions: {}".format(len(valid_move_actions)))
         if len(valid_move_actions) >= 1:  # agent only has 1 possible move
             for next_move_action in valid_move_actions:
@@ -1588,29 +1802,27 @@ class GraphObservation(ObservationBuilder):
                 for a in self.env.agents:
                     if a != agent and a.position == next_position:
                         other_agent = a
-                
+
                 if other_agent is None:
                     return False
                     #logging.debug("Other agent is {}".format(other_agent.handle))
                     #assert not other_agent is None
                 else:
-                    if not other_agent.handle in deadlock_list: # Circular deadlock
+                    if other_agent.handle not in deadlock_list:  # Circular deadlock
                         if other_agent.malfunction_data["malfunction"] == 0:
                             new_deadlock_list = deadlock_list.copy()
                             new_deadlock_list.append(handle)
                             #print("Other agent is: {}, new deadlock list is: {}".format(other_agent.handle, new_deadlock_list))
-                            is_other_agent_deadlock = self.is_agent_in_deadlock(other_agent.handle, new_deadlock_list)
+                            is_other_agent_deadlock = self.is_agent_in_deadlock(
+                                other_agent.handle, new_deadlock_list)
                             # We have to check all the possible moves before declaring deadlock
-                            # But if one agent is not in deadlock, than all the other behind are not as well
-                            if not is_other_agent_deadlock: 
+                            # But if one agent is not in deadlock, than all the
+                            # other behind are not as well
+                            if not is_other_agent_deadlock:
                                 return False
                         else:
                             return False
         return True
-
-            
-
-
 
     def preprocess_agent_obs(self, obs, handle):
         '''
