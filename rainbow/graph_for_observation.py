@@ -12,11 +12,9 @@ from copy import copy
 from sklearn import preprocessing
 
 from flatland.core.env import Environment
-from flatland.core.env import Environment
 from flatland.core.env_observation_builder import ObservationBuilder
 from flatland.envs.agent_utils import RailAgentStatus, EnvAgent
 from flatland.utils.ordered_set import OrderedSet
-from flatland.envs.agent_utils import RailAgentStatus
 from flatland.envs.distance_map import DistanceMap
 from flatland.envs.rail_env import RailEnvNextAction, RailEnvActions
 from flatland.core.grid.grid4 import Grid4TransitionsEnum

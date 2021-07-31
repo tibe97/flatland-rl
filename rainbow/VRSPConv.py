@@ -19,11 +19,8 @@ class VRSPConv(MessagePassing):
     '''
 
     def __init__(self, in_channels, out_channels):
-        super(
-            VRSPConv,
-            self).__init__(
-            aggr=None,
-            flow="target_to_source")  # Use custom aggregator
+        super(VRSPConv,self).__init__(aggr=None, flow="target_to_source")
+        # Use custom aggregator
         # self.lin = NoisyLinear(3 * in_channels, out_channels)
         #self.lin = Linear(in_channels, out_channels)
         self.mlp = Seq(
