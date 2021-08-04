@@ -222,13 +222,14 @@ def main(args):
             if ep_controller.is_episode_done():
                 break  
 
+            eps = max(eps_end, eps_decay * eps)  # Decrease epsilon
+
         # Learn action STOP/GO only at the end of episode
         # For now let's just use value network
         #rl_agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
 
+        
         # end of episode
-        eps = max(eps_end, eps_decay * eps)  # Decrease epsilon
-
         ep_controller.print_episode_stats(ep, args, eps, step)
 
         wandb_log_dict = ep_controller.retrieve_wandb_log()
