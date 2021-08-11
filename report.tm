@@ -25,10 +25,8 @@
   <subsubsection|The small pieces should not exceed the border of the whole
   paper>
 
-  We used <em|forall> in Minizinc to make sure that the right borders of all
-  the small pieces don't exceed the right border of the whole paper, also the
-  upper borders of all the small pieces don't exceed the upper border of the
-  whole paper.\ 
+  \ 1. intro to flatland problem 2. DQN & Improvements 3. GNN 4. Our approach
+  5. Results 6. Analysis & future work
 
   <with|math-level|1|<\equation*>
     constraint forall<around*|(|i in 1<text|..>N|)>
