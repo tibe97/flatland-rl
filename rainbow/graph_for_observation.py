@@ -361,7 +361,7 @@ class EpisodeController():
             eps,
             step+1,
             self.max_steps,
-            (sum(self.path_values_buffer).detach().numpy()/len(self.path_values_buffer)),
+            (sum(self.path_values_buffer).detach().cpu().numpy()/len(self.path_values_buffer)),
             self.epoch_mean_loss)
         print(episode_stats, end=" ")
 
@@ -371,9 +371,9 @@ class EpisodeController():
         if self.epoch_mean_loss is not None:
             wandb_log_dict.update({"mean_loss": self.epoch_mean_loss})
 
-        wandb_log_dict.update({"action_probs": wandb.Histogram(np.array([prob.detach().numpy() for agent_probs in self.probs_buffer for prob in agent_probs]))})
+        wandb_log_dict.update({"action_probs": wandb.Histogram(np.array([prob.detach().cpu().numpy() for agent_probs in self.probs_buffer for prob in agent_probs]))})
         wandb_log_dict.update({"stop_go_action": wandb.Histogram(np.array([action for agent_actions in self.stop_go_buffer for action in agent_actions]))})
-        wandb_log_dict.update({"node_values": wandb.Histogram(np.array(self.path_values_buffer))})
+        wandb_log_dict.update({"node_values": wandb.Histogram(np.array([x.item() for x in self.path_values_buffer]))})
         wandb_log_dict.update({"episode_rewards": wandb.Histogram(self.rewards_buffer)})
         return wandb_log_dict
 

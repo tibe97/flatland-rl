@@ -1,0 +1,61 @@
+About to train 1 agents on (25,25) env.
+Parameters:
+max_num_cities: 2
+max_rails_between_cities: 2
+max_rails_in_city: 4
+malfunction_rate: 0
+max_duration: 50
+min_duration: 20
+num_episodes: 1000
+starting from episode: 0
+max_steps: 404
+eps_initial: 1
+eps_decay_rate: 0.999
+learning_rate: 0.005
+learning_rate_decay: 1.0
+done_reward: 0
+deadlock_reward: -1000
+attention_0.att_l                                         (1, 4, 10)
+attention_0.att_r                                         (1, 4, 10)
+attention_0.bias                                               (40,)
+attention_0.lin_l.weight                                    (40, 12)
+attention_1.att_l                                         (1, 4, 10)
+attention_1.att_r                                         (1, 4, 10)
+attention_1.bias                                               (40,)
+attention_1.lin_l.weight                                    (40, 40)
+attention_2.att_l                                         (1, 4, 10)
+attention_2.att_r                                         (1, 4, 10)
+attention_2.bias                                               (40,)
+attention_2.lin_l.weight                                    (40, 40)
+out_att.att_l                                              (1, 1, 1)
+out_att.att_r                                              (1, 1, 1)
+out_att.bias                                                    (1,)
+out_att.lin_l.weight                                         (1, 40)
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+filename is: test_results/
+Traceback (most recent call last):
+  File "train.py", line 444, in <module>
+    main(args)
+  File "train.py", line 232, in main
+    ep_controller.save_experience_and_train(
+  File "/home/runnphoenix/work/flatland-rl/rainbow/graph_for_observation.py", line 352, in save_experience_and_train
+    step_loss = self.rl_agent.step(
+  File "/home/runnphoenix/work/flatland-rl/rainbow/dueling_double_dqn.py", line 180, in step
+    self._append_sample(state, reward, next_state, done, deadlock)
+  File "/home/runnphoenix/work/flatland-rl/rainbow/dueling_double_dqn.py", line 301, in _append_sample
+    self.memory.add(error, (state, reward, next_state, done, deadlock))
+  File "/home/runnphoenix/work/flatland-rl/rainbow/prioritized_memory.py", line 21, in add
+    p = self._get_priority(error)
+  File "/home/runnphoenix/work/flatland-rl/rainbow/prioritized_memory.py", line 18, in _get_priority
+    return (np.abs(error) + self.e) ** self.a
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/torch/tensor.py", line 630, in __array__
+    return self.numpy()
+TypeError: can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first.

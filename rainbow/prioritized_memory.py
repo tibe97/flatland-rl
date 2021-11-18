@@ -2,6 +2,7 @@ import random
 import numpy as np
 from SumTree import SumTree
 import pickle
+import torch
 
 class Memory:  # stored as ( s, a, r, s_ ) in SumTree
     e = 0.01

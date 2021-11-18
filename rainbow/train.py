@@ -38,8 +38,10 @@ def main(args):
         logging.getLogger().disabled = True
     
     # initialize Weight and Biases for logging results
-    wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_{}_agents_on_({}, {})_{}".format(args.run_title, args.num_agents, args.width, args.height, datetime.now().strftime("%d/%m/%Y %H:%M:%S")), config=args)
     
+    # turn wandb off when only testing the code correctness
+    #wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_{}_agents_on_({}, {})_{}".format(args.run_title, args.num_agents, args.width, args.height, datetime.now().strftime("%d/%m/%Y %H:%M:%S")), config=args)
+    wandb.init(mode='disabled')
 
     # ADAPTIVE parameters according to official configurations of tests 
     max_num_cities_adaptive = (args.num_agents//10)+2

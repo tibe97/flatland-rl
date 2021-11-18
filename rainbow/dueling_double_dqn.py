@@ -247,9 +247,9 @@ class Agent:
             S_value = path_values[0][3] # selected node value, which is the path with max value
             Q_target = reward + GAMMA * S_value
         else: # if agent is done or is in deadlock, we don't need to compute any value. Value is reward at the end
-            Q_target = torch.tensor([reward]) # append random value,it won't be considered
+            Q_target = torch.tensor([reward]).to(device) # append random value,it won't be considered
 
-        error = abs(Q_expected - Q_target)
+        error = abs(Q_expected - Q_target).cpu().numpy()
 
         self.memory.add(error, (state, reward, next_state, done, deadlock))
         
@@ -287,6 +287,7 @@ class Agent:
                 Q_targets_next.append(torch.tensor([rewards[i]])) # append random value,it won't be considered
             
         # Double DQN
+        Q_targets_next = [target.to(device) for target in Q_targets_next]
         Q_targets_next = torch.stack(Q_targets_next).squeeze()
 
         '''
@@ -295,15 +296,15 @@ class Agent:
         dones = torch.tensor([1 if done else 0 for done in dones]).to(device)
         deadlocks = torch.tensor([1 if deadlock else 0 for deadlock in deadlocks]).to(device)
         '''
-        rewards = torch.tensor(rewards)
-        dones = torch.tensor([1 if done else 0 for done in dones])
-        deadlocks = torch.tensor([1 if deadlock else 0 for deadlock in deadlocks])
+        rewards = torch.tensor(rewards).to(device)
+        dones = torch.tensor([1 if done else 0 for done in dones]).to(device)
+        deadlocks = torch.tensor([1 if deadlock else 0 for deadlock in deadlocks]).to(device)
 
         # Compute Q targets for current states
         Q_targets = rewards + (gamma * Q_targets_next * (1 - dones) * (1 - deadlocks))
 
 
-        errors = torch.abs(Q_expected - Q_targets).data.numpy()
+        errors = torch.abs(Q_expected - Q_targets).data.cpu().numpy()
         # update priority
         for i in range(self.batch_size):
             idx = idxs[i]
@@ -313,7 +314,8 @@ class Agent:
         # Compute loss
         #loss = F.mse_loss(Q_expected, Q_targets)
         #loss = F.smooth_l1_loss(Q_expected, Q_targets) # Huber loss
-        loss = (torch.FloatTensor(is_weights) * F.mse_loss(Q_targets, Q_expected)).mean()
+        Q_targets = Q_targets.type(torch.cuda.FloatTensor) 
+        loss = (torch.FloatTensor(is_weights).to(device) * F.mse_loss(Q_targets, Q_expected)).mean()
         loss_to_return = loss.item() 
         loss.backward()
         # Clip gradients - https://stackoverflow.com/questions/47036246/dqn-q-loss-not-converging
@@ -384,7 +386,7 @@ class Agent:
         for i in out_mapped.keys():
             Q_expected.append(out_mapped[i][0])
         Q_expected = torch.stack(Q_expected)
-        return Q_expected
+        return Q_expected.type(torch.cuda.FloatTensor)
 
     def soft_update(self, local_model, target_model, tau):
         """Soft update model parameters.
