@@ -1,0 +1,163 @@
+About to train 1 agents on (25,25) env.
+Parameters:
+max_num_cities: 2
+max_rails_between_cities: 2
+max_rails_in_city: 4
+malfunction_rate: 0
+max_duration: 50
+min_duration: 20
+num_episodes: 20
+starting from episode: 0
+max_steps: 404
+eps_initial: 1
+eps_decay_rate: 0.999
+learning_rate: 0.005
+learning_rate_decay: 1.0
+done_reward: 0
+deadlock_reward: -1000
+batch_size: 256
+attention_0.att_l                                         (1, 4, 10)
+attention_0.att_r                                         (1, 4, 10)
+attention_0.bias                                               (40,)
+attention_0.lin_l.weight                                    (40, 12)
+attention_1.att_l                                         (1, 4, 10)
+attention_1.att_r                                         (1, 4, 10)
+attention_1.bias                                               (40,)
+attention_1.lin_l.weight                                    (40, 40)
+attention_2.att_l                                         (1, 4, 10)
+attention_2.att_r                                         (1, 4, 10)
+attention_2.bias                                               (40,)
+attention_2.lin_l.weight                                    (40, 40)
+out_att.att_l                                              (1, 1, 1)
+out_att.att_r                                              (1, 1, 1)
+out_att.bias                                                    (1,)
+out_att.lin_l.weight                                         (1, 40)
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+filename is: test_results/
+Ep: 1	 2 Agents on (25,25).	 Ep score -157.500	Avg Score: -0.390	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.80	EP ended at step: 225/404	Mean state_value: [-1.8081914]	 Epoch avg_loss: None
+/home/runnphoenix/anaconda3/lib/python3.8/site-packages/torch/optim/lr_scheduler.py:131: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  warnings.warn("Detected call of `lr_scheduler.step()` before `optimizer.step()`. "
+Ep: 2	 3 Agents on (25,25).	 Ep score -68.333	Avg Score: -0.167	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.68	EP ended at step: 156/408	Mean state_value: [-1.779719]	 Epoch avg_loss: None
+Ep: 3	 4 Agents on (25,25).	 Ep score -318.500	Avg Score: -0.773	 Env Dones so far: 0.00%	 Done Agents in ep: 25.00%	 In deadlock 75.00%(at switch 0)
+		 Not started 0	 Eps: 0.45	EP ended at step: 416/412	Mean state_value: [-1.8421394]	 Epoch avg_loss: None
+Ep: 4	 5 Agents on (25,25).	 Ep score -418.000	Avg Score: -1.005	 Env Dones so far: 0.00%	 Done Agents in ep: 0.00%	 In deadlock 100.00%(at switch 1)
+		 Not started 0	 Eps: 0.30	EP ended at step: 420/416	Mean state_value: [-1.7163346]	 Epoch avg_loss: None
+Ep: 5	 6 Agents on (25,25).	 Ep score -422.000	Avg Score: -1.005	 Env Dones so far: 0.00%	 Done Agents in ep: 0.00%	 In deadlock 100.00%(at switch 1)
+		 Not started 0	 Eps: 0.19	EP ended at step: 424/420	Mean state_value: [-1.6943722]	 Epoch avg_loss: None
+Ep: 6	 7 Agents on (25,25).	 Ep score -369.429	Avg Score: -0.871	 Env Dones so far: 0.00%	 Done Agents in ep: 14.29%	 In deadlock 85.71%(at switch 0)
+		 Not started 0	 Eps: 0.13	EP ended at step: 428/424	Mean state_value: [-1.977424]	 Epoch avg_loss: None
+Ep: 7	 8 Agents on (25,25).	 Ep score -430.000	Avg Score: -1.005	 Env Dones so far: 0.00%	 Done Agents in ep: 0.00%	 In deadlock 62.50%(at switch 0)
+		 Not started 0	 Eps: 0.08	EP ended at step: 432/428	Mean state_value: [-1.9082844]	 Epoch avg_loss: None
+Ep: 8	 1 Agents on (25,25).	 Ep score -30.000	Avg Score: -0.069	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.08	EP ended at step: 32/432	Mean state_value: [-1.6196692]	 Epoch avg_loss: None
+Ep: 9	 2 Agents on (25,25).	 Ep score -406.000	Avg Score: -1.005	 Env Dones so far: 0.00%	 Done Agents in ep: 0.00%	 In deadlock 100.00%(at switch 0)
+		 Not started 0	 Eps: 0.05	EP ended at step: 408/404	Mean state_value: [-1.4184798]	 Epoch avg_loss: None
+Ep: 10	 3 Agents on (25,25).	 Ep score -69.667	Avg Score: -0.171	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.05	EP ended at step: 109/408	Mean state_value: [-1.9876133]	 Epoch avg_loss: None
+ DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+--------------- TESTING STARTED ------------------
+Ep: 0	 1 Agents on (25,25).	 Ep score -30.000	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 32/404
+Ep: 1	 1 Agents on (25,25).	 Ep score -32.000	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 34/404
+Ep: 2	 1 Agents on (25,25).	 Ep score -402.000	 Done Agents in ep: 0.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 404/404
+Ep: 0	 2 Agents on (25,25).	 Ep score -30.500	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 33/408
+/home/runnphoenix/anaconda3/lib/python3.8/site-packages/flatland/envs/rail_generators.py:780: UserWarning: Could not set all required cities!
+  warnings.warn(
+/home/runnphoenix/anaconda3/lib/python3.8/site-packages/flatland/envs/rail_generators.py:703: UserWarning: [WARNING] Changing to Grid mode to place at least 2 cities.
+  warnings.warn("[WARNING] Changing to Grid mode to place at least 2 cities.")
+Ep: 1	 2 Agents on (25,25).	 Ep score -406.000	 Done Agents in ep: 0.00%	 In deadlock 100.00%(at switch 0)	 Not started 0	EP ended at step: 408/408
+Ep: 2	 2 Agents on (25,25).	 Ep score -52.500	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 88/408
+Ep: 0	 3 Agents on (25,25).	 Ep score -27.333	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 33/412
+Ep: 1	 3 Agents on (25,25).	 Ep score -281.333	 Done Agents in ep: 33.33%	 In deadlock 66.67%(at switch 0)	 Not started 0	EP ended at step: 412/412
+Ep: 2	 3 Agents on (25,25).	 Ep score -284.667	 Done Agents in ep: 33.33%	 In deadlock 66.67%(at switch 0)	 Not started 0	EP ended at step: 412/412
+Ep: 0	 4 Agents on (25,25).	 Ep score -219.750	 Done Agents in ep: 50.00%	 In deadlock 50.00%(at switch 0)	 Not started 0	EP ended at step: 416/416
+Ep: 1	 4 Agents on (25,25).	 Ep score -224.000	 Done Agents in ep: 50.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 416/416
+Ep: 2	 4 Agents on (25,25).	 Ep score -414.000	 Done Agents in ep: 0.00%	 In deadlock 75.00%(at switch 0)	 Not started 0	EP ended at step: 416/416
+Ep: 0	 5 Agents on (25,25).	 Ep score -418.000	 Done Agents in ep: 0.00%	 In deadlock 100.00%(at switch 1)	 Not started 0	EP ended at step: 420/420
+Ep: 1	 5 Agents on (25,25).	 Ep score -341.600	 Done Agents in ep: 20.00%	 In deadlock 40.00%(at switch 0)	 Not started 0	EP ended at step: 420/420
+Ep: 2	 5 Agents on (25,25).	 Ep score -418.000	 Done Agents in ep: 0.00%	 In deadlock 80.00%(at switch 3)	 Not started 0	EP ended at step: 420/420
+Ep: 0	 6 Agents on (25,25).	 Ep score -422.000	 Done Agents in ep: 0.00%	 In deadlock 100.00%(at switch 1)	 Not started 0	EP ended at step: 424/424
+Ep: 1	 6 Agents on (25,25).	 Ep score -422.000	 Done Agents in ep: 0.00%	 In deadlock 50.00%(at switch 0)	 Not started 0	EP ended at step: 424/424
+Ep: 2	 6 Agents on (25,25).	 Ep score -32.167	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 62/424
+Ep: 0	 7 Agents on (25,25).	 Ep score -426.000	 Done Agents in ep: 0.00%	 In deadlock 100.00%(at switch 1)	 Not started 0	EP ended at step: 428/428
+Ep: 1	 7 Agents on (25,25).	 Ep score -426.000	 Done Agents in ep: 0.00%	 In deadlock 28.57%(at switch 0)	 Not started 0	EP ended at step: 428/428
+Ep: 2	 7 Agents on (25,25).	 Ep score -143.286	 Done Agents in ep: 71.43%	 In deadlock 28.57%(at switch 0)	 Not started 0	EP ended at step: 428/428
+Ep: 0	 8 Agents on (25,25).	 Ep score -430.000	 Done Agents in ep: 0.00%	 In deadlock 100.00%(at switch 1)	 Not started 0	EP ended at step: 432/432
+Ep: 1	 8 Agents on (25,25).	 Ep score -279.250	 Done Agents in ep: 37.50%	 In deadlock 62.50%(at switch 0)	 Not started 0	EP ended at step: 432/432
+Ep: 2	 8 Agents on (25,25).	 Ep score -331.500	 Done Agents in ep: 25.00%	 In deadlock 75.00%(at switch 0)	 Not started 0	EP ended at step: 432/432
+AGENT: Saving local and target networks
+Epoch 10, testing agents on 3: Avg. done agents: 38.35813492063492% | Avg. reward: -1383.2916666666667 | Avg. normalized reward: -25.616512345679013 | Avg. agents in deadlock: 46.79067460317461%| LR: 0.005
+Replay memory saved
+Ep: 11	 4 Agents on (25,25).	 Ep score -218.500	Avg Score: -0.530	 Env Dones so far: 0.00%	 Done Agents in ep: 50.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.03	EP ended at step: 416/412	Mean state_value: [-1.9413368]	 Epoch avg_loss: None
+Ep: 12	 5 Agents on (25,25).	 Ep score -341.600	Avg Score: -0.821	 Env Dones so far: 0.00%	 Done Agents in ep: 20.00%	 In deadlock 40.00%(at switch 0)
+		 Not started 0	 Eps: 0.02	EP ended at step: 420/416	Mean state_value: [-1.467994]	 Epoch avg_loss: None
+Ep: 13	 6 Agents on (25,25).	 Ep score -422.000	Avg Score: -1.005	 Env Dones so far: 0.00%	 Done Agents in ep: 0.00%	 In deadlock 33.33%(at switch 0)
+		 Not started 0	 Eps: 0.01	EP ended at step: 424/420	Mean state_value: [-1.9346981]	 Epoch avg_loss: None
+Ep: 14	 7 Agents on (25,25).	 Ep score -426.000	Avg Score: -1.005	 Env Dones so far: 0.00%	 Done Agents in ep: 0.00%	 In deadlock 28.57%(at switch 0)
+		 Not started 0	 Eps: 0.01	EP ended at step: 428/424	Mean state_value: [-1.9498621]	 Epoch avg_loss: None
+Ep: 15	 8 Agents on (25,25).	 Ep score -279.250	Avg Score: -0.652	 Env Dones so far: 0.00%	 Done Agents in ep: 37.50%	 In deadlock 62.50%(at switch 0)
+		 Not started 0	 Eps: 0.01	EP ended at step: 432/428	Mean state_value: [-1.930708]	 Epoch avg_loss: None
+Ep: 16	 1 Agents on (25,25).	 Ep score -32.000	Avg Score: -0.074	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.01	EP ended at step: 34/432	Mean state_value: [-1.6969318]	 Epoch avg_loss: None
+Ep: 17	 2 Agents on (25,25).	 Ep score -29.000	Avg Score: -0.072	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.01	EP ended at step: 31/404	Mean state_value: [-1.5405545]	 Epoch avg_loss: None
+Ep: 18	 3 Agents on (25,25).	 Ep score -153.000	Avg Score: -0.375	 Env Dones so far: 0.00%	 Done Agents in ep: 66.67%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.01	EP ended at step: 412/408	Mean state_value: [-1.8301749]	 Epoch avg_loss: None
+Ep: 19	 4 Agents on (25,25).	 Ep score -414.000	Avg Score: -1.005	 Env Dones so far: 0.00%	 Done Agents in ep: 0.00%	 In deadlock 75.00%(at switch 0)
+		 Not started 0	 Eps: 0.01	EP ended at step: 416/412	Mean state_value: [-1.7500162]	 Epoch avg_loss: None
+Ep: 20	 5 Agents on (25,25).	 Ep score -418.000	Avg Score: -1.005	 Env Dones so far: 0.00%	 Done Agents in ep: 0.00%	 In deadlock 80.00%(at switch 3)
+		 Not started 0	 Eps: 0.01	EP ended at step: 420/416	Mean state_value: [-2.313613]	 Epoch avg_loss: None
+ DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+--------------- TESTING STARTED ------------------
+Ep: 0	 1 Agents on (25,25).	 Ep score -30.000	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 32/404
+Ep: 1	 1 Agents on (25,25).	 Ep score -32.000	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 34/404
+Ep: 2	 1 Agents on (25,25).	 Ep score -402.000	 Done Agents in ep: 0.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 404/404
+Ep: 0	 2 Agents on (25,25).	 Ep score -30.500	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 33/408
+Ep: 1	 2 Agents on (25,25).	 Ep score -406.000	 Done Agents in ep: 0.00%	 In deadlock 100.00%(at switch 0)	 Not started 0	EP ended at step: 408/408
+Ep: 2	 2 Agents on (25,25).	 Ep score -52.500	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 88/408
+Ep: 0	 3 Agents on (25,25).	 Ep score -27.333	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 33/412
+Ep: 1	 3 Agents on (25,25).	 Ep score -281.333	 Done Agents in ep: 33.33%	 In deadlock 66.67%(at switch 0)	 Not started 0	EP ended at step: 412/412
+Ep: 2	 3 Agents on (25,25).	 Ep score -284.667	 Done Agents in ep: 33.33%	 In deadlock 66.67%(at switch 0)	 Not started 0	EP ended at step: 412/412
+Ep: 0	 4 Agents on (25,25).	 Ep score -219.750	 Done Agents in ep: 50.00%	 In deadlock 50.00%(at switch 0)	 Not started 0	EP ended at step: 416/416
+Ep: 1	 4 Agents on (25,25).	 Ep score -224.000	 Done Agents in ep: 50.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 416/416
+Ep: 2	 4 Agents on (25,25).	 Ep score -414.000	 Done Agents in ep: 0.00%	 In deadlock 75.00%(at switch 0)	 Not started 0	EP ended at step: 416/416
+Ep: 0	 5 Agents on (25,25).	 Ep score -418.000	 Done Agents in ep: 0.00%	 In deadlock 100.00%(at switch 1)	 Not started 0	EP ended at step: 420/420
+Ep: 1	 5 Agents on (25,25).	 Ep score -341.600	 Done Agents in ep: 20.00%	 In deadlock 40.00%(at switch 0)	 Not started 0	EP ended at step: 420/420
+Ep: 2	 5 Agents on (25,25).	 Ep score -418.000	 Done Agents in ep: 0.00%	 In deadlock 80.00%(at switch 3)	 Not started 0	EP ended at step: 420/420
+Ep: 0	 6 Agents on (25,25).	 Ep score -422.000	 Done Agents in ep: 0.00%	 In deadlock 100.00%(at switch 1)	 Not started 0	EP ended at step: 424/424
+Ep: 1	 6 Agents on (25,25).	 Ep score -422.000	 Done Agents in ep: 0.00%	 In deadlock 50.00%(at switch 0)	 Not started 0	EP ended at step: 424/424
+Ep: 2	 6 Agents on (25,25).	 Ep score -32.167	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 62/424
+Ep: 0	 7 Agents on (25,25).	 Ep score -426.000	 Done Agents in ep: 0.00%	 In deadlock 100.00%(at switch 1)	 Not started 0	EP ended at step: 428/428
+Ep: 1	 7 Agents on (25,25).	 Ep score -426.000	 Done Agents in ep: 0.00%	 In deadlock 28.57%(at switch 0)	 Not started 0	EP ended at step: 428/428
+Ep: 2	 7 Agents on (25,25).	 Ep score -143.286	 Done Agents in ep: 71.43%	 In deadlock 28.57%(at switch 0)	 Not started 0	EP ended at step: 428/428
+Ep: 0	 8 Agents on (25,25).	 Ep score -430.000	 Done Agents in ep: 0.00%	 In deadlock 100.00%(at switch 1)	 Not started 0	EP ended at step: 432/432
+Ep: 1	 8 Agents on (25,25).	 Ep score -279.250	 Done Agents in ep: 37.50%	 In deadlock 62.50%(at switch 0)	 Not started 0	EP ended at step: 432/432
+Ep: 2	 8 Agents on (25,25).	 Ep score -331.500	 Done Agents in ep: 25.00%	 In deadlock 75.00%(at switch 0)	 Not started 0	EP ended at step: 432/432
+Epoch 20, testing agents on 3: Avg. done agents: 38.35813492063492% | Avg. reward: -1383.2916666666667 | Avg. normalized reward: -25.616512345679013 | Avg. agents in deadlock: 46.79067460317461%| LR: 0.005
+Replay memory saved

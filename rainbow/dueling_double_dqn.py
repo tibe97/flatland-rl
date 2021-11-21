@@ -185,7 +185,9 @@ class Agent:
             with torch.no_grad():
                 out_value = self.qnetwork_value_local(batch.x, batch.edge_index) 
         else:
-            out_value = self.qnetwork_value_local(batch.x, batch.edge_index) 
+            # switch from qnetwork value local to target to implement Fixed Q-learning
+            #out_value = self.qnetwork_value_local(batch.x, batch.edge_index) 
+            out_value = self.qnetwork_value_target(batch.x, batch.edge_index)
 
         out_action = self.qnetwork_action(batch.x, batch.edge_index)
         out_mapped = defaultdict(lambda: defaultdict(list))

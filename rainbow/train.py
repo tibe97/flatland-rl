@@ -40,14 +40,14 @@ def main(args):
     # initialize Weight and Biases for logging results
     
     # turn wandb off when only testing the code correctness
-    #wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_{}_agents_on_({}, {})_{}".format(args.run_title, args.num_agents, args.width, args.height, datetime.now().strftime("%d/%m/%Y %H:%M:%S")), config=args)
-    wandb.init(mode='disabled')
+    wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_{}_agents_on_({}, {})_{}".format(args.run_title, args.num_agents, args.width, args.height, datetime.now().strftime("%d/%m/%Y %H:%M:%S")), config=args)
+    #wandb.init(mode='disabled')
 
     # ADAPTIVE parameters according to official configurations of tests 
     max_num_cities_adaptive = (args.num_agents//10)+2
     max_steps = int(4 * 2 * (args.width + args.height + args.num_agents / max_num_cities_adaptive))
 
-    start_print = "About to train {} agents on ({},{}) env.\nParameters:\nmax_num_cities: {}\nmax_rails_between_cities: {}\nmax_rails_in_city: {}\nmalfunction_rate: {}\nmax_duration: {}\nmin_duration: {}\nnum_episodes: {}\nstarting from episode: {}\nmax_steps: {}\neps_initial: {}\neps_decay_rate: {}\nlearning_rate: {}\nlearning_rate_decay: {}\ndone_reward: {}\ndeadlock_reward: {}\n".format(
+    start_print = "About to train {} agents on ({},{}) env.\nParameters:\nmax_num_cities: {}\nmax_rails_between_cities: {}\nmax_rails_in_city: {}\nmalfunction_rate: {}\nmax_duration: {}\nmin_duration: {}\nnum_episodes: {}\nstarting from episode: {}\nmax_steps: {}\neps_initial: {}\neps_decay_rate: {}\nlearning_rate: {}\nlearning_rate_decay: {}\ndone_reward: {}\ndeadlock_reward: {}\nbatch_size: {}\n".format(
         args.num_agents,
         args.width,
         args.height,
@@ -65,7 +65,8 @@ def main(args):
         args.learning_rate,
         args.learning_rate_decay,
         args.done_reward,
-        args.deadlock_reward
+        args.deadlock_reward,
+        args.batch_size
     )
     print(start_print)
     os.makedirs(args.model_path, exist_ok=True) 

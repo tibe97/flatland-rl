@@ -75,7 +75,6 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
             show_debug=False,
             screen_height=1080,
             screen_width=1920)
-
     
     # metrics['steps'].append(T)
     metrics['episodes'].append(ep)
