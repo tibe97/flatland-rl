@@ -190,6 +190,7 @@ class Agent:
             out_value = self.qnetwork_value_target(batch.x, batch.edge_index)
 
         out_action = self.qnetwork_action(batch.x, batch.edge_index)
+
         out_mapped = defaultdict(lambda: defaultdict(list))
         for i, res in enumerate(zip(out_value, out_action)): # RES = (node_value, (value_stop, value_go))
             batch_index = batch.batch[i] # batch array tells you to which graph each feature belongs to 

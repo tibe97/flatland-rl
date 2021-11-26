@@ -40,8 +40,8 @@ def main(args):
     # initialize Weight and Biases for logging results
     
     # turn wandb off when only testing the code correctness
-    wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_{}_agents_on_({}, {})_{}".format(args.run_title, args.num_agents, args.width, args.height, datetime.now().strftime("%d/%m/%Y %H:%M:%S")), config=args)
-    #wandb.init(mode='disabled')
+    # wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_{}_agents_on_({}, {})_{}".format(args.run_title, args.num_agents, args.width, args.height, datetime.now().strftime("%d/%m/%Y %H:%M:%S")), config=args)
+    wandb.init(mode='disabled')
 
     # ADAPTIVE parameters according to official configurations of tests 
     max_num_cities_adaptive = (args.num_agents//10)+2
@@ -193,6 +193,12 @@ def main(args):
         # env step returns next observations, rewards
         next_obs, all_rewards, done, info = env.step(railenv_action_dict)
 
+
+        # MULTI AGENT
+        # initialize actions for all agents in this episode
+        num_agents = env.get_num_agents
+        actions = torch.randint(0, 2, size=(num_agents,))
+
       
         # Main loop
         for step in range(max_steps):
@@ -207,13 +213,35 @@ def main(args):
                     step+1,
                     max_steps, end=" "))
 
+            # MULTI AGENT
+            states = [env.obs_builder.preprocess_agent_obs(ep_controller.agent_obs[i], i) for i in num_agents]
+            print("Agent states: {}".format(len(states)))
             
-            # for each agent
-            for a in range(env.get_num_agents()):
-                agent = env.agents[a]
-                # compute action for agent a and update dict
-                agent_next_action = ep_controller.compute_agent_action(a, info, eps)
-                railenv_action_dict.update({a: agent_next_action})
+            # first step together
+            def infer_acts(states, actions, num_iter=3):
+                N = actions.shape[0]
+                mean_fields = torch.zeros(N,2)
+                actions_ = actions.clone()
+                
+                for i in range(num_iter):
+                    for j in range(N):
+                        other_actions = actions[actions != actions[j]]
+                        other_actions = torch.nn.functional.one_hot(other_actions)
+                        mean_fields[j] = torch.mean(actions, dim=0) #Category actions to vectors first
+                    for j in range(N):
+                        # concatenate state and mf
+                        state = states[j]
+                        new_state = torch.cat(state.x, mf[j].repeat(state.shape[0], 1), dim=1)
+                        # calculate q and action
+                        q_action = ep_controller.rl_agent.act(new_state)
+                        # whether to store q value
+                        # TODO: _append_sample is a inner function of Agent
+                        q_value = q_action[3]
+                        # store actions
+                        actions_[j] = q_action[1]
+                 return actions_, mean_fileds
+                 
+            actions, mean_fields = infer_acts(states, actions)
 
             # Environment step
             next_obs, all_rewards, done, info = env.step(railenv_action_dict)
