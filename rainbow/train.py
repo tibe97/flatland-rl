@@ -196,7 +196,7 @@ def main(args):
 
         # MULTI AGENT
         # initialize actions for all agents in this episode
-        num_agents = env.get_num_agents
+        num_agents = env.get_num_agents()
         actions = torch.randint(0, 2, size=(num_agents,))
 
       
@@ -214,8 +214,8 @@ def main(args):
                     max_steps, end=" "))
 
             # MULTI AGENT
-            states = [env.obs_builder.preprocess_agent_obs(ep_controller.agent_obs[i], i) for i in num_agents]
-            print("Agent states: {}".format(len(states)))
+            states = [env.obs_builder.preprocess_agent_obs(ep_controller.agent_obs[i], i) for i in range(num_agents)]
+            print("Episode Agent states count before multi agents: {}".format(len(states)))
             
             # first step together
             def infer_acts(states, actions, num_iter=3):
@@ -226,20 +226,23 @@ def main(args):
                 for i in range(num_iter):
                     for j in range(N):
                         other_actions = actions[actions != actions[j]]
-                        other_actions = torch.nn.functional.one_hot(other_actions)
-                        mean_fields[j] = torch.mean(actions, dim=0) #Category actions to vectors first
+                        other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2)
+                        mean_fields[j] = torch.mean(actions.float(), dim=0) #Category actions to vectors first
                     for j in range(N):
                         # concatenate state and mf
                         state = states[j]
-                        new_state = torch.cat(state.x, mf[j].repeat(state.shape[0], 1), dim=1)
+                        new_x = torch.cat([state.x, mean_fields[j].repeat(state.x.shape[0], 1)], dim=1)
+                        state.x = new_x
                         # calculate q and action
-                        q_action = ep_controller.rl_agent.act(new_state)
+                        q_action = ep_controller.rl_agent.act(state)
+                        # TODO: change q-net structure 12->14
+                        print("q and action: {}\n".format(q_action))
                         # whether to store q value
                         # TODO: _append_sample is a inner function of Agent
                         q_value = q_action[3]
                         # store actions
                         actions_[j] = q_action[1]
-                 return actions_, mean_fileds
+                return actions_, mean_fileds
                  
             actions, mean_fields = infer_acts(states, actions)
 
