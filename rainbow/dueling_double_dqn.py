@@ -129,7 +129,7 @@ class Agent:
                     filename + "_action.pth"))
                 print(str(e))
 
-    def step(self, state, reward, next_state, done, deadlock, ep=0, train=True):
+    def step(self, state, reward, next_state, done, deadlock, mean_field, next_q_value, ep=0, train=True):
         # Save experience in replay memory
         # Logarithmic scaling
         
@@ -141,7 +141,7 @@ class Agent:
             return None
         
         #self.memory.add(state, reward, next_state, done, deadlock)
-        self._append_sample(state, reward, next_state, done, deadlock)
+        self._append_sample(state, reward, next_state, mean_field, next_q_value, done, deadlock)
 
         '''
         # Learn every UPDATE_EVERY time steps.
@@ -233,28 +233,29 @@ class Agent:
 
         return agents_best_path_values
     
-    def _append_sample(self, state, reward, next_state, done, deadlock):
+    def _append_sample(self, state, reward, next_state, mean_field, next_q_value, done, deadlock):
         '''
             Compute error for prioritized experience buffer and append to buffer
         '''
-
         with torch.no_grad():
-            Q_expected = self.compute_Q_values([state], "local")
+            Q_expected = self.compute_Q_values([state], [mean_field], "local")
 
         # Choose best paths with local network, then compute value with target network
         if not deadlock and not done:
-            preprocessed_next_state = self.obs_builder.preprocess_agent_obs(
-                next_state, 0)  # 0 is just a placeholder value for the agent (we don't care which one here)
+            #preprocessed_next_state = self.obs_builder.preprocess_agent_obs(
+            #    next_state, 0)  # 0 is just a placeholder value for the agent (we don't care which one here)     
             # Choose path to take at the current switch
-            path_values = self.act(preprocessed_next_state, eps=0)
-            S_value = path_values[0][3] # selected node value, which is the path with max value
-            Q_target = reward + GAMMA * S_value
+            #path_values = self.act(preprocessed_next_state, eps=0)
+            #S_value = path_values[0][3] # selected node value, which is the path with max value
+            #Q_target = reward + GAMMA * S_value
+            # MULTI AGENT
+            Q_target = next_q_value
         else: # if agent is done or is in deadlock, we don't need to compute any value. Value is reward at the end
             Q_target = torch.tensor([reward]).to(device) # append random value,it won't be considered
 
         error = abs(Q_expected - Q_target).cpu().numpy()
 
-        self.memory.add(error, (state, reward, next_state, done, deadlock))
+        self.memory.add(error, (state, reward, next_state, mean_field.cpu(), next_q_value.cpu(), done, deadlock))
         
 
     def learn(self, gamma, ep):
@@ -265,19 +266,23 @@ class Agent:
             experiences (Tuple[torch.Tensor]):
             gamma (float): discount factor
         """
+        print("------LEARNING------\n")
         batch, idxs, is_weights = self.memory.sample(self.batch_size)
         batch = np.array(batch).transpose()
         states = list(batch[0])
         rewards = list(batch[1])
         next_states = list(batch[2])
-        dones = list(batch[3])
-        deadlocks = list(batch[4])
+        mean_fields = list(batch[3])
+        next_q_values = list(batch[4])
+        dones = list(batch[5])
+        deadlocks = list(batch[6])
         
-        Q_expected = self.compute_Q_values(states, "local")
+        Q_expected = self.compute_Q_values(states, mean_fields, "local")
    
         # Choose best paths with local network, then compute value with target network
         #selected_next_states = []
-        Q_targets_next = []
+        Q_targets_next = next_q_values
+        '''
         for i, state in enumerate(next_states):
             if not deadlocks[i] and not dones[i]:
                 preprocessed_next_state = self.obs_builder.preprocess_agent_obs(
@@ -288,6 +293,7 @@ class Agent:
                 Q_targets_next.append(S_value)
             else: # if agent is done or is in deadlock, we don't need to compute any value. Value is reward at the end
                 Q_targets_next.append(torch.tensor([rewards[i]])) # append random value,it won't be considered
+        '''
             
         # Double DQN
         Q_targets_next = [target.to(device) for target in Q_targets_next]
@@ -358,7 +364,7 @@ class Agent:
         self.optimizer_action.step()
 
 
-    def compute_Q_values(self, states, net):
+    def compute_Q_values(self, states, mean_fields, net):
         ''' 
             Used at learning time to compute values of states/paths.
             The value of each single path is represented by the value of the first node, so the first output
@@ -367,10 +373,13 @@ class Agent:
         network = self.qnetwork_value_local if net == "local" else self.qnetwork_value_target
         network.train()
         batch_list = []
+        
         # create batch with all the states
         for i, state in enumerate(states):
             data = Data(x=state["node_features"],
-                        edge_index=state["graph_edges"])
+                        edge_index=state["graph_edges"]).to(device)
+            new_x = torch.cat([data.x, mean_fields[i].to(device).repeat(data.x.shape[0], 1)], dim=1)
+            data.x = new_x
             data.new_to_old_map = state["new_to_old_map"]
             batch_list.append(data)
         batch = Batch.from_data_list(batch_list).to(device)

@@ -141,9 +141,9 @@ class EpisodeController():
                     obs_batch = self.env.obs_builder.preprocess_agent_obs(self.agent_obs[handle], handle)
                     
                     # Choose path to take at the current switch
+                    
                     # MULTI AGENT
                     obs_batch = obs_batch.to(device)
-                    print("OBS BATCH(STATE): {}, mf: {}".format(obs_batch.x, mf))
                     new_x = torch.cat([obs_batch.x, mf.repeat(obs_batch.x.shape[0], 1)], dim=1)
                     obs_batch.x = new_x
                     path_values = self.rl_agent.act(obs_batch, eps=eps)
@@ -188,11 +188,12 @@ class EpisodeController():
 
         return next_action
     
-    def save_experience_and_train(self, a, action, reward, next_obs, done, step, args, ep):
+    def save_experience_and_train(self, a, action, reward, next_obs, done, step, args, ep, mean_field, next_q_value):
         '''
             In the first part we perform an agent step (save experience and possibly learn) only if agent 
             was able to move (no agent blocked his action).
         '''
+        
         agent = self.env.agents[a]
         if not self.agent_done_removed[a]:
             logging.debug("Agent {} at position {}, fraction {}, speed Timesteps {}, reward {}".format(a, agent.position, agent.speed_data["position_fraction"], self.agents_speed_timesteps[a], self.acc_rewards[a]))
@@ -219,7 +220,7 @@ class EpisodeController():
                     else: 
                         logging.debug("Agent reward is {}".format(self.acc_rewards[a]))
                     # step saves experience tuple and can perform learning (every T time steps)
-                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], ep=ep)
+                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], mean_field, next_q_value, ep=ep)
                     
                     # save stats
                     if step_loss is not None:
@@ -289,7 +290,7 @@ class EpisodeController():
                                     assert len(next_obs) > 0
                                     logging.debug("Agent {} just exited switch and ALREADY entering another one".format(a))
                                     #self.agent_obs_buffer[a] = next_obs.copy()
-                                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], ep=ep)
+                                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], mean_field, next_q_value, ep=ep)
                                     if step_loss is not None:
                                         self.epoch_loss.append(step_loss)
                                 else:
@@ -305,7 +306,7 @@ class EpisodeController():
                 self.agents_speed_timesteps[a] -= 1
                 self.env.obs_builder.agent_requires_obs.update({a: True})
                 if len(next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
-                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], ep=ep)
+                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], mean_field, next_q_value, ep=ep)
                     self.agent_obs[a] = next_obs.copy()
             else:
                 logging.debug("Agent {} cannot move at position {}, fraction {}".format(
@@ -319,7 +320,7 @@ class EpisodeController():
                         #self.agent_obs_buffer[a] = next_obs
                         self.acc_rewards[a] = args.deadlock_reward
                         self.agents_in_deadlock[a] = True
-                        step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, done, self.agents_in_deadlock[a], ep=ep)
+                        step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, done, self.agents_in_deadlock[a], mean_field, next_q_value, ep=ep)
                         if step_loss is not None:
                             self.epoch_loss.append(step_loss)
                         self.env.obs_builder.agent_requires_obs.update({a: False})

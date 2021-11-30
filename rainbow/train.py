@@ -42,8 +42,8 @@ def main(args):
     # initialize Weight and Biases for logging results
     
     # turn wandb off when only testing the code correctness
-    # wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_{}_agents_on_({}, {})_{}".format(args.run_title, args.num_agents, args.width, args.height, datetime.now().strftime("%d/%m/%Y %H:%M:%S")), config=args)
-    wandb.init(mode='disabled')
+    wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_{}_agents_on_({}, {})_{}".format(args.run_title, args.num_agents, args.width, args.height, datetime.now().strftime("%d/%m/%Y %H:%M:%S")), config=args)
+    #wandb.init(mode='disabled')
 
     # ADAPTIVE parameters according to official configurations of tests 
     max_num_cities_adaptive = (args.num_agents//10)+2
@@ -223,6 +223,7 @@ def main(args):
                 N = actions.shape[0]
                 mean_fields = torch.zeros(N,2).to(device)
                 actions_ = actions.clone()
+                q_values = torch.zeros(N).to(device)
                 
                 for i in range(num_iter):
                     for j in range(N):
@@ -237,15 +238,12 @@ def main(args):
                         state.x = new_x
                         # calculate q and action
                         q_action = ep_controller.rl_agent.act(state)
-                        # whether to store q value
-                        # TODO: _append_sample is a inner function of Agent
-                        q_value = q_action[j][3]
-                        # store actions
+                        q_values[j] = q_action[j][3]
                         actions_[j] = q_action[j][1]
-                return actions_, mean_fields
+                return actions_, mean_fields, q_values
                  
-            actions, mean_fields = infer_acts(states, actions)
-            print("#AGENTS: {}, ACTIONS: {}, MF: {} for current Q".format(num_agents, actions, mean_fields))
+            actions, mean_fields, q_values = infer_acts(states, actions)
+            #print("#AGENTS: {}, ACTIONS: {}, MF: {} for current Q".format(num_agents, actions, mean_fields))
             
             # For each agent
             for a in range(env.get_num_agents()):
@@ -255,10 +253,22 @@ def main(args):
 
             # Environment step
             next_obs, all_rewards, done, info = env.step(railenv_action_dict)
+            
+            # MULTI AGENT
+            # PROBELM: NEXT_OBS MAY NOT EXSIT
+
+            next_states = [None for i in range(env.get_num_agents())]
+            for i, obs in enumerate(next_obs):
+                if len(next_obs[obs]) == 0:
+                    next_states[i] = states[i]
+                else:
+                    next_states[i] = env.obs_builder.preprocess_agent_obs(next_obs[i], i)
+            _, _, next_q_values = infer_acts(next_states, actions)
+            #print("#AGENTS: {}, values: {} for next Q".format(num_agents, next_q_values))
 
             # Update replay buffer and train agent
             for a in range(env.get_num_agents()):
-                ep_controller.save_experience_and_train(a, railenv_action_dict[a], all_rewards[a], next_obs[a], done[a], step, args, ep)
+                ep_controller.save_experience_and_train(a, railenv_action_dict[a], all_rewards[a], next_obs[a], done[a], step, args, ep, mean_fields[a], next_q_values[a])
                 
             if ep_controller.is_episode_done():
                 break  
