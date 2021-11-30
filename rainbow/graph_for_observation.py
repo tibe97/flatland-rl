@@ -35,6 +35,8 @@ import wandb
 
 IntersectionBranch = namedtuple("IntersectionBranch", "track_id, orientation")
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 class EpisodeController():
     def __init__(self, env, agent, max_steps):
         super(EpisodeController, self).__init__()
@@ -99,7 +101,7 @@ class EpisodeController():
     def is_episode_done(self):
         return self.agent_done_removed.count(True) == self.env.get_num_agents()
 
-    def compute_agent_action(self, handle, info, eps):
+    def compute_agent_action(self, handle, info, eps, mf):
         ''' 
             If agent is arriving at switch we need to compute the next path to reach in advance.
             The agent computes a sequence of actions because the switch could be composed of more cells.
@@ -137,8 +139,15 @@ class EpisodeController():
                 if len(self.agent_action_buffer[handle]) == 0:
                     assert self.agent_obs[handle]["partitioned"] # Check that obs dict is not empty
                     obs_batch = self.env.obs_builder.preprocess_agent_obs(self.agent_obs[handle], handle)
+                    
                     # Choose path to take at the current switch
+                    # MULTI AGENT
+                    obs_batch = obs_batch.to(device)
+                    print("OBS BATCH(STATE): {}, mf: {}".format(obs_batch.x, mf))
+                    new_x = torch.cat([obs_batch.x, mf.repeat(obs_batch.x.shape[0], 1)], dim=1)
+                    obs_batch.x = new_x
                     path_values = self.rl_agent.act(obs_batch, eps=eps)
+                    
                     # save some stats
                     self.log_probs_buffer[handle].append(path_values[handle][2])
                     self.probs_buffer[handle].append(path_values[handle][4])

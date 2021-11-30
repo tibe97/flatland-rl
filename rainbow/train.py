@@ -24,6 +24,8 @@ from torch.utils.tensorboard import SummaryWriter
 import logging
 import wandb
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 base_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(base_dir))
 
@@ -197,7 +199,7 @@ def main(args):
         # MULTI AGENT
         # initialize actions for all agents in this episode
         num_agents = env.get_num_agents()
-        actions = torch.randint(0, 2, size=(num_agents,))
+        actions = torch.randint(0, 2, size=(num_agents,)).to(device)
 
       
         # Main loop
@@ -215,36 +217,41 @@ def main(args):
 
             # MULTI AGENT
             states = [env.obs_builder.preprocess_agent_obs(ep_controller.agent_obs[i], i) for i in range(num_agents)]
-            print("Episode Agent states count before multi agents: {}".format(len(states)))
             
             # first step together
             def infer_acts(states, actions, num_iter=3):
                 N = actions.shape[0]
-                mean_fields = torch.zeros(N,2)
+                mean_fields = torch.zeros(N,2).to(device)
                 actions_ = actions.clone()
                 
                 for i in range(num_iter):
                     for j in range(N):
-                        other_actions = actions[actions != actions[j]]
-                        other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2)
-                        mean_fields[j] = torch.mean(actions.float(), dim=0) #Category actions to vectors first
+                        #other_actions = actions_[actions_ != actions_[j]]
+                        #other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2)
+                        other_actions = torch.nn.functional.one_hot(actions_, num_classes=2) #TODO: to use 'real' other actions
+                        mean_fields[j] = torch.mean(other_actions.float(), dim=0) #Category actions to vectors first
                     for j in range(N):
                         # concatenate state and mf
-                        state = states[j]
+                        state = states[j].to(device).clone()
                         new_x = torch.cat([state.x, mean_fields[j].repeat(state.x.shape[0], 1)], dim=1)
                         state.x = new_x
                         # calculate q and action
                         q_action = ep_controller.rl_agent.act(state)
-                        # TODO: change q-net structure 12->14
-                        print("q and action: {}\n".format(q_action))
                         # whether to store q value
                         # TODO: _append_sample is a inner function of Agent
-                        q_value = q_action[3]
+                        q_value = q_action[j][3]
                         # store actions
-                        actions_[j] = q_action[1]
-                return actions_, mean_fileds
+                        actions_[j] = q_action[j][1]
+                return actions_, mean_fields
                  
             actions, mean_fields = infer_acts(states, actions)
+            print("#AGENTS: {}, ACTIONS: {}, MF: {} for current Q".format(num_agents, actions, mean_fields))
+            
+            # For each agent
+            for a in range(env.get_num_agents()):
+                agent = env.agents[a]
+                agent_next_action = ep_controller.compute_agent_action(a, info, eps, mean_fields[a])
+                railenv_action_dict.update({a: agent_next_action})
 
             # Environment step
             next_obs, all_rewards, done, info = env.step(railenv_action_dict)
