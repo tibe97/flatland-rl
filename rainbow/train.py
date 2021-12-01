@@ -255,8 +255,6 @@ def main(args):
             next_obs, all_rewards, done, info = env.step(railenv_action_dict)
             
             # MULTI AGENT
-            # PROBELM: NEXT_OBS MAY NOT EXSIT
-
             next_states = [None for i in range(env.get_num_agents())]
             for i, obs in enumerate(next_obs):
                 if len(next_obs[obs]) == 0:

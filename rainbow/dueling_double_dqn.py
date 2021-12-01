@@ -160,7 +160,6 @@ class Agent:
             if self.memory.tree.n_entries >= 1000: # hyperparam
                 return self.learn(GAMMA, ep)
       
-
         return None
         
     def act(self, state, eps=0.0, eval=True):
