@@ -21,6 +21,7 @@ from pathlib import Path
 
 import logging
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # These 2 lines must go before the import from src/
 base_dir = Path(__file__).resolve().parent.parent
@@ -151,6 +152,11 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
             max_steps = int(4 * 2 * (args.width + args.height + env.get_num_agents() / max_num_cities_adaptive))
 
             score = 0
+            
+            # MULTI AGENT
+            # initialize actions for all agents in this episode
+            num_agents = env.get_num_agents()
+            actions = torch.randint(0, 2, size=(num_agents,)).to(device)
 
             # Main loop
             for step in range(max_steps):
@@ -158,6 +164,36 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                 num_agents_not_started = 0
                 num_agents_done = 0
                 agents_with_malfunctions = 0
+
+
+                # MULTI AGENT
+                states = [env.obs_builder.preprocess_agent_obs(agent_obs[i], i) for i in range(num_agents)]
+                
+                # step together
+                def infer_acts(states, actions, num_iter=3):
+                    N = actions.shape[0]
+                    mean_fields = torch.zeros(N,2).to(device)
+                    actions_ = actions.clone()
+                    q_values = torch.zeros(N).to(device)
+                
+                    for i in range(num_iter):
+                        for j in range(N):
+                            #other_actions = actions_[actions_ != actions_[j]]
+                            #other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2)
+                            other_actions = torch.nn.functional.one_hot(actions_, num_classes=2) #TODO: to use 'real' other actions
+                            mean_fields[j] = torch.mean(other_actions.float(), dim=0) #Category actions to vectors first
+                        for j in range(N):
+                            # concatenate state and mf
+                            state = states[j].to(device).clone()
+                            new_x = torch.cat([state.x.to(device), mean_fields[j].repeat(state.x.shape[0], 1)], dim=1)
+                            state.x = new_x
+                            # calculate q and action
+                            q_action = dqn_agent.act(state)
+                            q_values[j] = q_action[j][3]
+                            actions_[j] = q_action[j][1]
+                    return actions_, mean_fields, q_values
+                 
+                actions, mean_fields, q_values = infer_acts(states, actions)
 
                 for a in range(env.get_num_agents()):
                     agent = env.agents[a]
@@ -181,8 +217,12 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                             if len(agent_action_buffer[a]) == 0:
                                 # Check that dict is not empty
                                 assert agent_obs[a]["partitioned"]
-                                obs_batch = env.obs_builder.preprocess_agent_obs(
-                                    agent_obs[a], a)
+                                obs_batch = env.obs_builder.preprocess_agent_obs(agent_obs[a], a)
+                                
+                                # MULTI AGENGT
+                                new_x = torch.cat([obs_batch.x.to(device), mean_fields[a].repeat(obs_batch.x.shape[0], 1)], dim=1)
+                                obs_batch.x = new_x
+                                
                                 # Choose path to take at the current switch
                                 path_values = dqn_agent.act(obs_batch, eps=0)
                                 railenv_action = env.obs_builder.choose_railenv_actions(

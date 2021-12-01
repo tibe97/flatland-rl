@@ -42,8 +42,8 @@ def main(args):
     # initialize Weight and Biases for logging results
     
     # turn wandb off when only testing the code correctness
-    wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_{}_agents_on_({}, {})_{}".format(args.run_title, args.num_agents, args.width, args.height, datetime.now().strftime("%d/%m/%Y %H:%M:%S")), config=args)
-    #wandb.init(mode='disabled')
+    #wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_{}_agents_on_({}, {})_{}".format(args.run_title, args.num_agents, args.width, args.height, datetime.now().strftime("%d/%m/%Y %H:%M:%S")), config=args)
+    wandb.init(mode='disabled')
 
     # ADAPTIVE parameters according to official configurations of tests 
     max_num_cities_adaptive = (args.num_agents//10)+2
@@ -218,7 +218,7 @@ def main(args):
             # MULTI AGENT
             states = [env.obs_builder.preprocess_agent_obs(ep_controller.agent_obs[i], i) for i in range(num_agents)]
             
-            # first step together
+            # step together
             def infer_acts(states, actions, num_iter=3):
                 N = actions.shape[0]
                 mean_fields = torch.zeros(N,2).to(device)
