@@ -49,7 +49,7 @@ def main(args):
     max_num_cities_adaptive = (args.num_agents//10)+2
     max_steps = int(4 * 2 * (args.width + args.height + args.num_agents / max_num_cities_adaptive))
 
-    start_print = "About to train {} agents on ({},{}) env.\nParameters:\nmax_num_cities: {}\nmax_rails_between_cities: {}\nmax_rails_in_city: {}\nmalfunction_rate: {}\nmax_duration: {}\nmin_duration: {}\nnum_episodes: {}\nstarting from episode: {}\nmax_steps: {}\neps_initial: {}\neps_decay_rate: {}\nlearning_rate: {}\nlearning_rate_decay: {}\ndone_reward: {}\ndeadlock_reward: {}\nbatch_size: {}\n".format(
+    start_print = "About to train {} agents on ({},{}) env.\nParameters:\nmax_num_cities: {}\nmax_rails_between_cities: {}\nmax_rails_in_city: {}\nmalfunction_rate: {}\nmax_duration: {}\nmin_duration: {}\nnum_episodes: {}\nstarting from episode: {}\nmax_steps: {}\neps_initial: {}\neps_decay_rate: {}\nlearning_rate: {}\nlearning_rate_decay: {}\ndone_reward: {}\ndeadlock_reward: {}\nbatch_size: {}".format(
         args.num_agents,
         args.width,
         args.height,
@@ -275,7 +275,7 @@ def main(args):
 
         # Learn action STOP/GO only at the end of episode
         # For now let's just use value network
-        #rl_agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
+        rl_agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
 
         
         # end of episode
@@ -289,7 +289,7 @@ def main(args):
             avg_done_agents, avg_reward, avg_norm_reward, avg_deadlock_agents, test_actions = test(
                 args, ep, rl_agent, metrics, args.model_path)  # Test
             
-            testing_stats = '\nEpoch ' + str(ep) + ', testing agents on ' + str(args.evaluation_episodes) + ': Avg. done agents: ' + str(avg_done_agents*100) + '% | Avg. reward: ' + str(avg_reward) + ' | Avg. normalized reward: ' + str(avg_norm_reward) + ' | Avg. agents in deadlock: ' + str(avg_deadlock_agents*100) + '%' + '| LR: ' + str(rl_agent.optimizer_value.param_groups[0]['lr']) + "\n"
+            testing_stats = '\nEpoch ' + str(ep) + ', testing agents on ' + str(args.evaluation_episodes) + ': Avg. done agents: ' + str(avg_done_agents*100) + '% | Avg. reward: ' + str(avg_reward) + ' | Avg. normalized reward: ' + str(avg_norm_reward) + ' | Avg. agents in deadlock: ' + str(avg_deadlock_agents*100) + '%' + '| LR: ' + str(rl_agent.optimizer_value.param_groups[0]['lr'])
             print(testing_stats)
             with open(args.model_path + 'training_stats.txt', 'a') as f:
                 print(testing_stats, file=f)
@@ -378,11 +378,11 @@ if __name__ == '__main__':
                         help='Save models every tot episodes')
     parser.add_argument('--eps-decay', type=float, default=0.999,
                         help='epsilon decay value')
-    parser.add_argument('--learning-rate', type=float, default=0.005,
+    parser.add_argument('--learning-rate', type=float, default=0.05,
                         help='LR for DQN agent')
-    parser.add_argument('--learning-rate-decay', type=float, default=1.0,
+    parser.add_argument('--learning-rate-decay', type=float, default=0.5,
                         help='LR decay for DQN agent')
-    parser.add_argument('--learning-rate-decay-policy', type=float, default=1.0,
+    parser.add_argument('--learning-rate-decay-policy', type=float, default=0.5,
                         help='LR decay for policy network')
 
     # WANDB Logging

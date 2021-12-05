@@ -61,11 +61,10 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
         schedule_generator=schedule_generator,
         number_of_agents=args.num_agents,
         obs_builder_object=observation_builder,
-        malfunction_generator_and_process_data= malfunction_from_params(MalfunctionParameters(
-            malfunction_rate=args.malfunction_rate,
-            min_duration=args.min_duration,
-            max_duration=args.max_duration
-        )),
+        #malfunction_generator_and_process_data= malfunction_from_params(MalfunctionParameters(
+        #   malfunction_rate=args.malfunction_rate,
+        #   min_duration=args.min_duration,
+        #   max_duration=args.max_duration)),
     )
 
     if args.render:
@@ -98,11 +97,10 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                     schedule_generator=schedule_generator,
                     number_of_agents=num_agents,
                     obs_builder_object=observation_builder,
-                    malfunction_generator_and_process_data=malfunction_from_params(MalfunctionParameters(
-                malfunction_rate=args.malfunction_rate,
-                min_duration=args.min_duration,
-                max_duration=args.max_duration
-            )),
+                    #malfunction_generator_and_process_data=malfunction_from_params(MalfunctionParameters(
+                    #   malfunction_rate=args.malfunction_rate,
+                    #   min_duration=args.min_duration,
+                    #   max_duration=args.max_duration)),
                     remove_agents_at_target=True) 
             for num_agents in [1,2,3,4,5,6,7,8]]
     
@@ -368,7 +366,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
             T_all_done.append(all_done)
             T_agents_deadlock.append(num_agents_in_deadlock / env.get_num_agents())
             # Print training results info
-            episode_stats = '\rEp: {}\t {} Agents on ({},{}).\t Ep score {:.3f}\t Done Agents in ep: {:.2f}%\t In deadlock {:.2f}%(at switch {})\t Not started {}\tEP ended at step: {}/{}\n'.format(
+            episode_stats = '\rEp: {}\t {} Agents on ({},{}).\t Ep score {:.3f}\t Done Agents in ep: {:.2f}%\t In deadlock {:.2f}%(at switch {})\t Not started {}\tEP ended at step: {}/{}'.format(
                 ep,
                 env.get_num_agents(), args.width, args.height,
                 score,
