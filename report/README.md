@@ -81,7 +81,7 @@ This file is quite messy, but the main purpose is to store the experience for an
 
 - "dueling_double_dqn.py": contains the DQN agent implemented as DQN (planning to extend to Rainbow).
 
-- "graph_for_observation.py": all the computation for the observation (also a mess, I don't suggest you to look at it). The function "_compute_node_observation()" gives you an idea of the features i computed for each track.
+- "graph_for_observation.py": all the computation for the observation. The function "_compute_node_observation()" gives you an idea of the features i computed for each track.
 
 - "VRSPConv.py": the convolution layer of the GNN model. Pytorch geometric is the framework used to implement conv layer.
 
