@@ -199,7 +199,7 @@ def main(args):
         # MULTI AGENT
         # initialize actions for all agents in this episode
         num_agents = env.get_num_agents()
-        actions = torch.randint(0, 2, size=(num_agents,)).to(device)
+        actions = torch.randint(0, 2, size=(num_agents,))
 
       
         # Main loop
@@ -221,16 +221,20 @@ def main(args):
             # step together
             def infer_acts(states, actions, num_iter=3):
                 N = actions.shape[0]
+                actions_ = actions.clone()               
                 mean_fields = torch.zeros(N,2).to(device)
-                actions_ = actions.clone()
                 q_values = torch.zeros(N).to(device)
                 
                 for i in range(num_iter):
-                    for j in range(N):
-                        #other_actions = actions_[actions_ != actions_[j]]
-                        #other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2)
-                        other_actions = torch.nn.functional.one_hot(actions_, num_classes=2) #TODO: to use 'real' other actions
-                        mean_fields[j] = torch.mean(other_actions.float(), dim=0) #Category actions to vectors first
+                    if N == 1:
+                            mean_fields = torch.FloatTensor([[0.5,0.5]]).to(device)
+                    else:
+                        for j in range(N):
+                            pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
+                            aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1,N)))
+                            other_actions = torch.cat((pre_actions, aft_actions))
+                            other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2) #TODO: to use 'real' other actions
+                            mean_fields[j] = torch.mean(other_actions.float(), dim=0) #Category actions to vectors first
                     for j in range(N):
                         # concatenate state and mf
                         state = states[j].to(device).clone()
@@ -378,11 +382,11 @@ if __name__ == '__main__':
                         help='Save models every tot episodes')
     parser.add_argument('--eps-decay', type=float, default=0.999,
                         help='epsilon decay value')
-    parser.add_argument('--learning-rate', type=float, default=0.05,
+    parser.add_argument('--learning-rate', type=float, default=0.1,
                         help='LR for DQN agent')
-    parser.add_argument('--learning-rate-decay', type=float, default=0.5,
+    parser.add_argument('--learning-rate-decay', type=float, default=0.1,
                         help='LR decay for DQN agent')
-    parser.add_argument('--learning-rate-decay-policy', type=float, default=0.5,
+    parser.add_argument('--learning-rate-decay-policy', type=float, default=0.1,
                         help='LR decay for policy network')
 
     # WANDB Logging
