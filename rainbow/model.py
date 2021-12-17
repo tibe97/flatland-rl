@@ -233,3 +233,22 @@ class GAT_action(nn.Module):
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.out_att(x, adj)
         return F.log_softmax(x, dim=1)
+        
+class FC_action(nn.Module):
+    def __init__(self, n_in, n_hidden, n_out):
+        super(FC_action, self).__init__()
+        self.n_in = n_in
+        self.n_hidden = n_hidden
+        self.n_out = n_out
+        
+        self.layer1 = nn.Linear(n_in, n_hidden)
+        self.layer2 = nn.Linear(n_hidden, n_hidden)
+        self.layer3 = nn.Linear(n_hidden, n_out)
+        
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = torch.nn.functional.softmax(self.layer3(x))
+        
+        return x
+        

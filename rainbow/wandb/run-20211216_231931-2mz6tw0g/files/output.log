@@ -1,0 +1,70 @@
+About to train 1 agents on (25,25) env.
+Parameters:
+max_num_cities: 2
+max_rails_between_cities: 2
+max_rails_in_city: 4
+malfunction_rate: 0
+max_duration: 50
+min_duration: 20
+num_episodes: 300
+starting from episode: 0
+max_steps: 404
+eps_initial: 1
+eps_decay_rate: 0.999
+learning_rate: 0.005
+learning_rate_decay: 0.5
+done_reward: 0
+deadlock_reward: -1000
+batch_size: 128
+Traceback (most recent call last):
+  File "train.py", line 440, in <module>
+    main(args)
+  File "train.py", line 250, in main
+    actions, mean_fields, q_values = infer_acts(states, actions)
+  File "train.py", line 245, in infer_acts
+    q_action = ep_controller.rl_agent.act(state, mean_fields[j])
+  File "/home/runnphoenix/work/flatland-rl/rainbow/dueling_double_dqn.py", line 198, in act
+    out_action = self.qnetwork_action() # qvalue + mean_field
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/torch/nn/modules/module.py", line 727, in _call_impl
+    result = self.forward(*input, **kwargs)
+TypeError: forward() missing 1 required positional argument: 'x'
+attention_0.att_l                                         (1, 4, 10)
+attention_0.att_r                                         (1, 4, 10)
+attention_0.bias                                               (40,)
+attention_0.lin_l.weight                                    (40, 14)
+attention_1.att_l                                         (1, 4, 10)
+attention_1.att_r                                         (1, 4, 10)
+attention_1.bias                                               (40,)
+attention_1.lin_l.weight                                    (40, 40)
+attention_2.att_l                                         (1, 4, 10)
+attention_2.att_r                                         (1, 4, 10)
+attention_2.bias                                               (40,)
+attention_2.lin_l.weight                                    (40, 40)
+out_att.att_l                                              (1, 1, 1)
+out_att.att_r                                              (1, 1, 1)
+out_att.bias                                                    (1,)
+out_att.lin_l.weight                                         (1, 40)
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+filename is: test_results/
+out_value: tensor([[-0.0763],
+        [-0.0687],
+        [-0.0632],
+        [ 0.1922],
+        [ 0.1816],
+        [ 0.1598],
+        [ 0.1985]], device='cuda:0'), mf: tensor([0., 1.], device='cuda:0')
+new_x: tensor([[-0.0763,  0.0000,  1.0000],
+        [-0.0687,  0.0000,  1.0000],
+        [-0.0632,  0.0000,  1.0000],
+        [ 0.1922,  0.0000,  1.0000],
+        [ 0.1816,  0.0000,  1.0000],
+        [ 0.1598,  0.0000,  1.0000],
+        [ 0.1985,  0.0000,  1.0000]], device='cuda:0')

@@ -186,7 +186,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                             new_x = torch.cat([state.x.to(device), mean_fields[j].repeat(state.x.shape[0], 1)], dim=1)
                             state.x = new_x
                             # calculate q and action
-                            q_action = dqn_agent.act(state)
+                            q_action = dqn_agent.act(state, mean_fields[j])
                             q_values[j] = q_action[j][3]
                             actions_[j] = q_action[j][1]
                     return actions_, mean_fields, q_values
@@ -222,7 +222,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                                 obs_batch.x = new_x
                                 
                                 # Choose path to take at the current switch
-                                path_values = dqn_agent.act(obs_batch, eps=0)
+                                path_values = dqn_agent.act(obs_batch, mean_fields[a], eps=0)
                                 railenv_action = env.obs_builder.choose_railenv_actions(
                                     a, path_values[a])
                                 agent_action_buffer[a] = railenv_action

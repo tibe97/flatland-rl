@@ -14,7 +14,7 @@ from prioritized_memory import Memory
 import pdb
 # import torchsummary
 
-from model import DQN_action, DQN_value, GAT_action, GAT_value
+from model import DQN_action, DQN_value, GAT_action, GAT_value, FC_action
 
 BUFFER_SIZE = int(1e4)  # replay buffer size
 # BATCH_SIZE = 512  # minibatch size
@@ -44,8 +44,11 @@ class Agent:
         #self.qnetwork_value_local = DQN_value(state_size).to(device)
         self.qnetwork_value_local = GAT_value(14, 10, 1, args.gat_layers, args.dropout_rate, 0.3, args.attention_heads, args.flow, args.batch_norm).to(device)
         self.qnetwork_value_target = copy.deepcopy(self.qnetwork_value_local)
+        
         #self.qnetwork_action = DQN_action(state_size).to(device)
-        self.qnetwork_action = GAT_action(14, 10, 2, args.gat_layers, args.dropout_rate, 0.3, args.attention_heads, args.flow, args.batch_norm).to(device)
+        #self.qnetwork_action = GAT_action(14, 10, 2, args.gat_layers, args.dropout_rate, 0.3, args.attention_heads, args.flow, args.batch_norm).to(device)
+        self.qnetwork_action = FC_action(3, 32, 2).to(device)
+        
         self.learning_rate = args.learning_rate
         self.optimizer_value = optim.Adam(self.qnetwork_value_local.parameters(), lr=self.learning_rate)
         self.optimizer_action = optim.Adam(self.qnetwork_action.parameters(), lr=self.learning_rate)
@@ -157,12 +160,12 @@ class Agent:
         # Learn every UPDATE_EVERY time steps.
         self.t_step = (self.t_step + 1) % UPDATE_EVERY
         if self.t_step == 0:
-            if self.memory.tree.n_entries >= 1000: # hyperparam
+            if self.memory.tree.n_entries >= 1000:
                 return self.learn(GAMMA, ep)
       
         return None
         
-    def act(self, state, eps=0.0, eval=True):
+    def act(self, state, mean_field, eps=0.0, eval=True):
         """ Returns for each agent the path to take and whether to stop or go.
             2 separate networks (we should try to unify)
 
@@ -188,7 +191,11 @@ class Agent:
             #out_value = self.qnetwork_value_local(batch.x, batch.edge_index) 
             out_value = self.qnetwork_value_target(batch.x, batch.edge_index)
 
-        out_action = self.qnetwork_action(batch.x, batch.edge_index)
+        #out_action = self.qnetwork_action(batch.x, batch.edge_index)
+        #print("out_value: {}, mf: {}".format(out_value, mean_field))
+        action_x = torch.cat([out_value, mean_field.repeat(out_value.shape[0], 1)], dim=1)
+        out_action = self.qnetwork_action(action_x) # qvalue + mean_field
+        #print("action_x: {}, action_out: {}".format(action_x, out_action))
 
         out_mapped = defaultdict(lambda: defaultdict(list))
         for i, res in enumerate(zip(out_value, out_action)): # RES = (node_value, (value_stop, value_go))

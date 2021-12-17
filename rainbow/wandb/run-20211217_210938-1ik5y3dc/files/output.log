@@ -1,0 +1,72 @@
+About to train 1 agents on (25,25) env.
+Parameters:
+max_num_cities: 2
+max_rails_between_cities: 2
+max_rails_in_city: 4
+malfunction_rate: 0
+max_duration: 50
+min_duration: 20
+num_episodes: 300
+starting from episode: 0
+max_steps: 404
+eps_initial: 1
+eps_decay_rate: 0.999
+learning_rate: 0.005
+learning_rate_decay: 0.5
+done_reward: 0
+deadlock_reward: -1000
+batch_size: 128
+Traceback (most recent call last):
+  File "train.py", line 440, in <module>
+    main(args)
+  File "train.py", line 250, in main
+    actions, mean_fields, q_values = infer_acts(states, actions)
+  File "train.py", line 245, in infer_acts
+    q_action = ep_controller.rl_agent.act(state, mean_fields[j])
+  File "/home/runnphoenix/work/flatland-rl/rainbow/dueling_double_dqn.py", line 227, in act
+    log_prob = m.log_prob(action)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/torch/distributions/categorical.py", line 114, in log_prob
+    value, log_pmf = torch.broadcast_tensors(value, self.logits)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/torch/distributions/utils.py", line 103, in __get__
+    value = self.wrapped(instance)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/torch/distributions/categorical.py", line 85, in logits
+    return probs_to_logits(self.probs)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/torch/distributions/utils.py", line 82, in probs_to_logits
+    ps_clamped = clamp_probs(probs)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/torch/distributions/utils.py", line 72, in clamp_probs
+    return probs.clamp(min=eps, max=1 - eps)
+RuntimeError: CUDA error: device-side assert triggered
+attention_0.att_l                                         (1, 4, 10)
+attention_0.att_r                                         (1, 4, 10)
+attention_0.bias                                               (40,)
+attention_0.lin_l.weight                                    (40, 14)
+attention_1.att_l                                         (1, 4, 10)
+attention_1.att_r                                         (1, 4, 10)
+attention_1.bias                                               (40,)
+attention_1.lin_l.weight                                    (40, 40)
+attention_2.att_l                                         (1, 4, 10)
+attention_2.att_r                                         (1, 4, 10)
+attention_2.bias                                               (40,)
+attention_2.lin_l.weight                                    (40, 40)
+out_att.att_l                                              (1, 1, 1)
+out_att.att_r                                              (1, 1, 1)
+out_att.bias                                                    (1,)
+out_att.lin_l.weight                                         (1, 40)
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+filename is: test_results/
+new_x: tensor([[0.0984, 0.0000, 1.0000],
+        [0.0959, 0.0000, 1.0000],
+        [0.0848, 0.0000, 1.0000],
+        [0.4883, 0.0000, 1.0000],
+        [0.4660, 0.0000, 1.0000],
+        [0.4388, 0.0000, 1.0000],
+        [0.4355, 0.0000, 1.0000]], device='cuda:0')
+/opt/conda/conda-bld/pytorch_1607370172916/work/aten/src/ATen/native/cuda/MultinomialKernel.cu:190: sampleMultinomialOnce: block: [0,0,0], thread: [1,0,0] Assertion `val >= zero` failed.

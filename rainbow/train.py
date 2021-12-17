@@ -241,7 +241,8 @@ def main(args):
                         new_x = torch.cat([state.x, mean_fields[j].repeat(state.x.shape[0], 1)], dim=1)
                         state.x = new_x
                         # calculate q and action
-                        q_action = ep_controller.rl_agent.act(state)
+                        #q_action = ep_controller.rl_agent.act(state)
+                        q_action = ep_controller.rl_agent.act(state, mean_fields[j])
                         q_values[j] = q_action[j][3]
                         actions_[j] = q_action[j][1]
                 return actions_, mean_fields, q_values
@@ -279,7 +280,7 @@ def main(args):
 
         # Learn action STOP/GO only at the end of episode
         # For now let's just use value network
-        rl_agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
+        #rl_agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
 
         
         # end of episode
@@ -382,11 +383,11 @@ if __name__ == '__main__':
                         help='Save models every tot episodes')
     parser.add_argument('--eps-decay', type=float, default=0.999,
                         help='epsilon decay value')
-    parser.add_argument('--learning-rate', type=float, default=0.1,
+    parser.add_argument('--learning-rate', type=float, default=0.01,
                         help='LR for DQN agent')
-    parser.add_argument('--learning-rate-decay', type=float, default=0.1,
+    parser.add_argument('--learning-rate-decay', type=float, default=0.5,
                         help='LR decay for DQN agent')
-    parser.add_argument('--learning-rate-decay-policy', type=float, default=0.1,
+    parser.add_argument('--learning-rate-decay-policy', type=float, default=0.5,
                         help='LR decay for policy network')
 
     # WANDB Logging

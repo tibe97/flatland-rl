@@ -146,7 +146,7 @@ class EpisodeController():
                     obs_batch = obs_batch.to(device)
                     new_x = torch.cat([obs_batch.x, mf.repeat(obs_batch.x.shape[0], 1)], dim=1)
                     obs_batch.x = new_x
-                    path_values = self.rl_agent.act(obs_batch, eps=eps)
+                    path_values = self.rl_agent.act(obs_batch, mf, eps=eps)
                     
                     # save some stats
                     self.log_probs_buffer[handle].append(path_values[handle][2])
