@@ -19,7 +19,7 @@ import pprint
 import math
 # make sure the root path is in system path
 from pathlib import Path
-from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau
+from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, CosineAnnealingLR
 from torch.utils.tensorboard import SummaryWriter
 import logging
 import wandb
@@ -118,9 +118,11 @@ def main(args):
         print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
 
     # LR scheduler to reduce learning rate over epochs
-    lr_scheduler = StepLR(rl_agent.optimizer_value, step_size=25, gamma=args.learning_rate_decay)
     #lr_scheduler = ReduceLROnPlateau(rl_agent.optimizer_value, mode='min', factor=args.learning_rate_decay, patience=0, verbose=True, eps=1e-25)
-    lr_scheduler_policy = StepLR(rl_agent.optimizer_action, step_size=25, gamma=args.learning_rate_decay_policy)
+    #lr_scheduler = StepLR(rl_agent.optimizer_value, step_size=25, gamma=args.learning_rate_decay)
+    #lr_scheduler_policy = StepLR(rl_agent.optimizer_action, step_size=25, gamma=args.learning_rate_decay_policy)
+    lr_scheduler = CosineAnnealingLR(rl_agent.optimizer_value, T_max = 100)
+    lr_scheduler_policy = CosineAnnealingLR(rl_agent.optimizer_action, T_max=100)
     
     # Construct the environment with the given observation, generators, predictors, and stochastic data
     env = RailEnv(width=args.width,
@@ -237,9 +239,10 @@ def main(args):
                             mean_fields[j] = torch.mean(other_actions.float(), dim=0) #Category actions to vectors first
                     for j in range(N):
                         # concatenate state and mf
-                        state = states[j].to(device).clone()
-                        new_x = torch.cat([state.x, mean_fields[j].repeat(state.x.shape[0], 1)], dim=1)
-                        state.x = new_x
+                        #state = states[j].to(device).clone()
+                        state = states[j].to(device)
+                        #new_x = torch.cat([state.x, mean_fields[j].repeat(state.x.shape[0], 1)], dim=1)
+                        #state.x = new_x
                         # calculate q and action
                         #q_action = ep_controller.rl_agent.act(state)
                         q_action = ep_controller.rl_agent.act(state, mean_fields[j])

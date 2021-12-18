@@ -42,12 +42,12 @@ class Agent:
         self.state_size = state_size
         # Q-Network
         #self.qnetwork_value_local = DQN_value(state_size).to(device)
-        self.qnetwork_value_local = GAT_value(14, 10, 1, args.gat_layers, args.dropout_rate, 0.3, args.attention_heads, args.flow, args.batch_norm).to(device)
+        self.qnetwork_value_local = GAT_value(12, 10, 1, args.gat_layers, args.dropout_rate, 0.3, args.attention_heads, args.flow, args.batch_norm).to(device)
         self.qnetwork_value_target = copy.deepcopy(self.qnetwork_value_local)
         
         #self.qnetwork_action = DQN_action(state_size).to(device)
         #self.qnetwork_action = GAT_action(14, 10, 2, args.gat_layers, args.dropout_rate, 0.3, args.attention_heads, args.flow, args.batch_norm).to(device)
-        self.qnetwork_action = FC_action(3, 32, 2).to(device)
+        self.qnetwork_action = FC_action(3, 12, 2).to(device)
         
         self.learning_rate = args.learning_rate
         self.optimizer_value = optim.Adam(self.qnetwork_value_local.parameters(), lr=self.learning_rate)
@@ -192,7 +192,6 @@ class Agent:
             out_value = self.qnetwork_value_target(batch.x, batch.edge_index)
 
         #out_action = self.qnetwork_action(batch.x, batch.edge_index)
-        #print("out_value: {}, mf: {}".format(out_value, mean_field))
         action_x = torch.cat([out_value, mean_field.repeat(out_value.shape[0], 1)], dim=1)
         out_action = self.qnetwork_action(action_x) # qvalue + mean_field
         #print("action_x: {}, action_out: {}".format(action_x, out_action))
@@ -384,8 +383,8 @@ class Agent:
         for i, state in enumerate(states):
             data = Data(x=state["node_features"],
                         edge_index=state["graph_edges"]).to(device)
-            new_x = torch.cat([data.x, mean_fields[i].to(device).repeat(data.x.shape[0], 1)], dim=1)
-            data.x = new_x
+            #new_x = torch.cat([data.x, mean_fields[i].to(device).repeat(data.x.shape[0], 1)], dim=1)
+            #data.x = new_x
             data.new_to_old_map = state["new_to_old_map"]
             batch_list.append(data)
         batch = Batch.from_data_list(batch_list).to(device)

@@ -143,9 +143,9 @@ class EpisodeController():
                     # Choose path to take at the current switch
                     
                     # MULTI AGENT
-                    obs_batch = obs_batch.to(device)
-                    new_x = torch.cat([obs_batch.x, mf.repeat(obs_batch.x.shape[0], 1)], dim=1)
-                    obs_batch.x = new_x
+                    #obs_batch = obs_batch.to(device)
+                    #new_x = torch.cat([obs_batch.x, mf.repeat(obs_batch.x.shape[0], 1)], dim=1)
+                    #obs_batch.x = new_x
                     path_values = self.rl_agent.act(obs_batch, mf, eps=eps)
                     
                     # save some stats

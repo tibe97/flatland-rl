@@ -182,9 +182,9 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                             mean_fields[j] = torch.mean(other_actions.float(), dim=0) #Category actions to vectors first
                         for j in range(N):
                             # concatenate state and mf
-                            state = states[j].to(device).clone()
-                            new_x = torch.cat([state.x.to(device), mean_fields[j].repeat(state.x.shape[0], 1)], dim=1)
-                            state.x = new_x
+                            state = states[j].to(device)
+                            #new_x = torch.cat([state.x.to(device), mean_fields[j].repeat(state.x.shape[0], 1)], dim=1)
+                            #state.x = new_x
                             # calculate q and action
                             q_action = dqn_agent.act(state, mean_fields[j])
                             q_values[j] = q_action[j][3]
@@ -218,8 +218,8 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                                 obs_batch = env.obs_builder.preprocess_agent_obs(agent_obs[a], a)
                                 
                                 # MULTI AGENGT
-                                new_x = torch.cat([obs_batch.x.to(device), mean_fields[a].repeat(obs_batch.x.shape[0], 1)], dim=1)
-                                obs_batch.x = new_x
+                                #new_x = torch.cat([obs_batch.x.to(device), mean_fields[a].repeat(obs_batch.x.shape[0], 1)], dim=1)
+                                #obs_batch.x = new_x
                                 
                                 # Choose path to take at the current switch
                                 path_values = dqn_agent.act(obs_batch, mean_fields[a], eps=0)

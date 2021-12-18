@@ -241,14 +241,14 @@ class FC_action(nn.Module):
         self.n_hidden = n_hidden
         self.n_out = n_out
         
-        self.layer1 = nn.Linear(n_in, n_hidden)
-        self.layer2 = nn.Linear(n_hidden, n_hidden)
+        self.layer1 = nn.Sequential(nn.Linear(n_in, n_hidden), nn.ReLU(True))
+        self.layer2 = nn.Sequential(nn.Linear(n_hidden, n_hidden), nn.ReLU(True))
         self.layer3 = nn.Linear(n_hidden, n_out)
         
     def forward(self, x):
         x = self.layer1(x)
         x = self.layer2(x)
-        x = torch.nn.functional.softmax(self.layer3(x))
+        x = nn.functional.softmax(self.layer3(x))
         
         return x
         
