@@ -121,8 +121,8 @@ def main(args):
     #lr_scheduler = ReduceLROnPlateau(rl_agent.optimizer_value, mode='min', factor=args.learning_rate_decay, patience=0, verbose=True, eps=1e-25)
     #lr_scheduler = StepLR(rl_agent.optimizer_value, step_size=25, gamma=args.learning_rate_decay)
     #lr_scheduler_policy = StepLR(rl_agent.optimizer_action, step_size=25, gamma=args.learning_rate_decay_policy)
-    lr_scheduler = CosineAnnealingLR(rl_agent.optimizer_value, T_max = 100)
-    lr_scheduler_policy = CosineAnnealingLR(rl_agent.optimizer_action, T_max=100)
+    lr_scheduler = CosineAnnealingLR(rl_agent.optimizer_value, T_max = 40)
+    lr_scheduler_policy = CosineAnnealingLR(rl_agent.optimizer_action, T_max=40)
     
     # Construct the environment with the given observation, generators, predictors, and stochastic data
     env = RailEnv(width=args.width,
