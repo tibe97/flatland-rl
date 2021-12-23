@@ -235,15 +235,16 @@ class GAT_action(nn.Module):
         return F.log_softmax(x, dim=1)
         
 class FC_action(nn.Module):
-    def __init__(self, n_in, n_hidden, n_out):
+    def __init__(self, n_in, n_hidden1, n_hidden2, n_out):
         super(FC_action, self).__init__()
         self.n_in = n_in
-        self.n_hidden = n_hidden
+        self.n_hidden1 = n_hidden1
+        self.n_hidden2 = n_hidden2
         self.n_out = n_out
         
-        self.layer1 = nn.Sequential(nn.Linear(n_in, n_hidden), nn.ReLU(True))
-        self.layer2 = nn.Sequential(nn.Linear(n_hidden, n_hidden), nn.ReLU(True))
-        self.layer3 = nn.Linear(n_hidden, n_out)
+        self.layer1 = nn.Sequential(nn.Linear(n_in, n_hidden1), nn.Dropout(0.3), nn.GELU())
+        self.layer2 = nn.Sequential(nn.Linear(n_hidden1, n_hidden2), nn.Dropout(0.3), nn.GELU())
+        self.layer3 = nn.Linear(n_hidden2, n_out)
         
     def forward(self, x):
         x = self.layer1(x)

@@ -230,7 +230,15 @@ def main(args):
                 for i in range(num_iter):
                     if N == 1:
                             mean_fields = torch.FloatTensor([[0.5,0.5]]).to(device)
+                    elif N <= 3: # 2 or 3 agent all together, which means that there're not 3 nearest neighbors
+                        for j in range(N):
+                            pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
+                            aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1,N)))
+                            other_actions = torch.cat((pre_actions, aft_actions))
+                            other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2) #TODO: to use 'real' other actions
+                            mean_fields[j] = torch.mean(other_actions.float(), dim=0) #Category actions to vectors first
                     else:
+                        # select 3 nearest neighbors
                         for j in range(N):
                             pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
                             aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1,N)))
@@ -386,7 +394,7 @@ if __name__ == '__main__':
                         help='Save models every tot episodes')
     parser.add_argument('--eps-decay', type=float, default=0.999,
                         help='epsilon decay value')
-    parser.add_argument('--learning-rate', type=float, default=0.01,
+    parser.add_argument('--learning-rate', type=float, default=0.02,
                         help='LR for DQN agent')
     parser.add_argument('--learning-rate-decay', type=float, default=0.5,
                         help='LR decay for DQN agent')

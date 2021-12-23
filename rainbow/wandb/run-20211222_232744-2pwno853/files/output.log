@@ -1,0 +1,28 @@
+About to train 1 agents on (25,25) env.
+Parameters:
+max_num_cities: 2
+max_rails_between_cities: 2
+max_rails_in_city: 4
+malfunction_rate: 0
+max_duration: 50
+min_duration: 20
+num_episodes: 200
+starting from episode: 0
+max_steps: 404
+eps_initial: 1
+eps_decay_rate: 0.999
+learning_rate: 0.05
+learning_rate_decay: 0.5
+done_reward: 0
+deadlock_reward: -1000
+batch_size: 128
+Traceback (most recent call last):
+  File "train.py", line 443, in <module>
+    main(args)
+  File "train.py", line 111, in main
+    rl_agent = Agent(args=args, state_size=state_size, obs_builder=observation_builder)
+  File "/home/runnphoenix/work/flatland-rl/rainbow/dueling_double_dqn.py", line 50, in __init__
+    self.qnetwork_action = FC_action(3, 12, 6, 2).to(device)
+  File "/home/runnphoenix/work/flatland-rl/rainbow/model.py", line 241, in __init__
+    self.n_hidden = n_hidden
+NameError: name 'n_hidden' is not defined
