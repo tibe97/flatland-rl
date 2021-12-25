@@ -1,0 +1,213 @@
+2021-12-23 23:42:12,593 INFO    MainThread:1598073 [internal.py:wandb_internal():87] W&B internal server running at pid: 1598073, started at: 2021-12-23 23:42:12.592831
+2021-12-23 23:42:12,594 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: check_version
+2021-12-23 23:42:12,594 INFO    WriterThread:1598073 [datastore.py:open_for_write():77] open: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/run-13g3ul2v.wandb
+2021-12-23 23:42:12,596 DEBUG   SenderThread:1598073 [sender.py:send():238] send: header
+2021-12-23 23:42:12,596 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: check_version
+2021-12-23 23:42:13,212 DEBUG   SenderThread:1598073 [sender.py:send():238] send: run
+2021-12-23 23:42:13,882 INFO    SenderThread:1598073 [dir_watcher.py:__init__():169] watching files in: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files
+2021-12-23 23:42:13,883 INFO    SenderThread:1598073 [sender.py:_start_run_threads():825] run started: 13g3ul2v with start time 1640274131
+2021-12-23 23:42:13,883 DEBUG   SenderThread:1598073 [sender.py:send():238] send: summary
+2021-12-23 23:42:13,883 INFO    SenderThread:1598073 [sender.py:_save_file():960] saving file wandb-summary.json with policy end
+2021-12-23 23:42:13,885 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: run_start
+2021-12-23 23:42:13,888 DEBUG   HandlerThread:1598073 [meta.py:__init__():40] meta init
+2021-12-23 23:42:13,888 DEBUG   HandlerThread:1598073 [meta.py:__init__():54] meta init done
+2021-12-23 23:42:13,888 DEBUG   HandlerThread:1598073 [meta.py:probe():214] probe
+2021-12-23 23:42:13,894 DEBUG   HandlerThread:1598073 [meta.py:_setup_git():204] setup git
+2021-12-23 23:42:13,907 DEBUG   HandlerThread:1598073 [meta.py:_setup_git():211] setup git done
+2021-12-23 23:42:13,908 DEBUG   HandlerThread:1598073 [meta.py:_save_pip():58] save pip
+2021-12-23 23:42:13,908 DEBUG   HandlerThread:1598073 [meta.py:_save_pip():72] save pip done
+2021-12-23 23:42:13,908 DEBUG   HandlerThread:1598073 [meta.py:_save_conda():79] save conda
+2021-12-23 23:42:14,885 INFO    Thread-8  :1598073 [dir_watcher.py:_on_file_created():217] file/dir created: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/conda-environment.yaml
+2021-12-23 23:42:14,885 INFO    Thread-8  :1598073 [dir_watcher.py:_on_file_created():217] file/dir created: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/requirements.txt
+2021-12-23 23:42:14,886 INFO    Thread-8  :1598073 [dir_watcher.py:_on_file_created():217] file/dir created: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/wandb-summary.json
+2021-12-23 23:42:19,885 INFO    Thread-8  :1598073 [dir_watcher.py:_on_file_created():217] file/dir created: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/output.log
+2021-12-23 23:42:21,886 INFO    Thread-8  :1598073 [dir_watcher.py:_on_file_modified():230] file/dir modified: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/output.log
+2021-12-23 23:42:23,886 INFO    Thread-8  :1598073 [dir_watcher.py:_on_file_modified():230] file/dir modified: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/output.log
+2021-12-23 23:42:26,312 DEBUG   HandlerThread:1598073 [meta.py:_save_conda():89] save conda done
+2021-12-23 23:42:26,312 DEBUG   HandlerThread:1598073 [meta.py:probe():252] probe done
+2021-12-23 23:42:26,471 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: stop_status
+2021-12-23 23:42:26,472 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: stop_status
+2021-12-23 23:42:26,887 INFO    Thread-8  :1598073 [dir_watcher.py:_on_file_modified():230] file/dir modified: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/conda-environment.yaml
+2021-12-23 23:42:26,887 INFO    Thread-8  :1598073 [dir_watcher.py:_on_file_created():217] file/dir created: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/wandb-metadata.json
+2021-12-23 23:42:27,633 DEBUG   SenderThread:1598073 [sender.py:send():238] send: files
+2021-12-23 23:42:27,635 INFO    SenderThread:1598073 [sender.py:_save_file():960] saving file wandb-metadata.json with policy now
+2021-12-23 23:42:30,190 INFO    Thread-11 :1598073 [upload_job.py:push():137] Uploaded file /tmp/tmpl76lqprmwandb/3r9t6vt1-wandb-metadata.json
+2021-12-23 23:42:36,417 DEBUG   SenderThread:1598073 [sender.py:send():238] send: history
+2021-12-23 23:42:36,418 DEBUG   SenderThread:1598073 [sender.py:send():238] send: summary
+2021-12-23 23:42:36,421 INFO    SenderThread:1598073 [sender.py:_save_file():960] saving file wandb-summary.json with policy end
+2021-12-23 23:42:36,890 INFO    Thread-8  :1598073 [dir_watcher.py:_on_file_modified():230] file/dir modified: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/wandb-summary.json
+2021-12-23 23:42:37,890 INFO    Thread-8  :1598073 [dir_watcher.py:_on_file_modified():230] file/dir modified: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/output.log
+2021-12-23 23:42:38,889 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: stop_status
+2021-12-23 23:42:38,889 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: stop_status
+2021-12-23 23:42:41,079 DEBUG   SenderThread:1598073 [sender.py:send():238] send: history
+2021-12-23 23:42:41,081 DEBUG   SenderThread:1598073 [sender.py:send():238] send: summary
+2021-12-23 23:42:41,085 INFO    SenderThread:1598073 [sender.py:_save_file():960] saving file wandb-summary.json with policy end
+2021-12-23 23:42:41,179 DEBUG   SenderThread:1598073 [sender.py:send():238] send: history
+2021-12-23 23:42:41,179 DEBUG   SenderThread:1598073 [sender.py:send():238] send: summary
+2021-12-23 23:42:41,181 INFO    SenderThread:1598073 [sender.py:_save_file():960] saving file wandb-summary.json with policy end
+2021-12-23 23:42:41,892 INFO    Thread-8  :1598073 [dir_watcher.py:_on_file_modified():230] file/dir modified: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/wandb-summary.json
+2021-12-23 23:42:42,186 DEBUG   SenderThread:1598073 [sender.py:send():238] send: stats
+2021-12-23 23:42:42,893 INFO    Thread-8  :1598073 [dir_watcher.py:_on_file_modified():230] file/dir modified: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/output.log
+2021-12-23 23:42:43,451 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:43,452 DEBUG   SenderThread:1598073 [sender.py:send():238] send: telemetry
+2021-12-23 23:42:43,452 DEBUG   SenderThread:1598073 [sender.py:send():238] send: exit
+2021-12-23 23:42:43,452 INFO    SenderThread:1598073 [sender.py:send_exit():370] handling exit code: 1
+2021-12-23 23:42:43,452 INFO    SenderThread:1598073 [sender.py:send_exit():372] handling runtime: 29
+2021-12-23 23:42:43,455 INFO    SenderThread:1598073 [sender.py:_save_file():960] saving file wandb-summary.json with policy end
+2021-12-23 23:42:43,455 INFO    SenderThread:1598073 [sender.py:send_exit():382] send defer
+2021-12-23 23:42:43,455 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:43,455 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: defer
+2021-12-23 23:42:43,456 INFO    HandlerThread:1598073 [handler.py:handle_request_defer():147] handle defer: 0
+2021-12-23 23:42:43,456 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: defer
+2021-12-23 23:42:43,456 INFO    SenderThread:1598073 [sender.py:send_request_defer():391] handle sender defer: 0
+2021-12-23 23:42:43,456 INFO    SenderThread:1598073 [sender.py:transition_state():395] send defer: 1
+2021-12-23 23:42:43,456 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: defer
+2021-12-23 23:42:43,456 INFO    HandlerThread:1598073 [handler.py:handle_request_defer():147] handle defer: 1
+2021-12-23 23:42:43,501 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: defer
+2021-12-23 23:42:43,501 INFO    SenderThread:1598073 [sender.py:send_request_defer():391] handle sender defer: 1
+2021-12-23 23:42:43,501 INFO    SenderThread:1598073 [sender.py:transition_state():395] send defer: 2
+2021-12-23 23:42:43,502 DEBUG   SenderThread:1598073 [sender.py:send():238] send: stats
+2021-12-23 23:42:43,502 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: defer
+2021-12-23 23:42:43,502 INFO    HandlerThread:1598073 [handler.py:handle_request_defer():147] handle defer: 2
+2021-12-23 23:42:43,502 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: defer
+2021-12-23 23:42:43,502 INFO    SenderThread:1598073 [sender.py:send_request_defer():391] handle sender defer: 2
+2021-12-23 23:42:43,502 INFO    SenderThread:1598073 [sender.py:transition_state():395] send defer: 3
+2021-12-23 23:42:43,503 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: defer
+2021-12-23 23:42:43,503 INFO    HandlerThread:1598073 [handler.py:handle_request_defer():147] handle defer: 3
+2021-12-23 23:42:43,504 DEBUG   SenderThread:1598073 [sender.py:send():238] send: summary
+2021-12-23 23:42:43,505 INFO    SenderThread:1598073 [sender.py:_save_file():960] saving file wandb-summary.json with policy end
+2021-12-23 23:42:43,506 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: defer
+2021-12-23 23:42:43,506 INFO    SenderThread:1598073 [sender.py:send_request_defer():391] handle sender defer: 3
+2021-12-23 23:42:43,506 INFO    SenderThread:1598073 [sender.py:transition_state():395] send defer: 4
+2021-12-23 23:42:43,506 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: defer
+2021-12-23 23:42:43,506 INFO    HandlerThread:1598073 [handler.py:handle_request_defer():147] handle defer: 4
+2021-12-23 23:42:43,506 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: defer
+2021-12-23 23:42:43,507 INFO    SenderThread:1598073 [sender.py:send_request_defer():391] handle sender defer: 4
+2021-12-23 23:42:43,557 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:43,893 INFO    Thread-8  :1598073 [dir_watcher.py:_on_file_modified():230] file/dir modified: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/output.log
+2021-12-23 23:42:43,893 INFO    Thread-8  :1598073 [dir_watcher.py:_on_file_modified():230] file/dir modified: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/wandb-summary.json
+2021-12-23 23:42:44,234 INFO    SenderThread:1598073 [sender.py:transition_state():395] send defer: 5
+2021-12-23 23:42:44,234 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:44,235 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: defer
+2021-12-23 23:42:44,235 INFO    HandlerThread:1598073 [handler.py:handle_request_defer():147] handle defer: 5
+2021-12-23 23:42:44,235 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: defer
+2021-12-23 23:42:44,235 INFO    SenderThread:1598073 [sender.py:send_request_defer():391] handle sender defer: 5
+2021-12-23 23:42:44,235 INFO    SenderThread:1598073 [dir_watcher.py:finish():283] shutting down directory watcher
+2021-12-23 23:42:44,336 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:44,894 INFO    Thread-8  :1598073 [dir_watcher.py:_on_file_modified():230] file/dir modified: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/config.yaml
+2021-12-23 23:42:44,894 INFO    SenderThread:1598073 [dir_watcher.py:finish():313] scan: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files
+2021-12-23 23:42:44,895 INFO    SenderThread:1598073 [dir_watcher.py:finish():327] scan save: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/config.yaml config.yaml
+2021-12-23 23:42:44,895 INFO    SenderThread:1598073 [dir_watcher.py:finish():327] scan save: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/requirements.txt requirements.txt
+2021-12-23 23:42:44,895 INFO    SenderThread:1598073 [dir_watcher.py:finish():327] scan save: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/output.log output.log
+2021-12-23 23:42:44,895 INFO    SenderThread:1598073 [dir_watcher.py:finish():327] scan save: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/wandb-summary.json wandb-summary.json
+2021-12-23 23:42:44,896 INFO    SenderThread:1598073 [dir_watcher.py:finish():327] scan save: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/conda-environment.yaml conda-environment.yaml
+2021-12-23 23:42:44,896 INFO    SenderThread:1598073 [dir_watcher.py:finish():327] scan save: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/wandb-metadata.json wandb-metadata.json
+2021-12-23 23:42:44,896 INFO    SenderThread:1598073 [sender.py:transition_state():395] send defer: 6
+2021-12-23 23:42:44,897 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:44,906 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: defer
+2021-12-23 23:42:44,908 INFO    HandlerThread:1598073 [handler.py:handle_request_defer():147] handle defer: 6
+2021-12-23 23:42:44,911 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: defer
+2021-12-23 23:42:44,911 INFO    SenderThread:1598073 [sender.py:send_request_defer():391] handle sender defer: 6
+2021-12-23 23:42:44,912 INFO    SenderThread:1598073 [file_pusher.py:finish():177] shutting down file pusher
+2021-12-23 23:42:45,012 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:45,012 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:45,114 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:45,114 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:45,215 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:45,216 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:45,317 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:45,317 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:45,419 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:45,419 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:45,520 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:45,521 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:45,622 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:45,622 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:45,724 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:45,724 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:45,825 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:45,826 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:45,927 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:45,927 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:46,029 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:46,029 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:46,131 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:46,131 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:46,232 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:46,233 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:46,318 INFO    Thread-14 :1598073 [upload_job.py:push():137] Uploaded file /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/output.log
+2021-12-23 23:42:46,321 INFO    Thread-12 :1598073 [upload_job.py:push():137] Uploaded file /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/config.yaml
+2021-12-23 23:42:46,334 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:46,334 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:46,436 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:46,436 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:46,538 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:46,538 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:46,639 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:46,639 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:46,741 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:46,741 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:46,842 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:46,843 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:46,886 INFO    Thread-15 :1598073 [upload_job.py:push():137] Uploaded file /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/wandb-summary.json
+2021-12-23 23:42:46,944 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:46,945 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:47,046 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:47,046 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:47,148 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:47,148 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:47,250 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:47,250 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:47,351 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:47,352 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:47,453 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:47,453 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:47,554 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:47,555 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:47,656 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:47,656 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:47,691 INFO    Thread-13 :1598073 [upload_job.py:push():137] Uploaded file /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/requirements.txt
+2021-12-23 23:42:47,758 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:47,758 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:47,860 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:47,860 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:47,961 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:47,962 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:48,063 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:48,064 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:48,110 INFO    Thread-16 :1598073 [upload_job.py:push():137] Uploaded file /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/files/conda-environment.yaml
+2021-12-23 23:42:48,165 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:48,165 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:48,267 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:48,267 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:48,310 INFO    Thread-7  :1598073 [sender.py:transition_state():395] send defer: 7
+2021-12-23 23:42:48,311 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: defer
+2021-12-23 23:42:48,311 INFO    HandlerThread:1598073 [handler.py:handle_request_defer():147] handle defer: 7
+2021-12-23 23:42:48,311 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: defer
+2021-12-23 23:42:48,311 INFO    SenderThread:1598073 [sender.py:send_request_defer():391] handle sender defer: 7
+2021-12-23 23:42:48,369 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:48,621 INFO    SenderThread:1598073 [sender.py:transition_state():395] send defer: 8
+2021-12-23 23:42:48,621 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:48,622 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: defer
+2021-12-23 23:42:48,622 INFO    HandlerThread:1598073 [handler.py:handle_request_defer():147] handle defer: 8
+2021-12-23 23:42:48,622 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: defer
+2021-12-23 23:42:48,622 INFO    SenderThread:1598073 [sender.py:send_request_defer():391] handle sender defer: 8
+2021-12-23 23:42:48,622 INFO    SenderThread:1598073 [sender.py:transition_state():395] send defer: 9
+2021-12-23 23:42:48,623 DEBUG   SenderThread:1598073 [sender.py:send():238] send: final
+2021-12-23 23:42:48,623 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: defer
+2021-12-23 23:42:48,623 DEBUG   SenderThread:1598073 [sender.py:send():238] send: footer
+2021-12-23 23:42:48,623 INFO    HandlerThread:1598073 [handler.py:handle_request_defer():147] handle defer: 9
+2021-12-23 23:42:48,623 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: defer
+2021-12-23 23:42:48,623 INFO    SenderThread:1598073 [sender.py:send_request_defer():391] handle sender defer: 9
+2021-12-23 23:42:48,723 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: poll_exit
+2021-12-23 23:42:48,723 DEBUG   SenderThread:1598073 [sender.py:send_request():252] send_request: poll_exit
+2021-12-23 23:42:48,723 INFO    SenderThread:1598073 [file_pusher.py:join():182] waiting for file pusher
+2021-12-23 23:42:50,467 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: get_summary
+2021-12-23 23:42:50,469 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: sampled_history
+2021-12-23 23:42:50,470 DEBUG   HandlerThread:1598073 [handler.py:handle_request():130] handle_request: shutdown
+2021-12-23 23:42:50,470 INFO    HandlerThread:1598073 [handler.py:finish():731] shutting down handler
+2021-12-23 23:42:50,623 INFO    WriterThread:1598073 [datastore.py:close():281] close: /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20211223_234211-13g3ul2v/run-13g3ul2v.wandb
+2021-12-23 23:42:51,466 INFO    SenderThread:1598073 [sender.py:finish():1091] shutting down sender
+2021-12-23 23:42:51,466 INFO    SenderThread:1598073 [file_pusher.py:finish():177] shutting down file pusher
+2021-12-23 23:42:51,466 INFO    SenderThread:1598073 [file_pusher.py:join():182] waiting for file pusher
+2021-12-23 23:42:51,467 INFO    MainThread:1598073 [internal.py:handle_exit():77] Internal process exited

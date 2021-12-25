@@ -154,7 +154,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
             # MULTI AGENT
             # initialize actions for all agents in this episode
             num_agents = env.get_num_agents()
-            actions = torch.randint(0, 2, size=(num_agents,)).to(device)
+            actions = torch.randint(0, 2, size=(num_agents,))
 
             # Main loop
             for step in range(max_steps):
@@ -173,22 +173,57 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                     mean_fields = torch.zeros(N,2).to(device)
                     actions_ = actions.clone()
                     q_values = torch.zeros(N).to(device)
+                    
+                    # calculating distance matrix of all agents
+                    if N > 3:
+                        positions = [(0,0) for _ in range(num_agents)]
+                        distance_matrix = [[0] * num_agents for _ in range(num_agents)]
+                        for i in range(num_agents):
+                            agent = env.agents[i]
+                            positions[i] = agent.position if agent.position != None else agent.initial_position
+                        #print(positions)
+                        for i in range(num_agents):
+                            for j in range(i+1, num_agents):
+                                distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
+                                distance_matrix[j][i] = distance_matrix[i][j]
+                        #print(distance_matrix)
                 
-                    for i in range(num_iter):
+                    #for i in range(num_iter):
+                    if N == 1:
+                            mean_fields = torch.FloatTensor([[0.5,0.5]]).to(device)
+                    elif N <= 3: # 2 or 3 agent all together, which means that there're not 3 nearest neighbors
                         for j in range(N):
-                            #other_actions = actions_[actions_ != actions_[j]]
-                            #other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2)
-                            other_actions = torch.nn.functional.one_hot(actions_, num_classes=2) #TODO: to use 'real' other actions
+                            pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
+                            aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1,N)))
+                            other_actions = torch.cat((pre_actions, aft_actions))
+                            other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2)
                             mean_fields[j] = torch.mean(other_actions.float(), dim=0) #Category actions to vectors first
+                    else:
                         for j in range(N):
-                            # concatenate state and mf
-                            state = states[j].to(device)
-                            #new_x = torch.cat([state.x.to(device), mean_fields[j].repeat(state.x.shape[0], 1)], dim=1)
-                            #state.x = new_x
-                            # calculate q and action
-                            q_action = dqn_agent.act(state, mean_fields[j])
-                            q_values[j] = q_action[j][3]
-                            actions_[j] = q_action[j][1]
+                            # select all other agents
+                            #pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
+                            #aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1,N)))
+                            #other_actions = torch.cat((pre_actions, aft_actions))
+                            
+                            # select 3 nearest neighbors
+                            neighbors = np.argpartition(distance_matrix[0], -3)[-3:]
+                            #print("neighbors: {}".format(neighbors))
+                            neighbor_actions = actions_[neighbors]
+                            #print("neigh_actions:{}".format(neighbor_actions))
+                            neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2) 
+                            mean_fields[j] = torch.mean(neighbor_actions.float(), dim=0) #Category actions to vectors first
+                    for j in range(N):
+                        # concatenate state and mf
+                        #state = states[j].to(device).clone()
+                        state = states[j].to(device)
+                        #new_x = torch.cat([state.x, mean_fields[j].repeat(state.x.shape[0], 1)], dim=1)
+                        #state.x = new_x
+                        # calculate q and action
+                        #q_action = ep_controller.rl_agent.act(state)
+                        q_action = dqn_agent.act(state, mean_fields[j])
+                        q_values[j] = q_action[j][3]
+                        actions_[j] = q_action[j][1]
+                        
                     return actions_, mean_fields, q_values
                  
                 actions, mean_fields, q_values = infer_acts(states, actions)

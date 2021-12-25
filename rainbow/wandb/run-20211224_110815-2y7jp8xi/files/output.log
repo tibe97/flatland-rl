@@ -1,0 +1,114 @@
+About to train 1 agents on (25,25) env.
+Parameters:
+max_num_cities: 2
+max_rails_between_cities: 2
+max_rails_in_city: 4
+malfunction_rate: 0
+max_duration: 50
+min_duration: 20
+num_episodes: 200
+starting from episode: 0
+max_steps: 404
+eps_initial: 1
+eps_decay_rate: 0.999
+learning_rate: 0.02
+learning_rate_decay: 0.5
+done_reward: 0
+deadlock_reward: -1000
+batch_size: 128
+attention_0.att_l                                         (1, 4, 10)
+attention_0.att_r                                         (1, 4, 10)
+attention_0.bias                                               (40,)
+attention_0.lin_l.weight                                    (40, 12)
+attention_1.att_l                                         (1, 4, 10)
+attention_1.att_r                                         (1, 4, 10)
+attention_1.bias                                               (40,)
+attention_1.lin_l.weight                                    (40, 40)
+attention_2.att_l                                         (1, 4, 10)
+attention_2.att_r                                         (1, 4, 10)
+attention_2.bias                                               (40,)
+attention_2.lin_l.weight                                    (40, 40)
+out_att.att_l                                              (1, 1, 1)
+out_att.att_r                                              (1, 1, 1)
+out_att.bias                                                    (1,)
+out_att.lin_l.weight                                         (1, 40)
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+filename is: test_results/
+/home/runnphoenix/work/flatland-rl/rainbow/model.py:252: UserWarning: Implicit dimension choice for softmax has been deprecated. Change the call to include dim=X as an argument.
+  x = nn.functional.softmax(self.layer3(x))
+/home/runnphoenix/anaconda3/lib/python3.8/site-packages/torch/optim/lr_scheduler.py:131: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  warnings.warn("Detected call of `lr_scheduler.step()` before `optimizer.step()`. "
+Ep: 1	 2 Agents on (25,25).	 Ep score -93.000	Avg Score: -0.230	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.86	EP ended at step: 156/404	Mean state_value: [-1.3872803]	 Epoch avg_loss: None
+Ep: 2	 3 Agents on (25,25).	 Ep score -23.667	Avg Score: -0.058	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.83	EP ended at step: 32/408	Mean state_value: [-1.3094993]	 Epoch avg_loss: None
+Ep: 3	 4 Agents on (25,25).	 Ep score -59.250	Avg Score: -0.144	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.70	EP ended at step: 168/412	Mean state_value: [-1.3684939]	 Epoch avg_loss: None
+Ep: 4	 5 Agents on (25,25).	 Ep score -261.200	Avg Score: -0.628	 Env Dones so far: 0.00%	 Done Agents in ep: 40.00%	 In deadlock 60.00%(at switch 0)
+		 Not started 0	 Eps: 0.46	EP ended at step: 420/416	Mean state_value: [-1.360714]	 Epoch avg_loss: None
+Ep: 5	 6 Agents on (25,25).	 Ep score -355.000	Avg Score: -0.845	 Env Dones so far: 0.00%	 Done Agents in ep: 16.67%	 In deadlock 83.33%(at switch 0)
+		 Not started 0	 Eps: 0.30	EP ended at step: 424/420	Mean state_value: [-1.3846099]	 Epoch avg_loss: None
+Ep: 6	 7 Agents on (25,25).	 Ep score -310.714	Avg Score: -0.733	 Env Dones so far: 0.00%	 Done Agents in ep: 28.57%	 In deadlock 71.43%(at switch 0)
+		 Not started 0	 Eps: 0.20	EP ended at step: 428/424	Mean state_value: [-1.3745369]	 Epoch avg_loss: None
+Ep: 7	 8 Agents on (25,25).	 Ep score -378.750	Avg Score: -0.885	 Env Dones so far: 0.00%	 Done Agents in ep: 12.50%	 In deadlock 87.50%(at switch 0)
+		 Not started 0	 Eps: 0.13	EP ended at step: 432/428	Mean state_value: [-1.4860685]	 Epoch avg_loss: None
+Ep: 8	 1 Agents on (25,25).	 Ep score -22.000	Avg Score: -0.051	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.12	EP ended at step: 24/432	Mean state_value: [-1.1940244]	 Epoch avg_loss: None
+/home/runnphoenix/anaconda3/lib/python3.8/site-packages/flatland/envs/rail_generators.py:780: UserWarning: Could not set all required cities!
+  warnings.warn(
+/home/runnphoenix/anaconda3/lib/python3.8/site-packages/flatland/envs/rail_generators.py:703: UserWarning: [WARNING] Changing to Grid mode to place at least 2 cities.
+  warnings.warn("[WARNING] Changing to Grid mode to place at least 2 cities.")
+Ep: 9	 2 Agents on (25,25).	 Ep score -31.500	Avg Score: -0.078	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.12	EP ended at step: 34/404	Mean state_value: [-1.2457719]	 Epoch avg_loss: None
+Ep: 10	 3 Agents on (25,25).	 Ep score -57.667	Avg Score: -0.141	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.11	EP ended at step: 105/408	Mean state_value: [-1.2847706]	 Epoch avg_loss: None
+ --------------- TESTING STARTED ------------------
+Ep: 0	 1 Agents on (25,25).	 Ep score -22.000	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 24/404
+Ep: 1	 1 Agents on (25,25).	 Ep score -30.000	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 32/404
+Ep: 2	 1 Agents on (25,25).	 Ep score -31.000	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 33/404
+Ep: 0	 2 Agents on (25,25).	 Ep score -27.000	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 36/408
+Ep: 1	 2 Agents on (25,25).	 Ep score -29.000	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 31/408
+Ep: 2	 2 Agents on (25,25).	 Ep score -27.500	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 30/408
+Ep: 0	 3 Agents on (25,25).	 Ep score -27.667	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 34/412
+Ep: 1	 3 Agents on (25,25).	 Ep score -45.667	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 73/412
+Ep: 2	 3 Agents on (25,25).	 Ep score -20.667	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 35/412
+Ep: 0	 4 Agents on (25,25).	 Ep score -220.000	 Done Agents in ep: 50.00%	 In deadlock 50.00%(at switch 0)	 Not started 0	EP ended at step: 416/416
+Ep: 1	 4 Agents on (25,25).	 Ep score -318.250	 Done Agents in ep: 25.00%	 In deadlock 75.00%(at switch 0)	 Not started 0	EP ended at step: 416/416
+Ep: 2	 4 Agents on (25,25).	 Ep score -414.000	 Done Agents in ep: 0.00%	 In deadlock 75.00%(at switch 1)	 Not started 0	EP ended at step: 416/416
+Ep: 0	 5 Agents on (25,25).	 Ep score -338.400	 Done Agents in ep: 20.00%	 In deadlock 80.00%(at switch 0)	 Not started 0	EP ended at step: 420/420
+Ep: 1	 5 Agents on (25,25).	 Ep score -27.200	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 34/420
+Ep: 2	 5 Agents on (25,25).	 Ep score -28.000	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 35/420
+Ep: 0	 6 Agents on (25,25).	 Ep score -355.000	 Done Agents in ep: 16.67%	 In deadlock 83.33%(at switch 0)	 Not started 0	EP ended at step: 424/424
+Ep: 1	 6 Agents on (25,25).	 Ep score -422.000	 Done Agents in ep: 0.00%	 In deadlock 100.00%(at switch 3)	 Not started 0	EP ended at step: 424/424
+Ep: 2	 6 Agents on (25,25).	 Ep score -290.500	 Done Agents in ep: 33.33%	 In deadlock 0.00%(at switch 0)	 Not started 0	EP ended at step: 424/424
+Ep: 0	 7 Agents on (25,25).	 Ep score -368.000	 Done Agents in ep: 14.29%	 In deadlock 85.71%(at switch 0)	 Not started 0	EP ended at step: 428/428
+Ep: 1	 7 Agents on (25,25).	 Ep score -152.000	 Done Agents in ep: 71.43%	 In deadlock 28.57%(at switch 0)	 Not started 0	EP ended at step: 428/428
+Ep: 2	 7 Agents on (25,25).	 Ep score -196.000	 Done Agents in ep: 57.14%	 In deadlock 42.86%(at switch 2)	 Not started 0	EP ended at step: 428/428
+Ep: 0	 8 Agents on (25,25).	 Ep score -378.750	 Done Agents in ep: 12.50%	 In deadlock 87.50%(at switch 0)	 Not started 0	EP ended at step: 432/432
+Ep: 1	 8 Agents on (25,25).	 Ep score -380.500	 Done Agents in ep: 12.50%	 In deadlock 50.00%(at switch 0)	 Not started 0	EP ended at step: 432/432
+Ep: 2	 8 Agents on (25,25).	 Ep score -430.000	 Done Agents in ep: 0.00%	 In deadlock 100.00%(at switch 0)	 Not started 0	EP ended at step: 432/432
+AGENT: Saving local and target networks
+Epoch 10, testing agents on 3: Avg. done agents: 58.869047619047606% | Avg. reward: -1139.5 | Avg. normalized reward: -21.10185185185185 | Avg. agents in deadlock: 35.74900793650793%| LR: 0.01760405965600031
+Replay memory saved
+Traceback (most recent call last):
+  File "train.py", line 471, in <module>
+    main(args)
+  File "train.py", line 305, in main
+    ep_controller.save_experience_and_train(a, railenv_action_dict[a], all_rewards[a], next_obs[a], done[a], step, args, ep, mean_fields[a], next_q_values[a])
+  File "/home/runnphoenix/work/flatland-rl/rainbow/graph_for_observation.py", line 315, in save_experience_and_train
+    if self.env.obs_builder.is_agent_in_deadlock(a) and not self.agents_in_deadlock[a]: # agent just got in deadlock
+  File "/home/runnphoenix/work/flatland-rl/rainbow/graph_for_observation.py", line 1599, in is_agent_in_deadlock
+    if a != agent and a.position == next_position:
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/attr/_make.py", line 1557, in __ne__
+    result = self.__eq__(other)
+  File "<attrs generated eq flatland.envs.agent_utils.EnvAgent>", line 23, in __eq__
+    other.speed_data,
+KeyboardInterrupt

@@ -1,0 +1,79 @@
+About to train 1 agents on (25,25) env.
+Parameters:
+max_num_cities: 2
+max_rails_between_cities: 2
+max_rails_in_city: 4
+malfunction_rate: 0
+max_duration: 50
+min_duration: 20
+num_episodes: 200
+starting from episode: 0
+max_steps: 404
+eps_initial: 1
+eps_decay_rate: 0.999
+learning_rate: 0.02
+learning_rate_decay: 0.5
+done_reward: 0
+deadlock_reward: -1000
+batch_size: 128
+attention_0.att_l                                         (1, 4, 10)
+attention_0.att_r                                         (1, 4, 10)
+attention_0.bias                                               (40,)
+attention_0.lin_l.weight                                    (40, 12)
+attention_1.att_l                                         (1, 4, 10)
+attention_1.att_r                                         (1, 4, 10)
+attention_1.bias                                               (40,)
+attention_1.lin_l.weight                                    (40, 40)
+attention_2.att_l                                         (1, 4, 10)
+attention_2.att_r                                         (1, 4, 10)
+attention_2.bias                                               (40,)
+attention_2.lin_l.weight                                    (40, 40)
+out_att.att_l                                              (1, 1, 1)
+out_att.att_r                                              (1, 1, 1)
+out_att.bias                                                    (1,)
+out_att.lin_l.weight                                         (1, 40)
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+filename is: test_results/
+/home/runnphoenix/work/flatland-rl/rainbow/model.py:252: UserWarning: Implicit dimension choice for softmax has been deprecated. Change the call to include dim=X as an argument.
+  x = nn.functional.softmax(self.layer3(x))
+/home/runnphoenix/anaconda3/lib/python3.8/site-packages/torch/optim/lr_scheduler.py:131: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  warnings.warn("Detected call of `lr_scheduler.step()` before `optimizer.step()`. "
+Ep: 1	 2 Agents on (25,25).	 Ep score -93.000	Avg Score: -0.230	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.86	EP ended at step: 156/404	Mean state_value: [-0.2530063]	 Epoch avg_loss: None
+Ep: 2	 3 Agents on (25,25).	 Ep score -24.333	Avg Score: -0.060	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.83	EP ended at step: 34/408	Mean state_value: [-0.1112553]	 Epoch avg_loss: None
+Ep: 3	 4 Agents on (25,25).	 Ep score -220.250	Avg Score: -0.535	 Env Dones so far: 0.00%	 Done Agents in ep: 50.00%	 In deadlock 50.00%(at switch 0)
+		 Not started 0	 Eps: 0.55	EP ended at step: 416/412	Mean state_value: [-0.16062605]	 Epoch avg_loss: None
+Ep: 4	 5 Agents on (25,25).	 Ep score -418.000	Avg Score: -1.005	 Env Dones so far: 0.00%	 Done Agents in ep: 0.00%	 In deadlock 40.00%(at switch 0)
+		 Not started 0	 Eps: 0.36	EP ended at step: 420/416	Mean state_value: [-0.13170496]	 Epoch avg_loss: None
+Ep: 5	 6 Agents on (25,25).	 Ep score -290.000	Avg Score: -0.690	 Env Dones so far: 0.00%	 Done Agents in ep: 33.33%	 In deadlock 66.67%(at switch 0)
+		 Not started 0	 Eps: 0.23	EP ended at step: 424/420	Mean state_value: [-0.12536721]	 Epoch avg_loss: None
+Ep: 6	 7 Agents on (25,25).	 Ep score -369.714	Avg Score: -0.872	 Env Dones so far: 0.00%	 Done Agents in ep: 14.29%	 In deadlock 85.71%(at switch 0)
+		 Not started 0	 Eps: 0.15	EP ended at step: 428/424	Mean state_value: [-0.15096088]	 Epoch avg_loss: None
+Ep: 7	 8 Agents on (25,25).	 Ep score -380.000	Avg Score: -0.888	 Env Dones so far: 0.00%	 Done Agents in ep: 12.50%	 In deadlock 87.50%(at switch 0)
+		 Not started 0	 Eps: 0.10	EP ended at step: 432/428	Mean state_value: [-0.13233672]	 Epoch avg_loss: None
+Ep: 8	 1 Agents on (25,25).	 Ep score -30.000	Avg Score: -0.069	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.10	EP ended at step: 32/432	Mean state_value: [-0.1766501]	 Epoch avg_loss: None
+Ep: 9	 2 Agents on (25,25).	 Ep score -28.500	Avg Score: -0.071	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.09	EP ended at step: 35/404	Mean state_value: [-0.23121239]	 Epoch avg_loss: None
+Ep: 10	 3 Agents on (25,25).	 Ep score -20.333	Avg Score: -0.050	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.09	EP ended at step: 34/408	Mean state_value: [-0.097605]	 Epoch avg_loss: None
+ --------------- TESTING STARTED ------------------
+Traceback (most recent call last):
+  File "train.py", line 471, in <module>
+    main(args)
+  File "train.py", line 325, in main
+    avg_done_agents, avg_reward, avg_norm_reward, avg_deadlock_agents, test_actions = test(
+  File "/home/runnphoenix/work/flatland-rl/rainbow/test.py", line 228, in test
+    actions, mean_fields, q_values = infer_acts(states, actions)
+  File "/home/runnphoenix/work/flatland-rl/rainbow/test.py", line 223, in infer_acts
+    q_action = ep_controller.rl_agent.act(state, mean_fields[j])
+NameError: name 'ep_controller' is not defined
