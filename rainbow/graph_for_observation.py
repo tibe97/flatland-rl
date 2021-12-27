@@ -211,10 +211,11 @@ class EpisodeController():
             done,
             step,
             args,
-            ep):
+            ep,
+            train=True):
         '''
             In the first part we perform an agent step (save experience and possibly learn) only if agent
-            was able to move (no agent blocked his action).
+            was able to move (no other agent blocked his action).
         '''
         agent = self.env.agents[a]
         if not self.agent_done_removed[a]:
@@ -258,17 +259,19 @@ class EpisodeController():
                                 self.acc_rewards[a]))
                     # step saves experience tuple and can perform learning
                     # (every T time steps)
-                    step_loss = self.rl_agent.step(
-                        self.agent_path_obs_buffer[a],
-                        self.acc_rewards[a],
-                        next_obs,
-                        self.agent_done_removed[a],
-                        self.agents_in_deadlock[a],
-                        ep=ep)
+                    if train:
+                        step_loss = self.rl_agent.step(
+                            self.agent_path_obs_buffer[a],
+                            self.acc_rewards[a],
+                            next_obs,
+                            self.agent_done_removed[a],
+                            self.agents_in_deadlock[a],
+                            ep=ep)
 
-                    # save stats
-                    if step_loss is not None:
-                        self.epoch_loss.append(step_loss)
+                        # save stats
+                        if step_loss is not None:
+                            self.epoch_loss.append(step_loss)
+
                     if self.agent_done_removed[a]:
                         self.rewards_buffer[a].append(0)
                     else:
@@ -349,15 +352,16 @@ class EpisodeController():
                                     logging.debug(
                                         "Agent {} just exited switch and ALREADY entering another one".format(a))
                                     #self.agent_obs_buffer[a] = next_obs.copy()
-                                    step_loss = self.rl_agent.step(
-                                        self.agent_path_obs_buffer[a],
-                                        self.acc_rewards[a],
-                                        next_obs,
-                                        self.agent_done_removed[a],
-                                        self.agents_in_deadlock[a],
-                                        ep=ep)
-                                    if step_loss is not None:
-                                        self.epoch_loss.append(step_loss)
+                                    if train:
+                                        step_loss = self.rl_agent.step(
+                                            self.agent_path_obs_buffer[a],
+                                            self.acc_rewards[a],
+                                            next_obs,
+                                            self.agent_done_removed[a],
+                                            self.agents_in_deadlock[a],
+                                            ep=ep)
+                                        if step_loss is not None:
+                                            self.epoch_loss.append(step_loss)
                                 else:
                                     logging.debug(
                                         "Agent {} is not at switch anymore".format(a))
@@ -373,15 +377,17 @@ class EpisodeController():
             if action == RailEnvActions.STOP_MOVING:
                 self.agents_speed_timesteps[a] -= 1
                 self.env.obs_builder.agent_requires_obs.update({a: True})
-                if len(
-                        next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
-                    step_loss = self.rl_agent.step(
-                        self.agent_path_obs_buffer[a],
-                        self.acc_rewards[a],
-                        next_obs,
-                        self.agent_done_removed[a],
-                        self.agents_in_deadlock[a],
-                        ep=ep)
+                if len(next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
+                    if train:
+                        step_loss = self.rl_agent.step(
+                            self.agent_path_obs_buffer[a],
+                            self.acc_rewards[a],
+                            next_obs,
+                            self.agent_done_removed[a],
+                            self.agents_in_deadlock[a],
+                            ep=ep)
+                        if step_loss is not None:
+                                self.epoch_loss.append(step_loss)
                     self.agent_obs[a] = next_obs.copy()
             else:
                 logging.debug("Agent {} cannot move at position {}, fraction {}".format(
@@ -398,15 +404,16 @@ class EpisodeController():
                         #self.agent_obs_buffer[a] = next_obs
                         self.acc_rewards[a] = args.deadlock_reward
                         self.agents_in_deadlock[a] = True
-                        step_loss = self.rl_agent.step(
-                            self.agent_path_obs_buffer[a],
-                            self.acc_rewards[a],
-                            next_obs,
-                            done,
-                            self.agents_in_deadlock[a],
-                            ep=ep)
-                        if step_loss is not None:
-                            self.epoch_loss.append(step_loss)
+                        if train:
+                            step_loss = self.rl_agent.step(
+                                self.agent_path_obs_buffer[a],
+                                self.acc_rewards[a],
+                                next_obs,
+                                done,
+                                self.agents_in_deadlock[a],
+                                ep=ep)
+                            if step_loss is not None:
+                                self.epoch_loss.append(step_loss)
                         self.env.obs_builder.agent_requires_obs.update({
                                                                        a: False})
                     logging.debug(
@@ -1673,16 +1680,7 @@ class GraphObservation(ObservationBuilder):
             agent_position, agent_orientation, valid_move_action.popitem()[0].action, self.env.rail)
         # if next position is switch, then return True
         return self.track_map[new_position[0], new_position[1]] == -2
-        '''
-        if self.track_map[new_position[0], new_position[1]] == -2:
-            if agent.speed_data["speed"] == 1:
-                return True
-            else:
-                # agent is doing last step in the cell before reaching new cell
-                if np.isclose(agent.speed_data["position_fraction"]+agent.speed_data["speed"]%1, 0.0, atol=1.e-3):
-                    return True
-        return False
-        '''
+       
 
     def is_agent_2_steps_from_switch(self, handle):
         agents = self.env.agents
