@@ -35,6 +35,7 @@ def main(args):
     np.random.seed(1)
 
 
+    agent_weights_path = ""
     ######## TEST SET SELECTION - PARAMETERS ########
     
     test_multi_agent_setup = 1             # 1 for Medium size test, 2 for Big size test
@@ -115,6 +116,9 @@ def main(args):
         state_size=state_size,
         obs_builder=observation_builder)
 
+    agent.load(agent_weights_path)
+
+
     if 'n_trials' not in locals():
         n_trials = 15000
     
@@ -149,10 +153,10 @@ def main(args):
     print("--------------- TESTING STARTED ------------------")
     # Test performance over several episodes
     if True:
-        for ep in range(args.evaluation_episodes):
+        for ep in range(n_trials):
             # reward_sum contains the cumulative reward obtained as sum during
             # the steps
-            logging.debug("Episode {} of {}".format(ep, args.num_episodes))
+            logging.debug("Episode {} of {}".format(ep, n_trials))
             ep_controller = EpisodeController(env, agent, max_steps)
             ep_controller.reset()
 
@@ -181,7 +185,7 @@ def main(args):
                     "------------------------------------------------------------")
                 logging.debug(
                     '\r{} Agents on ({},{}).\n Ep: {}\t Step/MaxSteps: {} / {}'.format(
-                        env.get_num_agents(), args.width, args.height,
+                        env.get_num_agents(), x_dim, y_dim,
                         ep,
                         step + 1,
                         max_steps, end=" "))
@@ -204,10 +208,6 @@ def main(args):
 
                 if ep_controller.is_episode_done():
                     break
-
-            # Learn action STOP/GO only at the end of episode
-            # For now let's just use value network
-            #agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
 
             # end of episode
             eps = 0
