@@ -1,0 +1,280 @@
+2022-01-02 23:17:10,005 INFO    MainThread:56739 [wandb_setup.py:_flush():71] setting env: {}
+2022-01-02 23:17:10,005 INFO    MainThread:56739 [wandb_setup.py:_flush():71] setting login settings: {}
+2022-01-02 23:17:10,006 INFO    MainThread:56739 [wandb_init.py:_log_setup():357] Logging user logs to /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20220102_231710-2b4i6mfl/logs/debug.log
+2022-01-02 23:17:10,006 INFO    MainThread:56739 [wandb_init.py:_log_setup():358] Logging internal logs to /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20220102_231710-2b4i6mfl/logs/debug-internal.log
+2022-01-02 23:17:10,006 INFO    MainThread:56739 [wandb_init.py:init():390] calling init triggers
+2022-01-02 23:17:10,006 INFO    MainThread:56739 [wandb_init.py:init():395] wandb.init called with sweep_config: {}
+config: {'width': 25, 'height': 25, 'num_agents': 1, 'max_num_cities': 2, 'seed': 1, 'grid_mode': False, 'max_rails_between_cities': 2, 'max_rails_in_city': 4, 'malfunction_rate': 0, 'min_duration': 20, 'max_duration': 50, 'observation_builder': 'GraphObsForRailEnv', 'predictor': 'ShortestPathPredictorForRailEnv', 'view_semiwidth': 7, 'view_height': 30, 'offset': 25, 'observation_depth': 3, 'num_episodes': 200, 'start_epoch': 0, 'max_steps': 300, 'eps': 1, 'debug_print': False, 'load_memory': False, 'evaluation_episodes': 3, 'render': False, 'evaluation_interval': 10, 'save_model_interval': 50, 'start_lr_decay': 150, 'eps_decay': 0.999, 'learning_rate': 0.02, 'learning_rate_decay': 0.5, 'learning_rate_decay_policy': 0.5, 'run_title': 'first_run', 'wandb_project_name': 'wandb_default', 'model_path': 'test_results/', 'model_name': '', 'gat_layers': 3, 'flow': 'source_to_target', 'resume_weights': True, 'batch_norm': False, 'dropout_rate': 0.8, 'attention_heads': 4, 'batch_size': 128, 'use_stop_action': False, 'done_reward': 0, 'deadlock_reward': -1000, 'reward_scaling': 0.1}
+2022-01-02 23:17:10,006 INFO    MainThread:56739 [wandb_init.py:init():435] starting backend
+2022-01-02 23:17:10,006 INFO    MainThread:56739 [backend.py:_multiprocessing_setup():95] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2022-01-02 23:17:10,019 INFO    MainThread:56739 [backend.py:ensure_launched():199] starting backend process...
+2022-01-02 23:17:10,029 INFO    MainThread:56739 [backend.py:ensure_launched():204] started backend process with pid: 56903
+2022-01-02 23:17:10,030 INFO    MainThread:56739 [wandb_init.py:init():444] backend started and connected
+2022-01-02 23:17:10,033 INFO    MainThread:56739 [wandb_init.py:init():503] updated telemetry
+2022-01-02 23:17:10,059 INFO    MainThread:56739 [wandb_init.py:init():533] communicating current version
+2022-01-02 23:17:14,011 INFO    MainThread:56739 [wandb_init.py:init():538] got version response 
+2022-01-02 23:17:14,011 INFO    MainThread:56739 [wandb_init.py:init():548] communicating run to backend with 30 second timeout
+2022-01-02 23:17:33,177 ERROR   Thread-1  :56739 [retry.py:__call__():126] Retry attempt failed:
+Traceback (most recent call last):
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/urllib3/connectionpool.py", line 696, in urlopen
+    self._prepare_proxy(conn)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/urllib3/connectionpool.py", line 964, in _prepare_proxy
+    conn.connect()
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/urllib3/connection.py", line 411, in connect
+    self.sock = ssl_wrap_socket(
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/urllib3/util/ssl_.py", line 428, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/urllib3/util/ssl_.py", line 472, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/ssl.py", line 500, in wrap_socket
+    return self.sslsocket_class._create(
+  File "/home/runnphoenix/anaconda3/lib/python3.8/ssl.py", line 1040, in _create
+    self.do_handshake()
+  File "/home/runnphoenix/anaconda3/lib/python3.8/ssl.py", line 1309, in do_handshake
+    self._sslobj.do_handshake()
+OSError: [Errno 0] Error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/requests/adapters.py", line 439, in send
+    resp = conn.urlopen(
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/urllib3/connectionpool.py", line 755, in urlopen
+    retries = retries.increment(
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/urllib3/util/retry.py", line 573, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='api.wandb.ai', port=443): Max retries exceeded with url: /graphql (Caused by ProxyError('Cannot connect to proxy.', OSError(0, 'Error')))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/wandb/sdk/lib/retry.py", line 102, in __call__
+    result = self._call_fn(*args, **kwargs)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/wandb/sdk/internal/internal_api.py", line 141, in execute
+    return self.client.execute(*args, **kwargs)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/wandb/vendor/gql-0.2.0/gql/client.py", line 52, in execute
+    result = self._get_result(document, *args, **kwargs)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/wandb/vendor/gql-0.2.0/gql/client.py", line 60, in _get_result
+    return self.transport.execute(document, *args, **kwargs)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/wandb/vendor/gql-0.2.0/gql/transport/requests.py", line 38, in execute
+    request = requests.post(self.url, **post_args)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/requests/api.py", line 119, in post
+    return request('post', url, data=data, json=json, **kwargs)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/requests/api.py", line 61, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/requests/sessions.py", line 542, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/requests/sessions.py", line 655, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/runnphoenix/anaconda3/lib/python3.8/site-packages/requests/adapters.py", line 510, in send
+    raise ProxyError(e, request=request)
+requests.exceptions.ProxyError: HTTPSConnectionPool(host='api.wandb.ai', port=443): Max retries exceeded with url: /graphql (Caused by ProxyError('Cannot connect to proxy.', OSError(0, 'Error')))
+2022-01-02 23:17:40,032 INFO    MainThread:56739 [wandb_init.py:init():576] starting run threads in backend
+2022-01-02 23:17:45,036 INFO    MainThread:56739 [wandb_run.py:_console_start():1693] atexit reg
+2022-01-02 23:17:45,037 INFO    MainThread:56739 [wandb_run.py:_redirect():1567] redirect: SettingsConsole.REDIRECT
+2022-01-02 23:17:45,037 INFO    MainThread:56739 [wandb_run.py:_redirect():1572] Redirecting console.
+2022-01-02 23:17:45,039 INFO    MainThread:56739 [wandb_run.py:_redirect():1628] Redirects installed.
+2022-01-02 23:17:45,039 INFO    MainThread:56739 [wandb_init.py:init():603] run started, returning control to user process
+2022-01-02 23:17:46,788 INFO    MainThread:56739 [wandb_watch.py:watch():43] Watching
+2022-01-03 06:01:13,916 INFO    MainThread:56739 [wandb_run.py:_atexit_cleanup():1663] got exitcode: 0
+2022-01-03 06:01:13,918 INFO    MainThread:56739 [wandb_run.py:_restore():1635] restore
+2022-01-03 06:01:16,426 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 1
+}
+pusher_stats {
+  uploaded_bytes: 838
+  total_bytes: 838
+}
+
+2022-01-03 06:01:18,068 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 1
+}
+pusher_stats {
+  uploaded_bytes: 838
+  total_bytes: 838
+}
+
+2022-01-03 06:01:18,594 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 838
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:18,697 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 838
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:18,798 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 838
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:18,900 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 838
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:19,001 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 838
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:19,103 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 838
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:19,205 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 838
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:19,307 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 838
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:19,408 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 838
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:19,510 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 838
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:19,612 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 838
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:19,714 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 220397
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:19,816 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 231808
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:19,917 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 231808
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:20,019 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 231808
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:20,121 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 231808
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:20,222 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 231808
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:20,324 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 231808
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:20,426 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 231808
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:20,528 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 231808
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:21,742 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 231808
+  total_bytes: 231808
+}
+
+2022-01-03 06:01:23,074 INFO    MainThread:56739 [wandb_run.py:_wait_for_finish():1793] got exit ret: done: true
+exit_result {
+}
+file_counts {
+  wandb_count: 6
+}
+pusher_stats {
+  uploaded_bytes: 231808
+  total_bytes: 231808
+}
+local_info {
+}
+
+2022-01-03 06:01:24,218 INFO    MainThread:56739 [wandb_run.py:_append_history():2011] rendering history
+2022-01-03 06:01:24,219 INFO    MainThread:56739 [wandb_run.py:_append_summary():1966] rendering summary
+2022-01-03 06:01:24,219 INFO    MainThread:56739 [wandb_run.py:_append_files():2061] logging synced files
