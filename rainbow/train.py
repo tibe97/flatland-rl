@@ -125,8 +125,8 @@ def main(args):
     #lr_scheduler = CosineAnnealingLR(rl_agent.optimizer_value, T_max = 200)
     #lr_scheduler_policy = CosineAnnealingLR(rl_agent.optimizer_action, T_max=200)
     
-    lr_scheduler = CyclicLR(rl_agent.optimizer_value, base_lr=0.001, max_lr=0.02, step_size_up=25, cycle_momentum=False, mode="triangular2")
-    lr_scheduler_policy = CyclicLR(rl_agent.optimizer_action, base_lr=0.001, max_lr=0.02, step_size_up=25, cycle_momentum=False, mode="triangular2")
+    lr_scheduler = CyclicLR(rl_agent.optimizer_value, base_lr=0.00, max_lr=0.02, step_size_up=25, cycle_momentum=False, mode="triangular2")
+    lr_scheduler_policy = CyclicLR(rl_agent.optimizer_action, base_lr=0.00, max_lr=0.02, step_size_up=25, cycle_momentum=False, mode="triangular2")
     
     # Construct the environment with the given observation, generators, predictors, and stochastic data
     env = RailEnv(width=args.width,
@@ -205,7 +205,7 @@ def main(args):
         # MULTI AGENT
         # initialize actions for all agents in this episode
         num_agents = env.get_num_agents()
-        actions = torch.randint(0, 2, size=(num_agents,))
+        actions = torch.randint(0, 5, size=(num_agents,))
 
       
         # Main loop
@@ -228,7 +228,7 @@ def main(args):
             def infer_acts(states, actions, num_iter=3):
                 N = actions.shape[0]
                 actions_ = actions.clone()               
-                mean_fields = torch.zeros(N,2).to(device)
+                mean_fields = torch.zeros(N,5).to(device)
                 q_values = torch.zeros(N).to(device)
                 
                 # calculating distance matrix of all agents
@@ -247,13 +247,13 @@ def main(args):
                 
                 for i in range(num_iter):
                     if N == 1:
-                            mean_fields = torch.FloatTensor([[0.5,0.5]]).to(device)
+                            mean_fields = torch.FloatTensor([[0.2, 0.2, 0.2, 0.2, 0.2]]).to(device)
                     elif N <= 3: # 2 or 3 agent all together, which means that there're not 3 nearest neighbors
                         for j in range(N):
                             pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
                             aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1,N)))
                             other_actions = torch.cat((pre_actions, aft_actions))
-                            other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2)
+                            other_actions = torch.nn.functional.one_hot(other_actions, num_classes=5)
                             mean_fields[j] = torch.mean(other_actions.float(), dim=0) #Category actions to vectors first
                     else:
                         for j in range(N):
@@ -277,9 +277,9 @@ def main(args):
                         #state.x = new_x
                         # calculate q and action
                         #q_action = ep_controller.rl_agent.act(state)
-                        q_action = ep_controller.rl_agent.act(state, mean_fields[j])
+                        q_action = ep_controller.rl_agent.act(state, mean_fields[j], actions_[j]) #TODO: to use changed version of function act
                         q_values[j] = q_action[j][3]
-                        actions_[j] = q_action[j][1]
+                        
                 return actions_, mean_fields, q_values
                  
             actions, mean_fields, q_values = infer_acts(states, actions)
@@ -288,7 +288,7 @@ def main(args):
             # For each agent
             for a in range(env.get_num_agents()):
                 agent = env.agents[a]
-                agent_next_action = ep_controller.compute_agent_action(a, info, eps, mean_fields[a])
+                agent_next_action = ep_controller.compute_agent_action(a, info, eps, mean_fields[a]) #TODO: not using previously computed actions
                 railenv_action_dict.update({a: agent_next_action})
 
             # Environment step

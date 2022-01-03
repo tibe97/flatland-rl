@@ -42,17 +42,18 @@ class Agent:
         self.state_size = state_size
         # Q-Network
         #self.qnetwork_value_local = DQN_value(state_size).to(device)
-        self.qnetwork_value_local = GAT_value(12, 10, 1, args.gat_layers, args.dropout_rate, 0.3, args.attention_heads, args.flow, args.batch_norm).to(device)
+        self.qnetwork_value_local = GAT_value(12+5, 10, 5, args.gat_layers, args.dropout_rate, 0.3, args.attention_heads, args.flow, args.batch_norm).to(device)
         self.qnetwork_value_target = copy.deepcopy(self.qnetwork_value_local)
         
         #self.qnetwork_action = DQN_action(state_size).to(device)
-        #self.qnetwork_action = GAT_action(14, 10, 2, args.gat_layers, args.dropout_rate, 0.3, args.attention_heads, args.flow, args.batch_norm).to(device)
-        self.qnetwork_action = FC_action(3, 32, 12, 2).to(device)
+        self.qnetwork_action = GAT_action(12+5, 10, 5, args.gat_layers, args.dropout_rate, 0.3, args.attention_heads, args.flow, args.batch_norm).to(device)
+        #self.qnetwork_action = FC_action(3, 32, 12, 2).to(device)
         
         self.learning_rate = args.learning_rate
         self.optimizer_value = optim.Adam(self.qnetwork_value_local.parameters(), lr=self.learning_rate)
         self.optimizer_action = optim.Adam(self.qnetwork_action.parameters(), lr=self.learning_rate)
         self.evaluation_mode = False
+        
         # Replay memory
         #self.memory = ReplayBuffer("fc", BUFFER_SIZE, args.batch_size)
         self.memory = Memory(BUFFER_SIZE)
@@ -143,20 +144,8 @@ class Agent:
         if reward is None:
             return None
         
-        #self.memory.add(state, reward, next_state, done, deadlock)
         self._append_sample(state, reward, next_state, mean_field, next_q_value, done, deadlock)
 
-        '''
-        # Learn every UPDATE_EVERY time steps.
-        self.t_step = (self.t_step + 1) % UPDATE_EVERY
-        if self.t_step == 0:
-            # If enough samples are available in memory, get random subset and learn
-            #print("Dones: {}, deadlock: {}, other: {}".format(len(self.memory.memory_dones), len(self.memory.memory_deadlocks), len(self.memory.memory_other)))
-            if (len(self.memory.memory_dones) > BATCH_SIZE//10*2 and len(self.memory.memory_deadlocks) > BATCH_SIZE//10*3 and len(self.memory.memory_other) > BATCH_SIZE//10*5) or (len(self.memory.memory_dones) > BATCH_SIZE//2 and len(self.memory.memory_other) > BATCH_SIZE//2):
-                experiences = self.memory.sample()
-                if train:
-                    return self.learn(experiences, GAMMA, ep)
-        '''
         # Learn every UPDATE_EVERY time steps.
         self.t_step = (self.t_step + 1) % UPDATE_EVERY
         if self.t_step == 0:
@@ -165,7 +154,7 @@ class Agent:
       
         return None
         
-    def act(self, state, mean_field, eps=0.0, eval=True):
+    def act(self, state, mean_field, action, eps=0.0, eval=True):
         """ Returns for each agent the path to take and whether to stop or go.
             2 separate networks (we should try to unify)
 
@@ -185,53 +174,16 @@ class Agent:
         if eval:
             self.qnetwork_value_local.eval()
             with torch.no_grad():
-                out_value = self.qnetwork_value_local(batch.x, batch.edge_index) 
+                q_value = self.qnetwork_value_local(batch.x, batch.edge_index) 
         else:
             # switch from qnetwork value local to target to implement Fixed Q-learning
             #out_value = self.qnetwork_value_local(batch.x, batch.edge_index) 
-            out_value = self.qnetwork_value_target(batch.x, batch.edge_index)
+            q_value = self.qnetwork_value_target(batch.x, batch.edge_index)
 
         #out_action = self.qnetwork_action(batch.x, batch.edge_index)
-        action_x = torch.cat([out_value, mean_field.repeat(out_value.shape[0], 1)], dim=1)
+        action_x = torch.cat([q_value, mean_field.repeat(out_value.shape[0], 1)], dim=1)
         out_action = self.qnetwork_action(action_x) # qvalue + mean_field
         #print("action_x: {}, action_out: {}".format(action_x, out_action))
-
-        out_mapped = defaultdict(lambda: defaultdict(list))
-        for i, res in enumerate(zip(out_value, out_action)): # RES = (node_value, (value_stop, value_go))
-            batch_index = batch.batch[i] # batch array tells you to which graph each feature belongs to 
-            handle, path = batch_list[batch_index].graph_info
-            out_mapped[handle][(path[0], path[1])].append(res) # path[0] = path_ID, path[1] = path_variation (through the switch)
-
-        for handle in out_mapped.keys():
-            paths = []
-            action_prob = None
-            for path in out_mapped[handle].keys():
-                if self.use_stop_action: # current node where the agent is represents STOP action
-                    paths.append([path, out_mapped[handle][path][0]])
-                else: 
-                    if path[0] != 0: # Skip current node, i.e. skip STOP action
-                        paths.append([path, out_mapped[handle][path][0]])   
-                action_prob = out_mapped[handle][(0,0)][0]
-            if self.evaluation_mode: # test time
-                best_path = max(paths, key=lambda item: item[1][0])
-                m = Categorical(action_prob[1])
-                action = m.sample()
-                log_prob = m.log_prob(action)
-                agents_best_path_values.update({handle: [best_path[0], action.item(), log_prob, best_path[1][0], m.probs[action]]})
-            else:
-                if random.random() >= eps:
-                    best_path = max(paths, key=lambda item: item[1][0])
-                    m = Categorical(action_prob[1])
-                    action = m.sample()
-                    log_prob = m.log_prob(action)
-                    agents_best_path_values.update({handle: [best_path[0], action.item(), log_prob, best_path[1][0], m.probs[action]]})
-                else:
-                    random_index = random.choice(np.arange(len(paths)))
-                    random_path = paths[random_index]
-                    m = Categorical(action_prob[1])
-                    action = m.sample()
-                    log_prob = m.log_prob(action)
-                    agents_best_path_values.update({handle: [random_path[0], action.item(), log_prob, random_path[1][0], m.probs[action]]})
            
         self.qnetwork_value_local.train()
         self.qnetwork_action.train()
@@ -247,12 +199,6 @@ class Agent:
 
         # Choose best paths with local network, then compute value with target network
         if not deadlock and not done:
-            #preprocessed_next_state = self.obs_builder.preprocess_agent_obs(
-            #    next_state, 0)  # 0 is just a placeholder value for the agent (we don't care which one here)     
-            # Choose path to take at the current switch
-            #path_values = self.act(preprocessed_next_state, eps=0)
-            #S_value = path_values[0][3] # selected node value, which is the path with max value
-            #Q_target = reward + GAMMA * S_value
             # MULTI AGENT
             Q_target = next_q_value
         else: # if agent is done or is in deadlock, we don't need to compute any value. Value is reward at the end
@@ -272,6 +218,7 @@ class Agent:
             gamma (float): discount factor
         """
         print("------LEARNING------\n")
+        
         batch, idxs, is_weights = self.memory.sample(self.batch_size)
         batch = np.array(batch).transpose()
         states = list(batch[0])
@@ -287,36 +234,17 @@ class Agent:
         # Choose best paths with local network, then compute value with target network
         #selected_next_states = []
         Q_targets_next = next_q_values
-        '''
-        for i, state in enumerate(next_states):
-            if not deadlocks[i] and not dones[i]:
-                preprocessed_next_state = self.obs_builder.preprocess_agent_obs(
-                    state, 0)  # 0 is just a placeholder value for the agent (we don't care which one here)
-                # Choose path to take at the current switch
-                path_values = self.act(preprocessed_next_state, eps=0, eval=False)
-                S_value = path_values[0][3] # selected node value, which is the path with max value
-                Q_targets_next.append(S_value)
-            else: # if agent is done or is in deadlock, we don't need to compute any value. Value is reward at the end
-                Q_targets_next.append(torch.tensor([rewards[i]])) # append random value,it won't be considered
-        '''
             
-        # Double DQN
+        # Double DQN TODO
         Q_targets_next = [target.to(device) for target in Q_targets_next]
         Q_targets_next = torch.stack(Q_targets_next).squeeze()
 
-        '''
-        rewards = torch.tensor(rewards).to(device)
-        # convert true/false in integers
-        dones = torch.tensor([1 if done else 0 for done in dones]).to(device)
-        deadlocks = torch.tensor([1 if deadlock else 0 for deadlock in deadlocks]).to(device)
-        '''
         rewards = torch.tensor(rewards).to(device)
         dones = torch.tensor([1 if done else 0 for done in dones]).to(device)
         deadlocks = torch.tensor([1 if deadlock else 0 for deadlock in deadlocks]).to(device)
 
         # Compute Q targets for current states
         Q_targets = rewards + (gamma * Q_targets_next * (1 - dones) * (1 - deadlocks))
-
 
         errors = torch.abs(Q_expected - Q_targets).data.cpu().numpy()
         # update priority
@@ -346,28 +274,6 @@ class Agent:
         
         return loss_to_return
 
-    def learn_actions(self, log_probs, ending_step, dones, max_steps, ep, gamma=1.0):
-        '''
-            Network to learn STOP/GO action for each reachable path.
-            Compute the rewards to assign to each trajectory (between -1 and 1).
-            If agent reaches destination, the reward is inversely proportional to time taken.
-            Faster the agent, higher the reward.
-            -1 if agent in deadlock or doesn't finish.
-        '''
-        for a in range(len(log_probs)):
-            policy_loss = []
-            if dones[a]:
-                agent_reward = (max_steps-ending_step[a])/max_steps
-            else:
-                agent_reward = -1
-            for log_prob in log_probs[a]:
-                policy_loss.append(-log_prob * agent_reward)
-        policy_loss = torch.stack(policy_loss).sum() / len(log_probs)
-
-        self.optimizer_action.zero_grad()
-        policy_loss.backward()
-        self.optimizer_action.step()
-
 
     def compute_Q_values(self, states, mean_fields, net):
         ''' 
@@ -392,18 +298,7 @@ class Agent:
         # Get expected Q values from local or target model
         out_q_expected = network(batch.x, batch.edge_index).flatten()
         
-        out_mapped = defaultdict(list)
-        # TODO: Da sistemare, è buggato. per ora non scelgo il max tra i nodi vicini ma il max tra tutti i nodi
-        # Inoltre, per q_expected devo prendere solo il nodo attuale, ma per q_next devo prendere il max tra i vicini.
-        # SCEMO!
-        for i, res in enumerate(out_q_expected):
-            batch_index = int(batch.batch[i])
-            out_mapped[batch_index].append(res)
-        Q_expected = []
-        for i in out_mapped.keys():
-            Q_expected.append(out_mapped[i][0])
-        Q_expected = torch.stack(Q_expected)
-        return Q_expected.type(torch.cuda.FloatTensor)
+        return out_q_expected.type(torch.cuda.FloatTensor)
 
     def soft_update(self, local_model, target_model, tau):
         """Soft update model parameters.
