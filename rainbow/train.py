@@ -125,8 +125,8 @@ def main(args):
     #lr_scheduler = CosineAnnealingLR(rl_agent.optimizer_value, T_max = 200)
     #lr_scheduler_policy = CosineAnnealingLR(rl_agent.optimizer_action, T_max=200)
     
-    lr_scheduler = CyclicLR(rl_agent.optimizer_value, base_lr=0.001, max_lr=0.02, step_size_up=25, cycle_momentum=False, mode="triangular2")
-    lr_scheduler_policy = CyclicLR(rl_agent.optimizer_action, base_lr=0.001, max_lr=0.02, step_size_up=25, cycle_momentum=False, mode="triangular2")
+    lr_scheduler = CyclicLR(rl_agent.optimizer_value, base_lr=0.00, max_lr=0.02, step_size_up=25, cycle_momentum=False, mode="triangular2")
+    lr_scheduler_policy = CyclicLR(rl_agent.optimizer_action, base_lr=0.00, max_lr=0.02, step_size_up=25, cycle_momentum=False, mode="triangular2")
     
     # Construct the environment with the given observation, generators, predictors, and stochastic data
     env = RailEnv(width=args.width,
@@ -288,9 +288,9 @@ def main(args):
             # For each agent
             for a in range(env.get_num_agents()):
                 agent = env.agents[a]
-                agent_next_action = ep_controller.compute_agent_action(a, info, eps, mean_fields[a])
+                agent_next_action = ep_controller.compute_agent_action(a, info, eps, mean_fields[a]) #TODO: here the action is 5-dim
+                #agent_next_action = actions[a]
                 railenv_action_dict.update({a: agent_next_action})
-
             # Environment step
             next_obs, all_rewards, done, info = env.step(railenv_action_dict)
             
@@ -315,7 +315,7 @@ def main(args):
 
         # Learn action STOP/GO only at the end of episode
         # For now let's just use value network
-        #rl_agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
+        rl_agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
 
         
         # end of episode
