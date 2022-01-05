@@ -1,0 +1,79 @@
+About to train 1 agents on (25,25) env.
+Parameters:
+max_num_cities: 2
+max_rails_between_cities: 2
+max_rails_in_city: 4
+malfunction_rate: 0
+max_duration: 50
+min_duration: 20
+num_episodes: 200
+starting from episode: 0
+max_steps: 404
+eps_initial: 1
+eps_decay_rate: 0.999
+learning_rate: 0.02
+learning_rate_decay: 0.5
+done_reward: 0
+deadlock_reward: -1000
+batch_size: 64
+attention_0.att_l                                         (1, 4, 10)
+attention_0.att_r                                         (1, 4, 10)
+attention_0.bias                                               (40,)
+attention_0.lin_l.weight                                    (40, 12)
+attention_1.att_l                                         (1, 4, 10)
+attention_1.att_r                                         (1, 4, 10)
+attention_1.bias                                               (40,)
+attention_1.lin_l.weight                                    (40, 40)
+attention_2.att_l                                         (1, 4, 10)
+attention_2.att_r                                         (1, 4, 10)
+attention_2.bias                                               (40,)
+attention_2.lin_l.weight                                    (40, 40)
+out_att.att_l                                              (1, 1, 1)
+out_att.att_r                                              (1, 1, 1)
+out_att.bias                                                    (1,)
+out_att.lin_l.weight                                         (1, 40)
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+DEPRECATED - RailEnv arg: malfunction_and_process_data - use malfunction_generator
+filename is: test_results/
+/home/runnphoenix/anaconda3/lib/python3.8/site-packages/torch/optim/lr_scheduler.py:131: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  warnings.warn("Detected call of `lr_scheduler.step()` before `optimizer.step()`. "
+Ep: 1	 2 Agents on (25,25).	 Ep score -93.000	Avg Score: -0.230	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.86	EP ended at step: 156/404	Mean state_value: [-1.6062402]	 Epoch avg_loss: None
+Ep: 2	 3 Agents on (25,25).	 Ep score -280.000	Avg Score: -0.686	 Env Dones so far: 0.00%	 Done Agents in ep: 33.33%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.57	EP ended at step: 412/408	Mean state_value: [-1.5921907]	 Epoch avg_loss: None
+Ep: 3	 4 Agents on (25,25).	 Ep score -219.750	Avg Score: -0.533	 Env Dones so far: 0.00%	 Done Agents in ep: 50.00%	 In deadlock 50.00%(at switch 0)
+		 Not started 0	 Eps: 0.37	EP ended at step: 416/412	Mean state_value: [-1.458693]	 Epoch avg_loss: None
+Ep: 4	 5 Agents on (25,25).	 Ep score -418.000	Avg Score: -1.005	 Env Dones so far: 0.00%	 Done Agents in ep: 0.00%	 In deadlock 40.00%(at switch 0)
+		 Not started 0	 Eps: 0.25	EP ended at step: 420/416	Mean state_value: [-1.5789077]	 Epoch avg_loss: None
+Ep: 5	 6 Agents on (25,25).	 Ep score -290.000	Avg Score: -0.690	 Env Dones so far: 0.00%	 Done Agents in ep: 33.33%	 In deadlock 66.67%(at switch 0)
+		 Not started 0	 Eps: 0.16	EP ended at step: 424/420	Mean state_value: [-1.4587436]	 Epoch avg_loss: None
+Ep: 6	 7 Agents on (25,25).	 Ep score -312.286	Avg Score: -0.737	 Env Dones so far: 0.00%	 Done Agents in ep: 28.57%	 In deadlock 71.43%(at switch 0)
+		 Not started 0	 Eps: 0.10	EP ended at step: 428/424	Mean state_value: [-1.5101482]	 Epoch avg_loss: None
+Ep: 7	 8 Agents on (25,25).	 Ep score -329.250	Avg Score: -0.769	 Env Dones so far: 0.00%	 Done Agents in ep: 25.00%	 In deadlock 75.00%(at switch 0)
+		 Not started 0	 Eps: 0.07	EP ended at step: 432/428	Mean state_value: [-1.5474434]	 Epoch avg_loss: None
+Ep: 8	 1 Agents on (25,25).	 Ep score -30.000	Avg Score: -0.069	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.07	EP ended at step: 32/432	Mean state_value: [-1.3460282]	 Epoch avg_loss: None
+Ep: 9	 2 Agents on (25,25).	 Ep score -61.500	Avg Score: -0.152	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.06	EP ended at step: 92/404	Mean state_value: [-1.6486218]	 Epoch avg_loss: None
+Ep: 10	 3 Agents on (25,25).	 Ep score -30.333	Avg Score: -0.074	 Env Dones so far: 100.00%	 Done Agents in ep: 100.00%	 In deadlock 0.00%(at switch 0)
+		 Not started 0	 Eps: 0.06	EP ended at step: 68/408	Mean state_value: [-1.4162486]	 Epoch avg_loss: None
+ filename is: /home/runnphoenix/work/flatland-rl/rainbow/test_results/checkpoint_1_agents_on_25_25/epoch_100_04_01_2022__13_24_
+Weights for model /home/runnphoenix/work/flatland-rl/rainbow/test_results/checkpoint_1_agents_on_25_25/epoch_100_04_01_2022__13_24__value_local.pth have been loaded!
+Weights for model /home/runnphoenix/work/flatland-rl/rainbow/test_results/checkpoint_1_agents_on_25_25/epoch_100_04_01_2022__13_24__value_target.pth have been loaded!
+Weights for model /home/runnphoenix/work/flatland-rl/rainbow/test_results/checkpoint_1_agents_on_25_25/epoch_100_04_01_2022__13_24__action.pth have been loaded!
+--------------- TESTING STARTED ------------------
+Traceback (most recent call last):
+  File "train.py", line 474, in <module>
+    main(args)
+  File "train.py", line 329, in main
+    avg_done_agents, avg_reward, avg_norm_reward, avg_deadlock_agents, test_actions = test(args)  # Test
+  File "/home/runnphoenix/work/flatland-rl/rainbow/test_navigation.py", line 199, in test
+    a, info, eps)
+UnboundLocalError: local variable 'eps' referenced before assignment

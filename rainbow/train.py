@@ -326,8 +326,7 @@ def main(args):
         if (ep % args.evaluation_interval) == 0:  # Evaluate only at the end of the episodes
 
             rl_agent.eval()  # Set DQN (online network) to evaluation mode
-            avg_done_agents, avg_reward, avg_norm_reward, avg_deadlock_agents, test_actions = test(
-                args, ep, rl_agent, metrics, args.model_path)  # Test
+            avg_done_agents, avg_reward, avg_norm_reward, avg_deadlock_agents, test_actions = test(args)  # Test
             
             testing_stats = '\nEpoch ' + str(ep) + ', testing agents on ' + str(args.evaluation_episodes) + ': Avg. done agents: ' + str(avg_done_agents*100) + '% | Avg. reward: ' + str(avg_reward) + ' | Avg. normalized reward: ' + str(avg_norm_reward) + ' | Avg. agents in deadlock: ' + str(avg_deadlock_agents*100) + '%' + '| LR: ' + str(rl_agent.optimizer_value.param_groups[0]['lr'])
             print(testing_stats)
