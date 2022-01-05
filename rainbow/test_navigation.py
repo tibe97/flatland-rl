@@ -219,3 +219,158 @@ def main(args):
 
 
 
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Flatland')
+
+    # Flatland env parameters
+    parser.add_argument('--width', type=int, default=25,
+                        help='Environment width')
+    parser.add_argument('--height', type=int, default=25,
+                        help='Environment height')
+    parser.add_argument('--num-agents', type=int, default=1,
+                        help='Number of agents in the environment')
+    parser.add_argument(
+        '--max-num-cities',
+        type=int,
+        default=2,
+        help='Maximum number of cities where agents can start or end')
+    parser.add_argument('--seed', type=int, default=1,
+                        help='Seed used to generate grid environment randomly')
+    parser.add_argument(
+        '--grid-mode',
+        type=bool,
+        default=False,
+        help='Type of city distribution, if False cities are randomly placed')
+    parser.add_argument(
+        '--max-rails-between-cities',
+        type=int,
+        default=2,
+        help='Max number of tracks allowed between cities, these count as entry points to a city')
+    parser.add_argument(
+        '--max-rails-in-city',
+        type=int,
+        default=4,
+        help='Max number of parallel tracks within a city allowed')
+    parser.add_argument('--malfunction-rate', type=int, default=0,
+                        help='Rate of malfunction occurrence of single agent')
+    parser.add_argument('--min-duration', type=int,
+                        default=20, help='Min duration of malfunction')
+    parser.add_argument('--max-duration', type=int,
+                        default=50, help='Max duration of malfunction')
+    parser.add_argument(
+        '--observation-builder',
+        type=str,
+        default='GraphObsForRailEnv',
+        help='Class to use to build observation for agent')
+    parser.add_argument(
+        '--predictor',
+        type=str,
+        default='ShortestPathPredictorForRailEnv',
+        help='Class used to predict agent paths and help observation building')
+    parser.add_argument('--view-semiwidth', type=int, default=7,
+                        help='Semiwidth of field view for agent in local obs')
+    parser.add_argument('--view-height', type=int, default=30,
+                        help='Height of the field view for agent in local obs')
+    parser.add_argument('--offset', type=int, default=25,
+                        help='Offset of agent in local obs')
+    parser.add_argument('--observation-depth', type=int, default=3,
+                        help='Depth of observation graph of each agent')
+
+    # Training parameters
+    parser.add_argument('--num-episodes', type=int, default=1000,
+                        help='Number of episodes on which to train the agents')
+    parser.add_argument(
+        '--start-epoch',
+        type=int,
+        default=0,
+        help='Epoch from which resume training (useful for stats)')
+    parser.add_argument('--max-steps', type=int, default=300,
+                        help='Maximum number of steps for each episode')
+    parser.add_argument('--eps', type=float, default=1,
+                        help='epsilon value for e-greedy')
+    parser.add_argument('--debug-print', type=bool, default=False,
+                        help='requires debug printing')
+    parser.add_argument('--load-memory', type=bool, default=False,
+                        help='if load saved memory')
+    parser.add_argument(
+        '--evaluation-episodes',
+        type=int,
+        default=3,
+        metavar='N',
+        help='Number of evaluation episodes to average over')
+    parser.add_argument('--render', action='store_true',
+                        default=False, help='Display screen (testing only)')
+    parser.add_argument(
+        '--evaluation-interval',
+        type=int,
+        default=10,
+        metavar='EPISODES',
+        help='Number of episodes between evaluations')
+    parser.add_argument('--save-model-interval', type=int, default=50,
+                        help='Save models every tot episodes')
+    parser.add_argument('--start-lr-decay', type=int, default=150,
+                        help='Save models every tot episodes')
+    parser.add_argument('--eps-decay', type=float, default=0.999,
+                        help='epsilon decay value')
+    parser.add_argument('--learning-rate', type=float, default=0.005,
+                        help='LR for DQN agent')
+    parser.add_argument('--learning-rate-decay', type=float, default=1.0,
+                        help='LR decay for DQN agent')
+    parser.add_argument(
+        '--learning-rate-decay-policy',
+        type=float,
+        default=1.0,
+        help='LR decay for policy network')
+
+    # WANDB Logging
+    parser.add_argument('--run-title', type=str, default="first_run",
+                        help='title for tensorboard run')
+    parser.add_argument(
+        '--wandb-project-name',
+        type=str,
+        default="wandb_default",
+        help='title for wandb run')
+
+    # Model arguments
+    parser.add_argument(
+        '--model-path',
+        type=str,
+        default='test_results/',
+        help="result directory")
+    parser.add_argument('--model-name', type=str, default='',
+                        help='Name to use to save the model .pth')
+    parser.add_argument('--gat-layers', type=int, default=3,
+                        help='Number of GAT layers for the model')
+    parser.add_argument('--flow', type=str, default="source_to_target",
+                        help='Message passing flow for graph neural networks')
+    parser.add_argument('--resume-weights', type=bool, default=True,
+                        help='True if load previous weights')
+    parser.add_argument('--batch-norm', type=bool, default=False,
+                        help='True if load previous weights')
+    parser.add_argument('--dropout-rate', type=float, default=0.8,
+                        help='Dropout rate for the model layers')
+    parser.add_argument('--attention-heads', type=int, default=4,
+                        help='Attention heads of GAT layer')
+    parser.add_argument('--batch-size', type=int, default=128,
+                        help='Batch size for training')
+    parser.add_argument('--use-stop-action', type=bool, default=False,
+                        help='Whether to use STOP action')
+
+    # Rewards
+    parser.add_argument('--done-reward', type=int, default=0,
+                        help='Reward given to agent when it reaches target')
+    parser.add_argument('--deadlock-reward', type=int, default=-1000,
+                        help='Reward given to agent when it reaches deadlock')
+    parser.add_argument('--reward-scaling', type=float, default=0.1,
+                        help='Reward scaling factor')
+
+    args = parser.parse_args()
+    # Check arguments
+    if args.offset > args.height:
+        raise ValueError(
+            "Agent offset can't be greater than view height in local obs")
+    if args.offset < 0:
+        raise ValueError("Agent offset must be a positive integer")
+
+    main(args)
