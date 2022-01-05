@@ -321,12 +321,12 @@ def main(args):
         # end of episode
         ep_controller.print_episode_stats(ep, args, eps, step)
 
-        wandb_log_dict = ep_controller.retrieve_wandb_log()
+        wandb_log_dict = ep_controller.retrieve_wandb_log(eps)
         
         if (ep % args.evaluation_interval) == 0:  # Evaluate only at the end of the episodes
 
             rl_agent.eval()  # Set DQN (online network) to evaluation mode
-            avg_done_agents, avg_reward, avg_norm_reward, avg_deadlock_agents, test_actions = test(args)  # Test
+            avg_done_agents, avg_reward, avg_norm_reward, avg_deadlock_agents, test_actions = test(args, ep, rl_agent, metrics, args.model_path)  # Test
             
             testing_stats = '\nEpoch ' + str(ep) + ', testing agents on ' + str(args.evaluation_episodes) + ': Avg. done agents: ' + str(avg_done_agents*100) + '% | Avg. reward: ' + str(avg_reward) + ' | Avg. normalized reward: ' + str(avg_norm_reward) + ' | Avg. agents in deadlock: ' + str(avg_deadlock_agents*100) + '%' + '| LR: ' + str(rl_agent.optimizer_value.param_groups[0]['lr'])
             print(testing_stats)
@@ -415,7 +415,7 @@ if __name__ == '__main__':
                         help='Save models every tot episodes')
     parser.add_argument('--start-lr-decay', type=int, default=150,
                         help='Save models every tot episodes')
-    parser.add_argument('--eps-decay', type=float, default=0.999,
+    parser.add_argument('--eps-decay', type=float, default=0.99,
                         help='epsilon decay value')
     parser.add_argument('--learning-rate', type=float, default=0.02,
                         help='LR for DQN agent')

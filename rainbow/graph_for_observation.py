@@ -475,7 +475,7 @@ class EpisodeController():
             self.epoch_mean_loss)
         print(episode_stats, end=" ")
 
-    def retrieve_wandb_log(self):
+    def retrieve_wandb_log(self, eps):
         wandb_log_dict = {"Learning rate value": self.rl_agent.optimizer_value.param_groups[0]['lr'], 
                     "Learning rate action": self.rl_agent.optimizer_action.param_groups[0]['lr'],
                     "epsilon": eps}

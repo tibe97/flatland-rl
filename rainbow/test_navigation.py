@@ -298,7 +298,7 @@ def main(args):
 
             ep_controller.print_episode_stats(ep, args, eps, step)
 
-            wandb_log_dict = ep_controller.retrieve_wandb_log()
+            wandb_log_dict = ep_controller.retrieve_wandb_log(eps)
 
 if __name__ == '__main__':
 
