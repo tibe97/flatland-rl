@@ -40,7 +40,7 @@ def main(args):
     ######## TEST SET SELECTION - PARAMETERS ########
     
     test_multi_agent_setup = 1             # 1 for Medium size test, 2 for Big size test
-    test_n_agents = 5                      # Number of agents to test (3 - 5 - 7 for Medium, 5 - 7 - 10 for Big)
+    test_n_agents = 4                      # Number of agents to test (3 - 5 - 7 for Medium, 5 - 7 - 10 for Big)
     test_malfunctions_enabled = False      # Malfunctions enabled?
     test_agents_one_speed = True           # Test agents with the same speed (1) or with 4 different speeds?
 
@@ -61,6 +61,9 @@ def main(args):
         max_num_cities = 9
         max_rails_between_cities = 5
         max_rails_in_city = 5
+        
+    args.width = x_dim
+    args.height = y_dim
 
 
     stochastic_data = {'malfunction_rate': 80,  # Rate of malfunction occurence of single agent
@@ -112,16 +115,16 @@ def main(args):
     env.reset()
 
     state_size = 12
-    agent = Agent(
+    rl_agent = Agent(
         args=args,
         state_size=state_size,
         obs_builder=observation_builder)
 
-    agent.load(agent_weights_path)
+    rl_agent.load(agent_weights_path)
 
 
     if 'n_trials' not in locals():
-        n_trials = 15000
+        n_trials = 10
     
     # max_steps computation
     speed_weighted_mean = 0
@@ -159,8 +162,8 @@ def main(args):
             # reward_sum contains the cumulative reward obtained as sum during
             # the steps
             logging.debug("Episode {} of {}".format(ep, n_trials))
-            ep_controller = EpisodeController(env, agent, max_steps)
-            ep_controller.reset()
+            ep_controller = EpisodeController(env, rl_agent, max_steps)
+
 
             obs, info = env.reset()
             ep_controller.reset()
@@ -256,7 +259,7 @@ def main(args):
                         #state.x = new_x
                         # calculate q and action
                         #q_action = ep_controller.rl_agent.act(state)
-                        q_action = ep_controller.rl_agent.act(state, mean_fields[j])
+                        q_action = rl_agent.act(state, mean_fields[j])
                         q_values[j] = q_action[j][3]
                         actions_[j] = q_action[j][1]
                         
@@ -287,13 +290,11 @@ def main(args):
 
                 # Update replay buffer and train agent
                 for a in range(env.get_num_agents()):
-                    ep_controller.save_experience_and_train(a, railenv_action_dict[a], all_rewards[a], next_obs[a], done[a], step, args, ep, mean_fields[a], next_q_values[a])#, train=False)
-
+                    ep_controller.save_experience_and_train(a, railenv_action_dict[a], all_rewards[a], next_obs[a], done[a], step, args, ep, mean_fields[a], next_q_values[a], train=False)
                 if ep_controller.is_episode_done():
                     break
 
             # end of episode
-
 
             ep_controller.print_episode_stats(ep, args, eps, step)
 

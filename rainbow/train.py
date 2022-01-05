@@ -311,7 +311,7 @@ def main(args):
             if ep_controller.is_episode_done():
                 break  
 
-            eps = max(eps_end, eps_decay * eps)  # Decrease epsilon
+        eps = max(eps_end, eps_decay * eps)  # Decrease epsilon
 
         # Learn action STOP/GO only at the end of episode
         # For now let's just use value network

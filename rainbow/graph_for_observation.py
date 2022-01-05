@@ -102,7 +102,7 @@ class EpisodeController():
         return self.agent_done_removed.count(True) == self.env.get_num_agents()
 
     def compute_agent_action(self, handle, info, eps, mf):
-        ''' 
+        '''
             If agent is arriving at switch we need to compute the next path to reach in advance.
             The agent computes a sequence of actions because the switch could be composed of more cells.
             Each action (e.g. MOVE_FORWARD) could take more than 1 timestep if speed is not 1.
@@ -122,106 +122,161 @@ class EpisodeController():
         elif agent.status == RailAgentStatus.READY_TO_DEPART:
             agent_position = agent.initial_position
 
-        if agent.status in [RailAgentStatus.DONE, RailAgentStatus.DONE_REMOVED]:
+        if agent.status in [
+                RailAgentStatus.DONE,
+                RailAgentStatus.DONE_REMOVED]:
             logging.debug("Agent {} is done".format(handle))
         else:
             logging.debug("Agent {} at position {}, fraction {}, status {}".format(
                 handle, agent.position, agent.speed_data["position_fraction"], agent.status))
 
-
         # If the agent arrives at a switch
-        if info['action_required'][handle] and self.agent_at_switch[handle] and agent.status in [RailAgentStatus.ACTIVE, RailAgentStatus.READY_TO_DEPART] and agent.malfunction_data["malfunction"] == 0:
-            # if we finish previous action (action may take more than 1 timestep)
+        if info['action_required'][handle] and self.agent_at_switch[handle] and agent.status in [
+                RailAgentStatus.ACTIVE,
+                RailAgentStatus.READY_TO_DEPART] and agent.malfunction_data["malfunction"] == 0:
+            # if we finish previous action (action may take more than 1
+            # timestep)
             if self.agents_speed_timesteps[handle] == 0:
                 # if we arrive before a switch we compute the next path to reach and the actions required
                 # (this is due to the switch being eventually composed of more cells)
                 # We are about to enter the switch, one cell away
                 if len(self.agent_action_buffer[handle]) == 0:
-                    assert self.agent_obs[handle]["partitioned"] # Check that obs dict is not empty
-                    obs_batch = self.env.obs_builder.preprocess_agent_obs(self.agent_obs[handle], handle)
-                    
+                    # Check that obs dict is not empty
+                    assert self.agent_obs[handle]["partitioned"]
+                    obs_batch = self.env.obs_builder.preprocess_agent_obs(
+                        self.agent_obs[handle], handle)
                     # Choose path to take at the current switch
+                    #path_values = self.rl_agent.act(obs_batch, eps=eps)
+                    
                     
                     # MULTI AGENT
                     path_values = self.rl_agent.act(obs_batch, mf, eps=eps)
                     
                     # save some stats
-                    self.log_probs_buffer[handle].append(path_values[handle][2])
+                    self.log_probs_buffer[handle].append(
+                        path_values[handle][2])
                     self.probs_buffer[handle].append(path_values[handle][4])
                     self.stop_go_buffer[handle].append(path_values[handle][1])
-                    railenv_action = self.env.obs_builder.choose_railenv_actions(handle, path_values[handle])
+                    railenv_action = self.env.obs_builder.choose_railenv_actions(
+                        handle, path_values[handle])
                     self.agent_action_buffer[handle] = railenv_action
-                    # as state to save we take the path (with its children) chosen by agent
+                    # as state to save we take the path (with its children)
+                    # chosen by agent
                     self.agent_path_obs_buffer[handle] = self.agent_obs[handle]["partitioned"][path_values[handle][0]]
-                    logging.debug("Agent {} choses path {} with value {} at position {}. Num actions to take: {}".format(
-                        handle, path_values[handle][0][0], path_values[handle][3], agent.position, len(self.agent_action_buffer[handle])))
-                    self.path_values_buffer.append(path_values[handle][3]) # for debug 
-                    
+                    logging.debug(
+                        "Agent {} choses path {} with value {} at position {}. Num actions to take: {}".format(
+                            handle, path_values[handle][0][0], path_values[handle][3], agent.position, len(
+                                self.agent_action_buffer[handle])))
+                    self.path_values_buffer.append(
+                        path_values[handle][3])  # for debug
+
                     logging.debug(
                         "Agent {} actions: {}".format(handle, railenv_action))
 
                 next_action = self.agent_action_buffer[handle].pop(0)
-                
-                logging.debug("Agent {} at: {}. Action is: {}. Speed: {}. Fraction {}. Remaining actions: {}. SpeedTimesteps: {}".format(
-                    handle, agent.position, next_action, agent.speed_data["speed"], agent.speed_data["position_fraction"], len(self.agent_action_buffer[handle]), self.agents_speed_timesteps[handle]))
-                
+
+                logging.debug(
+                    "Agent {} at: {}. Action is: {}. Speed: {}. Fraction {}. Remaining actions: {}. SpeedTimesteps: {}".format(
+                        handle, agent.position, next_action, agent.speed_data["speed"], agent.speed_data["position_fraction"], len(
+                            self.agent_action_buffer[handle]), self.agents_speed_timesteps[handle]))
+
                 # if agent has to stop, do it for 1 timestep
                 if (next_action == RailEnvActions.STOP_MOVING):
                     self.agents_speed_timesteps[handle] = 1
-                    self.env.obs_builder.agent_requires_obs.update({handle: True})
+                    self.env.obs_builder.agent_requires_obs.update(
+                        {handle: True})
                 else:
                     # speed is a fractionary value between 0 and 1
-                    self.agents_speed_timesteps[handle] = int(round(1 / info["speed"][handle]))
+                    self.agents_speed_timesteps[handle] = int(
+                        round(1 / info["speed"][handle]))
                     self.acc_rewards[handle] = 0
 
         # if agent is not at switch just go straight
-        elif agent.status != RailAgentStatus.DONE_REMOVED:  
+        elif agent.status != RailAgentStatus.DONE_REMOVED:
             next_action = 0
-            if agent.status == RailAgentStatus.READY_TO_DEPART or (not agent.moving and agent.malfunction_data["malfunction"] == 0):
-                valid_move_actions = get_valid_move_actions_(agent.direction, agent_position, self.env.rail)
+            if agent.status == RailAgentStatus.READY_TO_DEPART or (
+                    not agent.moving and agent.malfunction_data["malfunction"] == 0):
+                valid_move_actions = get_valid_move_actions_(
+                    agent.direction, agent_position, self.env.rail)
                 # agent could be at switch, so more actions possible
                 assert len(valid_move_actions) >= 1
                 next_action = valid_move_actions.popitem()[0].action
 
         return next_action
-    
-    def save_experience_and_train(self, a, action, reward, next_obs, done, step, args, ep, mean_field, next_q_value):
+ 
+    def save_experience_and_train(
+            self,
+            a,
+            action,
+            reward,
+            next_obs,
+            done,
+            step,
+            args,
+            ep,
+            mean_field, 
+            next_q_value,
+            train=True):
         '''
-            In the first part we perform an agent step (save experience and possibly learn) only if agent 
-            was able to move (no agent blocked his action).
+            In the first part we perform an agent step (save experience and possibly learn) only if agent
+            was able to move (no other agent blocked his action).
         '''
-        
         agent = self.env.agents[a]
         if not self.agent_done_removed[a]:
-            logging.debug("Agent {} at position {}, fraction {}, speed Timesteps {}, reward {}".format(a, agent.position, agent.speed_data["position_fraction"], self.agents_speed_timesteps[a], self.acc_rewards[a]))
+            logging.debug(
+                "Agent {} at position {}, fraction {}, speed Timesteps {}, reward {}".format(
+                    a,
+                    agent.position,
+                    agent.speed_data["position_fraction"],
+                    self.agents_speed_timesteps[a],
+                    self.acc_rewards[a]))
 
         self.score += reward / self.env.get_num_agents()  # Update score
 
         # if agent didn't move do nothing: agent couldn't perform action because another agent
         # occupied next cell or agent's action was STOP
-        if self.env.obs_builder.agent_could_move(a, action, self.agent_old_speed_data[a]):
+        if self.env.obs_builder.agent_could_move(
+                a, action, self.agent_old_speed_data[a]):
             # update replay memory
             self.acc_rewards[a] += reward
-            # If agent has to make a step, i.e. agent finished or agent is about to make a decision (UPDATE_VALUE = TRUE)
-            if ((self.update_values[a] and agent.speed_data["position_fraction"] == 0) or agent.status == RailAgentStatus.DONE_REMOVED) and not self.agent_done_removed[a]:
+            # If agent has to make a step, i.e. agent finished or agent is
+            # about to make a decision (UPDATE_VALUE = TRUE)
+            if ((self.update_values[a] and agent.speed_data["position_fraction"] == 0)
+                    or agent.status == RailAgentStatus.DONE_REMOVED) and not self.agent_done_removed[a]:
                 logging.debug("Update=True: agent {}".format(a))
                 # next_obs is the complete state, with all the possible path choices
-                # we check we can store (STATE, NEXT_STATE) in the experience replay
-                if len(next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
+                # we check we can store (STATE, NEXT_STATE) in the experience
+                # replay
+                if len(
+                        next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
                     # if agent reaches target
                     if agent.status == RailAgentStatus.DONE_REMOVED or agent.status == RailAgentStatus.DONE:
                         self.agent_done_removed[a] = True
                         self.acc_rewards[a] = args.done_reward
                         self.agent_ending_timestep[a] = step
-                        logging.debug("Agent {} DONE! It has been removed and experience saved with reward of {}!".format(a, self.acc_rewards[a]))
-                    else: 
-                        logging.debug("Agent reward is {}".format(self.acc_rewards[a]))
-                    # step saves experience tuple and can perform learning (every T time steps)
-                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], mean_field, next_q_value, ep=ep)
-                    
-                    # save stats
-                    if step_loss is not None:
-                        self.epoch_loss.append(step_loss)
+                        logging.debug(
+                            "Agent {} DONE! It has been removed and experience saved with reward of {}!".format(
+                                a, self.acc_rewards[a]))
+                    else:
+                        logging.debug(
+                            "Agent reward is {}".format(
+                                self.acc_rewards[a]))
+                    # step saves experience tuple and can perform learning
+                    # (every T time steps)
+                    if train:
+                        step_loss = self.rl_agent.step(
+                            self.agent_path_obs_buffer[a],
+                            self.acc_rewards[a],
+                            next_obs,
+                            self.agent_done_removed[a],
+                            self.agents_in_deadlock[a],
+                            mean_field, next_q_value,
+                            ep=ep)
+
+                        # save stats
+                        if step_loss is not None:
+                            self.epoch_loss.append(step_loss)
+
                     if self.agent_done_removed[a]:
                         self.rewards_buffer[a].append(0)
                     else:
@@ -229,18 +284,18 @@ class EpisodeController():
 
                     #self.acc_rewards[a] = 0
                     self.update_values[a] = False
-                    
-                    
+
             if len(next_obs) > 0:
                 # prepare agent obs for next timestep
                 self.agent_obs[a] = next_obs.copy()
 
             if self.agent_at_switch[a]:
-                # we descrease timestep if agent is performing actions at switch
+                # we descrease timestep if agent is performing actions at
+                # switch
                 self.agents_speed_timesteps[a] -= 1
-                
+
             """
-                We want to optimize computation of observations only when it's needed, i.e. before 
+                We want to optimize computation of observations only when it's needed, i.e. before
                 making a decision, to accelerate simulation.
                 We update the dictionary AGENT_REQUIRED_OBS to tell the ObservationBuilder for which agent to compute obs.
                 We compute observations only in these cases:
@@ -257,71 +312,121 @@ class EpisodeController():
                 if not self.agent_at_switch[a]:
                     agent_pos = agent.position
                     assert self.env.obs_builder.get_track(agent_pos) != -2
-                    if self.env.obs_builder.is_agent_entering_switch(a) and agent.speed_data["position_fraction"] == 0:
-                        logging.debug("Agent {} arrived at 1 cell before switch".format(a))
+                    if self.env.obs_builder.is_agent_entering_switch(
+                            a) and agent.speed_data["position_fraction"] == 0:
+                        logging.debug(
+                            "Agent {} arrived at 1 cell before switch".format(a))
                         self.agent_at_switch[a] = True
                         self.agents_speed_timesteps[a] = 0
                         # env.obs_builder.agent_requires_obs.update({a: False})
                     elif self.env.obs_builder.is_agent_2_steps_from_switch(a):
-                        self.env.obs_builder.agent_requires_obs.update({a: True})
+                        self.env.obs_builder.agent_requires_obs.update({
+                                                                       a: True})
                         self.update_values[a] = True
                     if self.env.obs_builder.is_agent_about_to_finish(a):
-                        self.env.obs_builder.agent_requires_obs.update({a: True})
+                        self.env.obs_builder.agent_requires_obs.update({
+                                                                       a: True})
                 else:  # Agent at SWITCH. In the step before reaching target path we want to make sure to compute the obs
                     # in order to update the replay memory. We need to be careful if the agent can't reach new path because of another agent blocking the cell.
                     # when agent speed is 1 we reach the target node in 1 step
-                    if len(self.agent_action_buffer[a]) == 1 and agent.speed_data["speed"] == 1:
-                        # compute obs in case we meet another switch immediately after completing this switch
-                        self.env.obs_builder.agent_requires_obs.update({a: True})
+                    if len(
+                            self.agent_action_buffer[a]) == 1 and agent.speed_data["speed"] == 1:
+                        # compute obs in case we meet another switch
+                        # immediately after completing this switch
+                        self.env.obs_builder.agent_requires_obs.update({
+                                                                       a: True})
 
-                    # if speed is less than 1, we need more steps to reach target node. So only compute obs if doing last step
+                    # if speed is less than 1, we need more steps to reach
+                    # target node. So only compute obs if doing last step
                     elif len(self.agent_action_buffer[a]) == 0:
-                        if self.env.obs_builder.get_track(agent.position) == -2 and agent.speed_data["speed"] < 1 and np.isclose(agent.speed_data["speed"] + agent.speed_data["position_fraction"], 1, rtol=1e-03):
+                        if self.env.obs_builder.get_track(
+                                agent.position) == -2 and agent.speed_data["speed"] < 1 and np.isclose(
+                                agent.speed_data["speed"] + agent.speed_data["position_fraction"], 1, rtol=1e-03):
                             # same check as "if" condition
                             assert self.agents_speed_timesteps[a] > 0
-                            # compute obs in case we meet another switch immediately after completing this switch
-                            self.env.obs_builder.agent_requires_obs.update({a: True})
-                        else: # agent just exited the switch, obs already computed
-                            if self.env.obs_builder.get_track(agent.position) != -2:
-                                if self.env.obs_builder.is_agent_entering_switch(a):
+                            # compute obs in case we meet another switch
+                            # immediately after completing this switch
+                            self.env.obs_builder.agent_requires_obs.update({
+                                                                           a: True})
+                        else:  # agent just exited the switch, obs already computed
+                            if self.env.obs_builder.get_track(
+                                    agent.position) != -2:
+                                if self.env.obs_builder.is_agent_entering_switch(
+                                        a):
                                     assert len(next_obs) > 0
-                                    logging.debug("Agent {} just exited switch and ALREADY entering another one".format(a))
+                                    logging.debug(
+                                        "Agent {} just exited switch and ALREADY entering another one".format(a))
                                     #self.agent_obs_buffer[a] = next_obs.copy()
-                                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], mean_field, next_q_value, ep=ep)
-                                    if step_loss is not None:
-                                        self.epoch_loss.append(step_loss)
+                                    if train:
+                                        step_loss = self.rl_agent.step(
+                                            self.agent_path_obs_buffer[a],
+                                            self.acc_rewards[a],
+                                            next_obs,
+                                            self.agent_done_removed[a],
+                                            self.agents_in_deadlock[a],
+                                            mean_field, next_q_value,
+                                            ep=ep)
+                                        if step_loss is not None:
+                                            self.epoch_loss.append(step_loss)
                                 else:
-                                    logging.debug("Agent {} is not at switch anymore".format(a))
+                                    logging.debug(
+                                        "Agent {} is not at switch anymore".format(a))
                                     self.agent_at_switch[a] = False
                                     self.agents_speed_timesteps[a] = 0
                                     #self.agent_obs_buffer[a] = next_obs.copy()
-                                if self.env.obs_builder.is_agent_about_to_finish(a):
-                                    self.env.obs_builder.agent_requires_obs.update({a: True})
+                                if self.env.obs_builder.is_agent_about_to_finish(
+                                        a):
+                                    self.env.obs_builder.agent_requires_obs.update({
+                                                                                   a: True})
 
         else:  # agent did not move. Check if it stopped on purpose or it's in deadlock
             if action == RailEnvActions.STOP_MOVING:
                 self.agents_speed_timesteps[a] -= 1
                 self.env.obs_builder.agent_requires_obs.update({a: True})
                 if len(next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
-                    step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, self.agent_done_removed[a], self.agents_in_deadlock[a], mean_field, next_q_value, ep=ep)
+                    if train:
+                        step_loss = self.rl_agent.step(
+                            self.agent_path_obs_buffer[a],
+                            self.acc_rewards[a],
+                            next_obs,
+                            self.agent_done_removed[a],
+                            self.agents_in_deadlock[a],
+                            mean_field, next_q_value,
+                            ep=ep)
+                        if step_loss is not None:
+                                self.epoch_loss.append(step_loss)
                     self.agent_obs[a] = next_obs.copy()
             else:
                 logging.debug("Agent {} cannot move at position {}, fraction {}".format(
                     a, agent.position, agent.speed_data["position_fraction"]))
                 # check if agent is in deadlock
-                if self.env.obs_builder.is_agent_in_deadlock(a) and not self.agents_in_deadlock[a]: # agent just got in deadlock
+                if self.env.obs_builder.is_agent_in_deadlock(
+                        a) and not self.agents_in_deadlock[a]:  # agent just got in deadlock
                     self.env.obs_builder.agent_requires_obs.update({a: True})
-                    logging.debug("Agent {} in DEADLOCK saved as experience with reward of {}".format(
-                        a, self.acc_rewards[a]))
-                    if len(next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
+                    logging.debug(
+                        "Agent {} in DEADLOCK saved as experience with reward of {}".format(
+                            a, self.acc_rewards[a]))
+                    if len(
+                            next_obs) > 0 and self.agent_path_obs_buffer[a] is not None:
                         #self.agent_obs_buffer[a] = next_obs
                         self.acc_rewards[a] = args.deadlock_reward
                         self.agents_in_deadlock[a] = True
-                        step_loss = self.rl_agent.step(self.agent_path_obs_buffer[a], self.acc_rewards[a], next_obs, done, self.agents_in_deadlock[a], mean_field, next_q_value, ep=ep)
-                        if step_loss is not None:
-                            self.epoch_loss.append(step_loss)
-                        self.env.obs_builder.agent_requires_obs.update({a: False})
-                    logging.debug("Agent {} is in DEADLOCK, accum. reward: {}, required_obs: {}".format(a, self.acc_rewards[a], self.env.obs_builder.agent_requires_obs[a]))
+                        if train:
+                            step_loss = self.rl_agent.step(
+                                self.agent_path_obs_buffer[a],
+                                self.acc_rewards[a],
+                                next_obs,
+                                done,
+                                self.agents_in_deadlock[a],
+                                mean_field, next_q_value,
+                                ep=ep)
+                            if step_loss is not None:
+                                self.epoch_loss.append(step_loss)
+                        self.env.obs_builder.agent_requires_obs.update({
+                                                                       a: False})
+                    logging.debug(
+                        "Agent {} is in DEADLOCK, accum. reward: {}, required_obs: {}".format(
+                            a, self.acc_rewards[a], self.env.obs_builder.agent_requires_obs[a]))
         self.agent_old_speed_data.update({a: agent.speed_data.copy()})
 
     def print_episode_stats(self, ep, args, eps, step):
@@ -372,7 +477,8 @@ class EpisodeController():
 
     def retrieve_wandb_log(self):
         wandb_log_dict = {"Learning rate value": self.rl_agent.optimizer_value.param_groups[0]['lr'], 
-                    "Learning rate action": self.rl_agent.optimizer_action.param_groups[0]['lr']}
+                    "Learning rate action": self.rl_agent.optimizer_action.param_groups[0]['lr'],
+                    "epsilon": eps}
         if self.epoch_mean_loss is not None:
             wandb_log_dict.update({"mean_loss": self.epoch_mean_loss})
 
