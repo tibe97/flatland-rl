@@ -277,7 +277,7 @@ def main(args):
                         #state.x = new_x
                         # calculate q and action
                         #q_action = ep_controller.rl_agent.act(state)
-                        q_action = ep_controller.rl_agent.act(state, mean_fields[j])
+                        q_action = ep_controller.rl_agent.act(state, mean_fields[j], eps=eps)
                         q_values[j] = q_action[j][3]
                         actions_[j] = q_action[j][1]
                 return actions_, mean_fields, q_values
