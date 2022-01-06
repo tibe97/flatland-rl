@@ -246,15 +246,10 @@ def main(args):
                     #print(distance_matrix)
                 
                 for i in range(num_iter):
-                    if N == 1:
-                            mean_fields = torch.FloatTensor([[0.5,0.5]]).to(device)
-                    elif N <= 3: # 2 or 3 agent all together, which means that there're not 3 nearest neighbors
-                        for j in range(N):
-                            pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
-                            aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1,N)))
-                            other_actions = torch.cat((pre_actions, aft_actions))
-                            other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2)
-                            mean_fields[j] = torch.mean(other_actions.float(), dim=0) #Category actions to vectors first
+                    if N <= 4: # using mean of all actions
+                            onehot_actions = torch.nn.functional.one_hot(actions_, num_classes=2)
+                            for j in range(N):
+                                mean_fields[j] = torch.mean(onehot_actions.float(), dim=0) #Category actions to vectors first
                     else:
                         for j in range(N):
                             # select all other agents
@@ -263,8 +258,7 @@ def main(args):
                             #other_actions = torch.cat((pre_actions, aft_actions))
                             
                             # select 3 nearest neighbors
-                            neighbors = np.argpartition(distance_matrix[0], -3)[-3:]
-                            #print("neighbors: {}".format(neighbors))
+                            neighbors = np.argpartition(distance_matrix[j], 4)[:4]
                             neighbor_actions = actions_[neighbors]
                             #print("neigh_actions:{}".format(neighbor_actions))
                             neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2) 

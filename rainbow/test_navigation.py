@@ -36,11 +36,11 @@ def main(args):
     np.random.seed(1)
 
 
-    agent_weights_path = "/home/runnphoenix/work/flatland-rl/rainbow/test_results/checkpoint_1_agents_on_25_25/epoch_100_04_01_2022__13_24_"
+    agent_weights_path = "/home/runnphoenix/work/flatland-rl/rainbow/test_results/checkpoint_1_agents_on_25_25/epoch_150_06_01_2022__04_21_"
     ######## TEST SET SELECTION - PARAMETERS ########
     
-    test_multi_agent_setup = 1             # 1 for Medium size test, 2 for Big size test
-    test_n_agents = 4                      # Number of agents to test (3 - 5 - 7 for Medium, 5 - 7 - 10 for Big)
+    test_multi_agent_setup = 2             # 1 for Medium size test, 2 for Big size test
+    test_n_agents = 16                      # Number of agents to test (3 - 5 - 7 for Medium, 5 - 7 - 10 for Big)
     test_malfunctions_enabled = False      # Malfunctions enabled?
     test_agents_one_speed = True           # Test agents with the same speed (1) or with 4 different speeds?
 
