@@ -428,7 +428,7 @@ if __name__ == '__main__':
     # Rewards
     parser.add_argument('--done-reward', type=int, default=0,
                         help='Reward given to agent when it reaches target')
-    parser.add_argument('--deadlock-reward', type=int, default=-1000,
+    parser.add_argument('--deadlock-reward', type=int, default=0,
                         help='Reward given to agent when it reaches deadlock')
     parser.add_argument('--reward-scaling', type=float, default=0.1,
                         help='Reward scaling factor')

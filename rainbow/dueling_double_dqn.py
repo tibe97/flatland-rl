@@ -230,14 +230,14 @@ class Agent:
             # batch array tells you to which graph each feature belongs to
             batch_index = batch.batch[i]
             handle, path = batch_list[batch_index].graph_info
-            # path[0] = path_ID, path[1] = path_variation (through the switch)
+            # path[0] = path_ID, path[1] = path_variation (through the switch). It can be one or more in case there are many ways to pass the switch
             out_mapped[handle][(path[0], path[1])].append(res)
 
         for handle in out_mapped.keys():
             paths = []
             action_prob = None
             for path in out_mapped[handle].keys():
-                if self.use_stop_action:  # current node where the agent is represents STOP action
+                if self.use_stop_action:  # current node where the agent represents STOP action
                     paths.append([path, out_mapped[handle][path][0]])
                 else:
                     if path[0] != 0:  # Skip current node, i.e. skip STOP action
@@ -278,7 +278,7 @@ class Agent:
         '''
 
         with torch.no_grad():
-            Q_expected = self.compute_Q_values([state], "local")
+            Q_expected = self._compute_Q_values([state], "local")
 
         # Choose best paths with local network, then compute value with target
         # network
@@ -316,7 +316,7 @@ class Agent:
         dones = list(batch[3])
         deadlocks = list(batch[4])
 
-        Q_expected = self.compute_Q_values(states, "local")
+        Q_expected = self._compute_Q_values(states, "local")
 
         # Choose best paths with local network, then compute value with target network
         #selected_next_states = []
@@ -419,7 +419,8 @@ class Agent:
         policy_loss.backward()
         self.optimizer_action.step()
 
-    def compute_Q_values(self, states, net):
+
+    def _compute_Q_values(self, states, net):
         '''
             Used at learning time to compute values of states/paths.
             The value of each single path is represented by the value of the first node, so the first output
