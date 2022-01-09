@@ -125,8 +125,8 @@ def main(args):
     #lr_scheduler = CosineAnnealingLR(rl_agent.optimizer_value, T_max = 200)
     #lr_scheduler_policy = CosineAnnealingLR(rl_agent.optimizer_action, T_max=200)
     
-    lr_scheduler = CyclicLR(rl_agent.optimizer_value, base_lr=0.00, max_lr=0.02, step_size_up=25, cycle_momentum=False, mode="triangular2")
-    lr_scheduler_policy = CyclicLR(rl_agent.optimizer_action, base_lr=0.00, max_lr=0.02, step_size_up=25, cycle_momentum=False, mode="triangular2")
+    lr_scheduler = CyclicLR(rl_agent.optimizer_value, base_lr=0.00, max_lr=args.learning_rate, step_size_up=25, cycle_momentum=False, mode="triangular2")
+    lr_scheduler_policy = CyclicLR(rl_agent.optimizer_action, base_lr=0.00, max_lr=args.learning_rate, step_size_up=25, cycle_momentum=False, mode="triangular2")
     
     # Construct the environment with the given observation, generators, predictors, and stochastic data
     env = RailEnv(width=args.width,
@@ -232,7 +232,7 @@ def main(args):
                 q_values = torch.zeros(N).to(device)
                 
                 # calculating distance matrix of all agents
-                if N > 3:
+                if N > 4:
                     positions = [(0,0) for _ in range(num_agents)]
                     distance_matrix = [[0] * num_agents for _ in range(num_agents)]
                     for i in range(num_agents):
@@ -247,9 +247,9 @@ def main(args):
                 
                 for i in range(num_iter):
                     if N <= 4: # using mean of all actions
-                            onehot_actions = torch.nn.functional.one_hot(actions_, num_classes=2)
-                            for j in range(N):
-                                mean_fields[j] = torch.mean(onehot_actions.float(), dim=0) #Category actions to vectors first
+                        onehot_actions = torch.nn.functional.one_hot(actions_, num_classes=2)
+                        for j in range(N):
+                            mean_fields[j] = torch.mean(onehot_actions.float(), dim=0) #Category actions to vectors first
                     else:
                         for j in range(N):
                             # select all other agents

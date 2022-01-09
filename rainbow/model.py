@@ -242,8 +242,8 @@ class FC_action(nn.Module):
         self.n_hidden2 = n_hidden2
         self.n_out = n_out
         
-        self.layer1 = nn.Sequential(nn.Linear(n_in, n_hidden1), nn.Dropout(0.3), nn.GELU())
-        self.layer2 = nn.Sequential(nn.Linear(n_hidden1, n_hidden2), nn.Dropout(0.3), nn.GELU())
+        self.layer1 = nn.Sequential(nn.Linear(n_in, n_hidden1), nn.ReLU(), nn.Dropout(0.3))
+        self.layer2 = nn.Sequential(nn.Linear(n_hidden1, n_hidden2), nn.ReLU(), nn.Dropout(0.3))
         self.layer3 = nn.Linear(n_hidden2, n_out)
         
     def forward(self, x):

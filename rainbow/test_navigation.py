@@ -36,11 +36,11 @@ def main(args):
     np.random.seed(1)
 
 
-    agent_weights_path = "/home/runnphoenix/work/flatland-rl/rainbow/test_results/checkpoint_1_agents_on_25_25/epoch_150_06_01_2022__04_21_"
+    agent_weights_path = "/home/runnphoenix/work/flatland-rl/rainbow/test_results/checkpoint_1_agents_on_25_25/epoch_200_07_01_2022__17_19_"
     ######## TEST SET SELECTION - PARAMETERS ########
     
-    test_multi_agent_setup = 2             # 1 for Medium size test, 2 for Big size test
-    test_n_agents = 16                      # Number of agents to test (3 - 5 - 7 for Medium, 5 - 7 - 10 for Big)
+    test_multi_agent_setup = 1             # 1 for Medium size test, 2 for Big size test
+    test_n_agents = 5                      # Number of agents to test (3 - 5 - 7 for Medium, 5 - 7 - 10 for Big)
     test_malfunctions_enabled = False      # Malfunctions enabled?
     test_agents_one_speed = True           # Test agents with the same speed (1) or with 4 different speeds?
 
@@ -214,7 +214,7 @@ def main(args):
                     q_values = torch.zeros(N).to(device)
                     
                     # calculating distance matrix of all agents
-                    if N > 3:
+                    if N > 4:
                         positions = [(0,0) for _ in range(num_agents)]
                         distance_matrix = [[0] * num_agents for _ in range(num_agents)]
                         for i in range(num_agents):
@@ -228,15 +228,10 @@ def main(args):
                         #print(distance_matrix)
                 
                     #for i in range(num_iter):
-                    if N == 1:
-                            mean_fields = torch.FloatTensor([[0.5,0.5]]).to(device)
-                    elif N <= 3: # 2 or 3 agent all together, which means that there're not 3 nearest neighbors
+                    if N <= 4:
+                        onehot_actions = torch.nn.functional.one_hot(actions_, num_classes=2)
                         for j in range(N):
-                            pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
-                            aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1,N)))
-                            other_actions = torch.cat((pre_actions, aft_actions))
-                            other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2)
-                            mean_fields[j] = torch.mean(other_actions.float(), dim=0) #Category actions to vectors first
+                            mean_fields[j] = torch.mean(onehot_actions.float(), dim=0) #Category actions to vectors first
                     else:
                         for j in range(N):
                             # select all other agents
@@ -245,7 +240,7 @@ def main(args):
                             #other_actions = torch.cat((pre_actions, aft_actions))
                             
                             # select 3 nearest neighbors
-                            neighbors = np.argpartition(distance_matrix[0], -3)[-3:]
+                            neighbors = np.argpartition(distance_matrix[j], 4)[:4]
                             #print("neighbors: {}".format(neighbors))
                             neighbor_actions = actions_[neighbors]
                             #print("neigh_actions:{}".format(neighbor_actions))

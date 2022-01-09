@@ -175,7 +175,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                     q_values = torch.zeros(N).to(device)
                     
                     # calculating distance matrix of all agents
-                    if N > 3:
+                    if N > 4:
                         positions = [(0,0) for _ in range(num_agents)]
                         distance_matrix = [[0] * num_agents for _ in range(num_agents)]
                         for i in range(num_agents):
@@ -189,24 +189,14 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                         #print(distance_matrix)
                 
                     #for i in range(num_iter):
-                    if N == 1:
-                            mean_fields = torch.FloatTensor([[0.5,0.5]]).to(device)
-                    elif N <= 3: # 2 or 3 agent all together, which means that there're not 3 nearest neighbors
+                    if N <= 4:
+                        onehot_actions = torch.nn.functional.one_hot(actions_, num_classes=2)
                         for j in range(N):
-                            pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
-                            aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1,N)))
-                            other_actions = torch.cat((pre_actions, aft_actions))
-                            other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2)
-                            mean_fields[j] = torch.mean(other_actions.float(), dim=0) #Category actions to vectors first
+                            mean_fields[j] = torch.mean(onehot_actions.float(), dim=0) #Category actions to vectors first
                     else:
-                        for j in range(N):
-                            # select all other agents
-                            #pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
-                            #aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1,N)))
-                            #other_actions = torch.cat((pre_actions, aft_actions))
-                            
+                        for j in range(N):                           
                             # select 3 nearest neighbors
-                            neighbors = np.argpartition(distance_matrix[0], -3)[-3:]
+                            neighbors = np.argpartition(distance_matrix[j], 4)[:4]
                             #print("neighbors: {}".format(neighbors))
                             neighbor_actions = actions_[neighbors]
                             #print("neigh_actions:{}".format(neighbor_actions))
