@@ -19,7 +19,7 @@ import pprint
 import math
 # make sure the root path is in system path
 from pathlib import Path
-from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau
+from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, CyclicLR
 from torch.utils.tensorboard import SummaryWriter
 import logging
 import wandb
@@ -118,9 +118,13 @@ def main(args):
         print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
 
     # LR scheduler to reduce learning rate over epochs
-    lr_scheduler = StepLR(rl_agent.optimizer_value, step_size=25, gamma=args.learning_rate_decay)
+    #lr_scheduler = StepLR(rl_agent.optimizer_value, step_size=25, gamma=args.learning_rate_decay)
     #lr_scheduler = ReduceLROnPlateau(rl_agent.optimizer_value, mode='min', factor=args.learning_rate_decay, patience=0, verbose=True, eps=1e-25)
-    lr_scheduler_policy = StepLR(rl_agent.optimizer_action, step_size=25, gamma=args.learning_rate_decay_policy)
+    #lr_scheduler_policy = StepLR(rl_agent.optimizer_action, step_size=25, gamma=args.learning_rate_decay_policy)
+    
+    #TODO
+    lr_scheduler = CyclicLR(rl_agent.optimizer_value, base_lr=0.00, max_lr=args.learning_rate, step_size_up=25, cycle_momentum=False, mode="triangular2")
+    lr_scheduler_policy = CyclicLR(rl_agent.optimizer_action, base_lr=0.00, max_lr=args.learning_rate, step_size_up=25, cycle_momentum=False, mode="triangular2")
     
     # Construct the environment with the given observation, generators, predictors, and stochastic data
     env = RailEnv(width=args.width,
@@ -222,31 +226,53 @@ def main(args):
             def infer_acts(states, actions, num_iter=3):
                 N = actions.shape[0]
                 actions_ = actions.clone()               
-                mean_fields = torch.zeros(N,2).to(device)
+                joint_actions = torch.zeros(N, 4).to(device) # TODO: change to N*8
                 q_values = torch.zeros(N).to(device)
                 
+                # calculate distance matrix
+                positions = [(0,0) for _ in range(num_agents)]
+                distance_matrix = [[0] * num_agents for _ in range(num_agents)]
+                for i in range(num_agents):
+                    agent = env.agents[i]
+                    positions[i] = agent.position if agent.position != None else agent.initial_position                        
+                for i in range(num_agents):
+                    for j in range(i+1, num_agents):
+                        #distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
+                        distance_matrix[i][j] = math.sqrt( (positions[i][0] - positions[j][0]) ** 2 + (positions[i][1] - positions[j][1]) ** 2 )
+                        distance_matrix[j][i] = distance_matrix[i][j]
+                
+                # Dilution process
                 for i in range(num_iter):
-                    if N == 1:
-                            mean_fields = torch.FloatTensor([[0.5,0.5]]).to(device)
+                    if N <= 4:
+                        for j in range(N):
+                            neighbors = np.argpartition(distance_matrix[j], N-1)
+                            neighbor_actions = actions_[neighbors]
+                            #neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
+                            neighbor_actions = neighbor_actions.reshape(1,-1)[0] # reshape to a row vector
+                            # adding #(4-N) [0.5,0.5]s to make a total length of 4*2
+                            complements = torch.tensor([0.0]).repeat(1, (4-N))[0]
+                            neighbor_actions = torch.cat([neighbor_actions, complements]) # a row vector whose length is 8
+                            joint_actions[j] = neighbor_actions
                     else:
                         for j in range(N):
-                            pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
-                            aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1,N)))
-                            other_actions = torch.cat((pre_actions, aft_actions))
-                            other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2) #TODO: to use 'real' other actions
-                            mean_fields[j] = torch.mean(other_actions.float(), dim=0) #Category actions to vectors first
+                            neighbors = np.argpartition(distance_matrix[j],4)[:4]
+                            neighbor_actions = actions_[neighbors]
+                            #neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
+                            neighbor_actions = neighbor_actions.reshape(1,-1)[0]
+                            joint_actions[j] = neighbor_actions
+
                     for j in range(N):
                         # concatenate state and mf
                         state = states[j].to(device).clone()
-                        new_x = torch.cat([state.x, mean_fields[j].repeat(state.x.shape[0], 1)], dim=1)
-                        state.x = new_x
+                        new_x = torch.cat([state.x, joint_actions[j].repeat(state.x.shape[0],1)], dim=1)
+                        state.x =  new_x                        
                         # calculate q and action
-                        q_action = ep_controller.rl_agent.act(state)
+                        q_action = ep_controller.rl_agent.act(state, eps=eps)
                         q_values[j] = q_action[j][3]
                         actions_[j] = q_action[j][1]
-                return actions_, mean_fields, q_values
+                return actions_, joint_actions, q_values
                  
-            actions, mean_fields, q_values = infer_acts(states, actions)
+            actions, mean_fields, q_values = infer_acts(states, actions) #TODO change names from mf to joint_actions
             #print("#AGENTS: {}, ACTIONS: {}, MF: {} for current Q".format(num_agents, actions, mean_fields))
             
             # For each agent
@@ -275,7 +301,7 @@ def main(args):
             if ep_controller.is_episode_done():
                 break  
 
-            eps = max(eps_end, eps_decay * eps)  # Decrease epsilon
+        eps = max(eps_end, eps_decay * eps)  # Decrease epsilon
 
         # Learn action STOP/GO only at the end of episode
         # For now let's just use value network
@@ -285,7 +311,7 @@ def main(args):
         # end of episode
         ep_controller.print_episode_stats(ep, args, eps, step)
 
-        wandb_log_dict = ep_controller.retrieve_wandb_log()
+        wandb_log_dict = ep_controller.retrieve_wandb_log(eps)
         
         if (ep % args.evaluation_interval) == 0:  # Evaluate only at the end of the episodes
 
@@ -380,9 +406,9 @@ if __name__ == '__main__':
                         help='Save models every tot episodes')
     parser.add_argument('--start-lr-decay', type=int, default=150,
                         help='Save models every tot episodes')
-    parser.add_argument('--eps-decay', type=float, default=0.999,
+    parser.add_argument('--eps-decay', type=float, default=0.992,
                         help='epsilon decay value')
-    parser.add_argument('--learning-rate', type=float, default=0.1,
+    parser.add_argument('--learning-rate', type=float, default=0.03,
                         help='LR for DQN agent')
     parser.add_argument('--learning-rate-decay', type=float, default=0.1,
                         help='LR decay for DQN agent')
@@ -421,7 +447,7 @@ if __name__ == '__main__':
     # Rewards
     parser.add_argument('--done-reward', type=int, default=0,
                         help='Reward given to agent when it reaches target')
-    parser.add_argument('--deadlock-reward', type=int, default=-1000,
+    parser.add_argument('--deadlock-reward', type=int, default=-100,
                         help='Reward given to agent when it reaches deadlock')
     parser.add_argument('--reward-scaling', type=float, default=0.1,
                         help='Reward scaling factor')
