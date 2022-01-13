@@ -170,7 +170,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                 # step together
                 def infer_acts(states, actions, num_iter=3):
                     N = actions.shape[0]
-                    mean_fields = torch.zeros(N,2).to(device)
+                    joint_actions = torch.zeros(N, 4).to(device)
                     actions_ = actions.clone()
                     q_values = torch.zeros(N).to(device)
                     
@@ -184,39 +184,36 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                         #print(positions)
                         for i in range(num_agents):
                             for j in range(i+1, num_agents):
-                                distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
+                                #distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
+                                distance_matrix[i][j] = math.sqrt( (positions[i][0] - positions[j][0]) ** 2 + (positions[i][1] - positions[j][1]) ** 2)
                                 distance_matrix[j][i] = distance_matrix[i][j]
                         #print(distance_matrix)
                 
                     #for i in range(num_iter):
-                    if N <= 4:
-                        onehot_actions = torch.nn.functional.one_hot(actions_, num_classes=2)
+                    if N <= 4: # using joint actions of all actions
                         for j in range(N):
-                            mean_fields[j] = torch.mean(onehot_actions.float(), dim=0) #Category actions to vectors first
+                            neighbors = np.argpartition(distance_matrix[j], N-1)
+                            neighbor_actions = actions_[neighbors]
+                            neighbor_actions = neighbor_actions.reshape(1, -1)[0]
+                            complements = torch.tensor([0.0]).repeat(1, (4-N))[0]
+                            neighbor_actions = torch.cat([neighbor_actions, complements])
+                            joint_actions[j] = neighbor_actions
                     else:
-                        for j in range(N):                           
-                            # select 3 nearest neighbors
+                        for j in range(N):
                             neighbors = np.argpartition(distance_matrix[j], 4)[:4]
-                            #print("neighbors: {}".format(neighbors))
                             neighbor_actions = actions_[neighbors]
                             #print("neigh_actions:{}".format(neighbor_actions))
-                            neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2) 
-                            mean_fields[j] = torch.mean(neighbor_actions.float(), dim=0) #Category actions to vectors first
+                            neighbor_actions = neighbor_actions.reshape(1, -1)[0]
+                            joint_actions[j] = neighbor_actions
                     for j in range(N):
-                        # concatenate state and mf
-                        #state = states[j].to(device).clone()
                         state = states[j].to(device)
-                        #new_x = torch.cat([state.x, mean_fields[j].repeat(state.x.shape[0], 1)], dim=1)
-                        #state.x = new_x
-                        # calculate q and action
-                        #q_action = ep_controller.rl_agent.act(state)
-                        q_action = dqn_agent.act(state, mean_fields[j])
+                        q_action = dqn_agent.act(state, joint_actions[j])
                         q_values[j] = q_action[j][3]
                         actions_[j] = q_action[j][1]
                         
-                    return actions_, mean_fields, q_values
+                    return actions_, joint_actions, q_values
                  
-                actions, mean_fields, q_values = infer_acts(states, actions)
+                actions, joint_actions, q_values = infer_acts(states, actions)
 
                 for a in range(env.get_num_agents()):
                     agent = env.agents[a]
@@ -243,11 +240,11 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                                 obs_batch = env.obs_builder.preprocess_agent_obs(agent_obs[a], a)
                                 
                                 # MULTI AGENGT
-                                #new_x = torch.cat([obs_batch.x.to(device), mean_fields[a].repeat(obs_batch.x.shape[0], 1)], dim=1)
+                                #new_x = torch.cat([obs_batch.x.to(device), joint_actions[a].repeat(obs_batch.x.shape[0], 1)], dim=1)
                                 #obs_batch.x = new_x
                                 
                                 # Choose path to take at the current switch
-                                path_values = dqn_agent.act(obs_batch, mean_fields[a], eps=0)
+                                path_values = dqn_agent.act(obs_batch, joint_actions[a], eps=0)
                                 railenv_action = env.obs_builder.choose_railenv_actions(
                                     a, path_values[a])
                                 agent_action_buffer[a] = railenv_action

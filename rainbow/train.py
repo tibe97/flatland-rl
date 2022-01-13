@@ -228,62 +228,53 @@ def main(args):
             def infer_acts(states, actions, num_iter=3):
                 N = actions.shape[0]
                 actions_ = actions.clone()               
-                mean_fields = torch.zeros(N,2).to(device)
+                joint_actions = torch.zeros(N, 4).to(device)
                 q_values = torch.zeros(N).to(device)
-                
+
                 # calculating distance matrix of all agents
-                if N > 4:
-                    positions = [(0,0) for _ in range(num_agents)]
-                    distance_matrix = [[0] * num_agents for _ in range(num_agents)]
-                    for i in range(num_agents):
-                        agent = env.agents[i]
-                        positions[i] = agent.position if agent.position != None else agent.initial_position
-                    #print(positions)
-                    for i in range(num_agents):
-                        for j in range(i+1, num_agents):
-                            distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
-                            distance_matrix[j][i] = distance_matrix[i][j]
-                    #print(distance_matrix)
+                positions = [(0,0) for _ in range(num_agents)]
+                distance_matrix = [[0] * num_agents for _ in range(num_agents)]
+                for i in range(num_agents):
+                    agent = env.agents[i]
+                    positions[i] = agent.position if agent.position != None else agent.initial_position
+                #print(positions)
+                for i in range(num_agents):
+                    for j in range(i+1, num_agents):
+                        #distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
+                        distance_matrix[i][j] = math.sqrt( (positions[i][0] - positions[j][0]) ** 2 + (positions[i][1] - positions[j][1]) ** 2)
+                        distance_matrix[j][i] = distance_matrix[i][j]
+                #print(distance_matrix)
                 
                 for i in range(num_iter):
-                    if N <= 4: # using mean of all actions
-                        onehot_actions = torch.nn.functional.one_hot(actions_, num_classes=2)
+                    if N <= 4: # using joint actions of all actions
                         for j in range(N):
-                            mean_fields[j] = torch.mean(onehot_actions.float(), dim=0) #Category actions to vectors first
+                            neighbors = np.argpartition(distance_matrix[j], N-1)
+                            neighbor_actions = actions_[neighbors]
+                            neighbor_actions = neighbor_actions.reshape(1, -1)[0]
+                            complements = torch.tensor([0.0]).repeat(1, (4-N))[0]
+                            neighbor_actions = torch.cat([neighbor_actions, complements])
+                            joint_actions[j] = neighbor_actions
                     else:
                         for j in range(N):
-                            # select all other agents
-                            #pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
-                            #aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1,N)))
-                            #other_actions = torch.cat((pre_actions, aft_actions))
-                            
-                            # select 3 nearest neighbors
                             neighbors = np.argpartition(distance_matrix[j], 4)[:4]
                             neighbor_actions = actions_[neighbors]
                             #print("neigh_actions:{}".format(neighbor_actions))
-                            neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2) 
-                            mean_fields[j] = torch.mean(neighbor_actions.float(), dim=0) #Category actions to vectors first
+                            neighbor_actions = neighbor_actions.reshape(1, -1)[0]
+                            joint_actions[j] = neighbor_actions
                     for j in range(N):
-                        # concatenate state and mf
-                        #state = states[j].to(device).clone()
                         state = states[j].to(device)
-                        #new_x = torch.cat([state.x, mean_fields[j].repeat(state.x.shape[0], 1)], dim=1)
-                        #state.x = new_x
-                        # calculate q and action
-                        #q_action = ep_controller.rl_agent.act(state)
-                        q_action = ep_controller.rl_agent.act(state, mean_fields[j], eps=eps)
+                        q_action = ep_controller.rl_agent.act(state, joint_actions[j], eps=eps)
                         q_values[j] = q_action[j][3]
                         actions_[j] = q_action[j][1]
-                return actions_, mean_fields, q_values
+                return actions_, joint_actions, q_values
                  
-            actions, mean_fields, q_values = infer_acts(states, actions)
-            #print("#AGENTS: {}, ACTIONS: {}, MF: {} for current Q".format(num_agents, actions, mean_fields))
+            actions, joint_actions, q_values = infer_acts(states, actions)
+            #print("#AGENTS: {}, ACTIONS: {}, MF: {} for current Q".format(num_agents, actions, joint_actions))
             
             # For each agent
             for a in range(env.get_num_agents()):
                 agent = env.agents[a]
-                agent_next_action = ep_controller.compute_agent_action(a, info, eps, mean_fields[a]) #TODO: here the action is 5-dim
-                #agent_next_action = actions[a]
+                agent_next_action = ep_controller.compute_agent_action(a, info, eps, joint_actions[a]) # here the action is 5-dim
                 railenv_action_dict.update({a: agent_next_action})
             # Environment step
             next_obs, all_rewards, done, info = env.step(railenv_action_dict)
@@ -300,7 +291,7 @@ def main(args):
 
             # Update replay buffer and train agent
             for a in range(env.get_num_agents()):
-                ep_controller.save_experience_and_train(a, railenv_action_dict[a], all_rewards[a], next_obs[a], done[a], step, args, ep, mean_fields[a], next_q_values[a])
+                ep_controller.save_experience_and_train(a, railenv_action_dict[a], all_rewards[a], next_obs[a], done[a], step, args, ep, joint_actions[a], next_q_values[a])
                 
             if ep_controller.is_episode_done():
                 break  
