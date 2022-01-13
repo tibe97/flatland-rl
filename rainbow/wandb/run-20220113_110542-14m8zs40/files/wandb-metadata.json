@@ -1,0 +1,30 @@
+{
+    "os": "Linux-5.11.0-37-generic-x86_64-with-glibc2.10",
+    "python": "3.8.5",
+    "heartbeatAt": "2022-01-13T03:05:44.183390",
+    "startedAt": "2022-01-13T03:05:42.230419",
+    "docker": null,
+    "gpu": "NVIDIA GeForce GTX 1060",
+    "gpu_count": 1,
+    "cpu_count": 8,
+    "cuda": null,
+    "args": [
+        "--num-episodes=200",
+        "--resume-weights=False",
+        "--run-title=joint-actions-no-net_action",
+        "--wandb-project-name=multi-agent",
+        "--deadlock-reward=-1000"
+    ],
+    "state": "running",
+    "program": "train.py",
+    "codePath": "rainbow/train.py",
+    "git": {
+        "remote": "git@github.com:tibe97/flatland-rl.git",
+        "commit": "211d73a33bcd97ac932be06c4a73d260dd589aa1"
+    },
+    "email": "runnphoenix@gmail.com",
+    "root": "/home/runnphoenix/work/flatland-rl",
+    "host": "AW15R3",
+    "username": "runnphoenix",
+    "executable": "/home/runnphoenix/anaconda3/bin/python3"
+}
