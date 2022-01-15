@@ -203,7 +203,7 @@ def main(args):
         # MULTI AGENT
         # initialize actions for all agents in this episode
         num_agents = env.get_num_agents()
-        actions = torch.randint(0, 2, size=(num_agents,))
+        actions = torch.randint(0, 1, size=(num_agents,))
 
       
         # Main loop
@@ -226,7 +226,7 @@ def main(args):
             def infer_acts(states, actions, num_iter=3):
                 N = actions.shape[0]
                 actions_ = actions.clone()               
-                joint_actions = torch.zeros(N, 4).to(device) # TODO: change to N*8
+                mean_fields = torch.zeros(N, 2).to(device) # TODO: change to N*8
                 q_values = torch.zeros(N).to(device)
                 
                 # calculate distance matrix
@@ -237,40 +237,39 @@ def main(args):
                     positions[i] = agent.position if agent.position != None else agent.initial_position                        
                 for i in range(num_agents):
                     for j in range(i+1, num_agents):
-                        #distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
-                        distance_matrix[i][j] = math.sqrt( (positions[i][0] - positions[j][0]) ** 2 + (positions[i][1] - positions[j][1]) ** 2 )
+                        distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
+                        #distance_matrix[i][j] = math.sqrt( (positions[i][0] - positions[j][0]) ** 2 + (positions[i][1] - positions[j][1]) ** 2 )
                         distance_matrix[j][i] = distance_matrix[i][j]
                 
                 # Dilution process
                 for i in range(num_iter):
-                    if N <= 4:
+                    if N < 4:
                         for j in range(N):
-                            neighbors = np.argpartition(distance_matrix[j], N-1)
+                            neighbors = np.argsort(distance_matrix[j])[1:]
                             neighbor_actions = actions_[neighbors]
-                            #neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
-                            neighbor_actions = neighbor_actions.reshape(1,-1)[0] # reshape to a row vector
-                            # adding #(4-N) [0.5,0.5]s to make a total length of 4*2
-                            complements = torch.tensor([0.0]).repeat(1, (4-N))[0]
-                            neighbor_actions = torch.cat([neighbor_actions, complements]) # a row vector whose length is 8
-                            joint_actions[j] = neighbor_actions
+                            complements = torch.tensor([0]).repeat(1, (4-N))[0]
+                            neighbor_actions = torch.cat([neighbor_actions, complements])
+                            neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
+                            neighbor_actions = torch.mean(neighbor_actions, dim=0)
+                            mean_fields[j] = neighbor_actions
                     else:
                         for j in range(N):
-                            neighbors = np.argpartition(distance_matrix[j],4)[:4]
+                            neighbors = np.argsort(distance_matrix[j])[1:4]
                             neighbor_actions = actions_[neighbors]
-                            #neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
-                            neighbor_actions = neighbor_actions.reshape(1,-1)[0]
-                            joint_actions[j] = neighbor_actions
+                            neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
+                            neighbor_actions = torch.mean(neighbor_actions, dim=0)
+                            mean_fields[j] = neighbor_actions
 
                     for j in range(N):
                         # concatenate state and mf
                         state = states[j].to(device).clone()
-                        new_x = torch.cat([state.x, joint_actions[j].repeat(state.x.shape[0],1)], dim=1)
-                        state.x =  new_x                        
+                        new_x = torch.cat([state.x, mean_fields[j].repeat(state.x.shape[0],1)], dim=1)
+                        state.x = new_x                     
                         # calculate q and action
                         q_action = ep_controller.rl_agent.act(state, eps=eps)
                         q_values[j] = q_action[j][3]
                         actions_[j] = q_action[j][1]
-                return actions_, joint_actions, q_values
+                return actions_, mean_fields, q_values
                  
             actions, mean_fields, q_values = infer_acts(states, actions) #TODO change names from mf to joint_actions
             #print("#AGENTS: {}, ACTIONS: {}, MF: {} for current Q".format(num_agents, actions, mean_fields))

@@ -17,6 +17,7 @@ import argparse
 import pprint
 import math
 import random
+import time
 # make sure the root path is in system path
 from pathlib import Path
 
@@ -167,6 +168,10 @@ def main(args):
 
             obs, info = env.reset()
             ep_controller.reset()
+
+
+            env_renderer = RenderTool(env)
+            env_renderer.render_env(show=True, frames=True, show_observations=False)
             
             # first action
             for a in range(env.get_num_agents()):
@@ -209,43 +214,41 @@ def main(args):
                 # step together
                 def infer_acts(states, actions, num_iter=3):
                     N = actions.shape[0]
-                    mean_fields = torch.zeros(N,2).to(device)
+                    mean_fields = torch.zeros(N, 2).to(device)
                     actions_ = actions.clone()
                     q_values = torch.zeros(N).to(device)
                     
                     # calculating distance matrix of all agents
-                    if N > 4:
-                        positions = [(0,0) for _ in range(num_agents)]
-                        distance_matrix = [[0] * num_agents for _ in range(num_agents)]
-                        for i in range(num_agents):
-                            agent = env.agents[i]
-                            positions[i] = agent.position if agent.position != None else agent.initial_position
-                        #print(positions)
-                        for i in range(num_agents):
-                            for j in range(i+1, num_agents):
-                                distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
-                                distance_matrix[j][i] = distance_matrix[i][j]
-                        #print(distance_matrix)
+                    positions = [(0,0) for _ in range(num_agents)]
+                    distance_matrix = [[0] * num_agents for _ in range(num_agents)]
+                    for i in range(num_agents):
+                        agent = env.agents[i]
+                        positions[i] = agent.position if agent.position != None else agent.initial_position
+                    #print(positions)
+                    for i in range(num_agents):
+                        for j in range(i+1, num_agents):
+                            distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
+                            distance_matrix[j][i] = distance_matrix[i][j]
+                    #print(distance_matrix)
                 
                     #for i in range(num_iter):
-                    if N <= 4:
-                        onehot_actions = torch.nn.functional.one_hot(actions_, num_classes=2)
+                    if N < 4:
                         for j in range(N):
-                            mean_fields[j] = torch.mean(onehot_actions.float(), dim=0) #Category actions to vectors first
+                            neighbors = np.argsort(distance_matrix[j])[1:]
+                            neighbor_actions = actions_[neighbors]
+                            complements = torch.tensor([0]).repeat(1, (4-N))[0]
+                            neighbor_actions = torch.cat([neighbor_actions, complements])
+                            neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
+                            neighbor_actions = torch.mean(neighbor_actions, dim=0)
+                            mean_fields[j] = neighbor_actions
                     else:
                         for j in range(N):
-                            # select all other agents
-                            #pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
-                            #aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1,N)))
-                            #other_actions = torch.cat((pre_actions, aft_actions))
-                            
-                            # select 3 nearest neighbors
-                            neighbors = np.argpartition(distance_matrix[j], 4)[:4]
-                            #print("neighbors: {}".format(neighbors))
+                            neighbors = np.argsort(distance_matrix[j])[1:4]
                             neighbor_actions = actions_[neighbors]
-                            #print("neigh_actions:{}".format(neighbor_actions))
-                            neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2) 
-                            mean_fields[j] = torch.mean(neighbor_actions.float(), dim=0) #Category actions to vectors first
+                            neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
+                            neighbor_actions = torch.mean(neighbor_actions, dim=0)
+                            mean_fields[j] = neighbor_actions
+
                     for j in range(N):
                         # concatenate state and mf
                         state = states[j].to(device).clone()
@@ -286,6 +289,10 @@ def main(args):
                     ep_controller.save_experience_and_train(a, railenv_action_dict[a], all_rewards[a], next_obs[a], done[a], step, args, ep, mean_fields[a], next_q_values[a], train=False)
                 if ep_controller.is_episode_done():
                     break
+
+
+                env_renderer.render_env(show=True, frames=True, show_observations=False)
+                time.sleep(0.1)
 
             # end of episode
 
