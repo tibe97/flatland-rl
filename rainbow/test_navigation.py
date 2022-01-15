@@ -231,33 +231,33 @@ def main(args):
                             distance_matrix[j][i] = distance_matrix[i][j]
                     #print(distance_matrix)
                 
-                    #for i in range(num_iter):
-                    if N < 4:
-                        for j in range(N):
-                            neighbors = np.argsort(distance_matrix[j])[1:]
-                            neighbor_actions = actions_[neighbors]
-                            complements = torch.tensor([0]).repeat(1, (4-N))[0]
-                            neighbor_actions = torch.cat([neighbor_actions, complements])
-                            neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
-                            neighbor_actions = torch.mean(neighbor_actions, dim=0)
-                            mean_fields[j] = neighbor_actions
-                    else:
-                        for j in range(N):
-                            neighbors = np.argsort(distance_matrix[j])[1:4]
-                            neighbor_actions = actions_[neighbors]
-                            neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
-                            neighbor_actions = torch.mean(neighbor_actions, dim=0)
-                            mean_fields[j] = neighbor_actions
+                    for i in range(num_iter):
+                        if N < 4:
+                            for j in range(N):
+                                neighbors = np.argsort(distance_matrix[j])[1:]
+                                neighbor_actions = actions_[neighbors]
+                                complements = torch.tensor([0]).repeat(1, (4-N))[0]
+                                neighbor_actions = torch.cat([neighbor_actions, complements])
+                                neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
+                                neighbor_actions = torch.mean(neighbor_actions, dim=0)
+                                mean_fields[j] = neighbor_actions
+                        else:
+                            for j in range(N):
+                                neighbors = np.argsort(distance_matrix[j])[1:4]
+                                neighbor_actions = actions_[neighbors]
+                                neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
+                                neighbor_actions = torch.mean(neighbor_actions, dim=0)
+                                mean_fields[j] = neighbor_actions
 
-                    for j in range(N):
-                        # concatenate state and mf
-                        state = states[j].to(device).clone()
-                        new_x = torch.cat([state.x, mean_fields[j].repeat(state.x.shape[0],1)], dim=1)
-                        state.x = new_x
-                        # calculate q and action
-                        q_action = rl_agent.act(state)
-                        q_values[j] = q_action[j][3]
-                        actions_[j] = q_action[j][1]
+                        for j in range(N):
+                            # concatenate state and mf
+                            state = states[j].to(device).clone()
+                            new_x = torch.cat([state.x, mean_fields[j].repeat(state.x.shape[0],1)], dim=1)
+                            state.x = new_x
+                            # calculate q and action
+                            q_action = rl_agent.act(state)
+                            q_values[j] = q_action[j][3]
+                            actions_[j] = q_action[j][1]
                         
                     return actions_, mean_fields, q_values
                  
