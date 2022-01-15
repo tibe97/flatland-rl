@@ -226,7 +226,11 @@ def main(args):
             def infer_acts(states, actions, num_iter=3):
                 N = actions.shape[0]
                 actions_ = actions.clone()               
+<<<<<<< HEAD
                 mean_fields = torch.zeros(N, 2).to(device) # TODO: change to N*8
+=======
+                joint_actions = torch.zeros(N, 4).to(device)
+>>>>>>> e6f8cfcb660dc3b7d8ecbac9ee173b36e5140362
                 q_values = torch.zeros(N).to(device)
                 
                 # calculate distance matrix
@@ -263,8 +267,13 @@ def main(args):
                     for j in range(N):
                         # concatenate state and mf
                         state = states[j].to(device).clone()
+<<<<<<< HEAD
                         new_x = torch.cat([state.x, mean_fields[j].repeat(state.x.shape[0],1)], dim=1)
                         state.x = new_x                     
+=======
+                        new_x = torch.cat([state.x, joint_actions[j].repeat(state.x.shape[0],1)], dim=1)
+                        state.x = new_x                        
+>>>>>>> e6f8cfcb660dc3b7d8ecbac9ee173b36e5140362
                         # calculate q and action
                         q_action = ep_controller.rl_agent.act(state, eps=eps)
                         q_values[j] = q_action[j][3]
@@ -304,7 +313,7 @@ def main(args):
 
         # Learn action STOP/GO only at the end of episode
         # For now let's just use value network
-        rl_agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
+        #rl_agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
 
         
         # end of episode
