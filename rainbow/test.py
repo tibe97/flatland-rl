@@ -154,7 +154,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
             # MULTI AGENT
             # initialize actions for all agents in this episode
             num_agents = env.get_num_agents()
-            actions = torch.randint(0, 2, size=(num_agents,))
+            actions = torch.randint(0, 1, size=(num_agents,))
 
             # Main loop
             for step in range(max_steps):
@@ -170,46 +170,51 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                 # step together
                 def infer_acts(states, actions, num_iter=3):
                     N = actions.shape[0]
-                    joint_actions = torch.zeros(N, 4).to(device)
+                    joint_actions = torch.zeros(N, 2**2).to(device)
                     actions_ = actions.clone()
                     q_values = torch.zeros(N).to(device)
                     
                     # calculating distance matrix of all agents
-                    if N > 4:
-                        positions = [(0,0) for _ in range(num_agents)]
-                        distance_matrix = [[0] * num_agents for _ in range(num_agents)]
-                        for i in range(num_agents):
-                            agent = env.agents[i]
-                            positions[i] = agent.position if agent.position != None else agent.initial_position
-                        #print(positions)
-                        for i in range(num_agents):
-                            for j in range(i+1, num_agents):
-                                #distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
-                                distance_matrix[i][j] = math.sqrt( (positions[i][0] - positions[j][0]) ** 2 + (positions[i][1] - positions[j][1]) ** 2)
-                                distance_matrix[j][i] = distance_matrix[i][j]
-                        #print(distance_matrix)
+                    positions = [(0,0) for _ in range(num_agents)]
+                    distance_matrix = [[0] * num_agents for _ in range(num_agents)]
+                    for i in range(num_agents):
+                        agent = env.agents[i]
+                        positions[i] = agent.position if agent.position != None else agent.initial_position
+                    #print(positions)
+                    for i in range(num_agents):
+                        for j in range(i+1, num_agents):
+                            distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
+                            #distance_matrix[i][j] = math.sqrt( (positions[i][0] - positions[j][0]) ** 2 + (positions[i][1] - positions[j][1]) ** 2)
+                            distance_matrix[j][i] = distance_matrix[i][j]
+                    #print(distance_matrix)
                 
-                    #for i in range(num_iter):
-                    if N <= 4: # using joint actions of all actions
+                    for i in range(num_iter):
+                        if N == 1:
+                            neighbor_action = torch.tensor([1, 0]) # [1,0] for stop
+                            joint_action = torch.outer(neighbor_action, neighbor_action).flatten()
+                            joint_actions[0] = joint_action
+                        elif N == 2: # using joint actions of 2 nearest neighbors
+                            for j in range(N):
+                                neighbor = np.argsort(distance_matrix[j])[1]
+                                neighbor_action = actions_[neighbor]
+                                neighbor_action = torch.nn.functional.one_hot(neighbor_action, num_classes=2)
+                                complement = torch.tensor([1, 0])
+                                joint_neighbor_action = torch.outer(neighbor_action, complement).flatten()
+                                joint_actions[j] = joint_neighbor_action
+                        else:
+                            for j in range(N):
+                                neighbors = np.argsort(distance_matrix[j])[1:3]
+                                neighbor_actions = actions_[neighbors]
+                                #print("neigh_actions:{}".format(neighbor_actions))
+                                neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
+                                joint_neighbor_action = torch.outer(neighbor_actions[0], neighbor_actions[1]).flatten()
+                                joint_actions[j] = joint_neighbor_action
+                            
                         for j in range(N):
-                            neighbors = np.argpartition(distance_matrix[j], N-1)
-                            neighbor_actions = actions_[neighbors]
-                            neighbor_actions = neighbor_actions.reshape(1, -1)[0]
-                            complements = torch.tensor([0.0]).repeat(1, (4-N))[0]
-                            neighbor_actions = torch.cat([neighbor_actions, complements])
-                            joint_actions[j] = neighbor_actions
-                    else:
-                        for j in range(N):
-                            neighbors = np.argpartition(distance_matrix[j], 4)[:4]
-                            neighbor_actions = actions_[neighbors]
-                            #print("neigh_actions:{}".format(neighbor_actions))
-                            neighbor_actions = neighbor_actions.reshape(1, -1)[0]
-                            joint_actions[j] = neighbor_actions
-                    for j in range(N):
-                        state = states[j].to(device)
-                        q_action = dqn_agent.act(state, joint_actions[j])
-                        q_values[j] = q_action[j][3]
-                        actions_[j] = q_action[j][1]
+                            state = states[j].to(device)
+                            q_action = dqn_agent.act(state, joint_actions[j])
+                            q_values[j] = q_action[j][3]
+                            actions_[j] = q_action[j][1]
                         
                     return actions_, joint_actions, q_values
                  
@@ -245,8 +250,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                                 
                                 # Choose path to take at the current switch
                                 path_values = dqn_agent.act(obs_batch, joint_actions[a], eps=0)
-                                railenv_action = env.obs_builder.choose_railenv_actions(
-                                    a, path_values[a])
+                                railenv_action = env.obs_builder.choose_railenv_actions(a, path_values[a])
                                 agent_action_buffer[a] = railenv_action
                                 # as state to save we take the path chosen by agent
                                 agent_path_obs_buffer[a] = agent_obs[a]["partitioned"][path_values[a][0]]

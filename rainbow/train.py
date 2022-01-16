@@ -125,8 +125,8 @@ def main(args):
     #lr_scheduler = CosineAnnealingLR(rl_agent.optimizer_value, T_max = 200)
     #lr_scheduler_policy = CosineAnnealingLR(rl_agent.optimizer_action, T_max=200)
     
-    lr_scheduler = CyclicLR(rl_agent.optimizer_value, base_lr=0.00, max_lr=args.learning_rate, step_size_up=25, cycle_momentum=False, mode="triangular2")
-    lr_scheduler_policy = CyclicLR(rl_agent.optimizer_action, base_lr=0.00, max_lr=args.learning_rate, step_size_up=25, cycle_momentum=False, mode="triangular2")
+    lr_scheduler = CyclicLR(rl_agent.optimizer_value, base_lr=0.00, max_lr=args.learning_rate, step_size_up=20, cycle_momentum=False, mode="triangular2")
+    lr_scheduler_policy = CyclicLR(rl_agent.optimizer_action, base_lr=0.00, max_lr=args.learning_rate, step_size_up=20, cycle_momentum=False, mode="triangular2")
     
     # Construct the environment with the given observation, generators, predictors, and stochastic data
     env = RailEnv(width=args.width,
@@ -205,7 +205,7 @@ def main(args):
         # MULTI AGENT
         # initialize actions for all agents in this episode
         num_agents = env.get_num_agents()
-        actions = torch.randint(0, 2, size=(num_agents,))
+        actions = torch.randint(0, 1, size=(num_agents,)) # 0, start from stop
 
       
         # Main loop
@@ -228,7 +228,7 @@ def main(args):
             def infer_acts(states, actions, num_iter=3):
                 N = actions.shape[0]
                 actions_ = actions.clone()               
-                joint_actions = torch.zeros(N, 4).to(device)
+                joint_actions = torch.zeros(N, 2**2).to(device)
                 q_values = torch.zeros(N).to(device)
 
                 # calculating distance matrix of all agents
@@ -240,27 +240,33 @@ def main(args):
                 #print(positions)
                 for i in range(num_agents):
                     for j in range(i+1, num_agents):
-                        #distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
-                        distance_matrix[i][j] = math.sqrt( (positions[i][0] - positions[j][0]) ** 2 + (positions[i][1] - positions[j][1]) ** 2)
+                        distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
+                        #distance_matrix[i][j] = math.sqrt( (positions[i][0] - positions[j][0]) ** 2 + (positions[i][1] - positions[j][1]) ** 2)
                         distance_matrix[j][i] = distance_matrix[i][j]
                 #print(distance_matrix)
                 
                 for i in range(num_iter):
-                    if N <= 4: # using joint actions of all actions
+                    if N == 1:
+                        neighbor_action = torch.tensor([1, 0]) # [1,0] for stop
+                        joint_action = torch.outer(neighbor_action, neighbor_action).flatten()
+                        joint_actions[0] = joint_action
+                    elif N == 2: # using joint actions of 2 nearest neighbors
                         for j in range(N):
-                            neighbors = np.argpartition(distance_matrix[j], N-1)
-                            neighbor_actions = actions_[neighbors]
-                            neighbor_actions = neighbor_actions.reshape(1, -1)[0]
-                            complements = torch.tensor([0.0]).repeat(1, (4-N))[0]
-                            neighbor_actions = torch.cat([neighbor_actions, complements])
-                            joint_actions[j] = neighbor_actions
+                            neighbor = np.argsort(distance_matrix[j])[1]
+                            neighbor_action = actions_[neighbor]
+                            neighbor_action = torch.nn.functional.one_hot(neighbor_action, num_classes=2)
+                            complement = torch.tensor([1, 0])
+                            joint_neighbor_action = torch.outer(neighbor_action, complement).flatten()
+                            joint_actions[j] = joint_neighbor_action
                     else:
                         for j in range(N):
-                            neighbors = np.argpartition(distance_matrix[j], 4)[:4]
+                            neighbors = np.argsort(distance_matrix[j])[1:3]
                             neighbor_actions = actions_[neighbors]
                             #print("neigh_actions:{}".format(neighbor_actions))
-                            neighbor_actions = neighbor_actions.reshape(1, -1)[0]
-                            joint_actions[j] = neighbor_actions
+                            neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
+                            joint_neighbor_action = torch.outer(neighbor_actions[0], neighbor_actions[1]).flatten()
+                            joint_actions[j] = joint_neighbor_action
+
                     for j in range(N):
                         state = states[j].to(device)
                         q_action = ep_controller.rl_agent.act(state, joint_actions[j], eps=eps)
@@ -400,9 +406,9 @@ if __name__ == '__main__':
                         help='Save models every tot episodes')
     parser.add_argument('--start-lr-decay', type=int, default=150,
                         help='Save models every tot episodes')
-    parser.add_argument('--eps-decay', type=float, default=0.99,
+    parser.add_argument('--eps-decay', type=float, default=0.992,
                         help='epsilon decay value')
-    parser.add_argument('--learning-rate', type=float, default=0.02,
+    parser.add_argument('--learning-rate', type=float, default=0.03,
                         help='LR for DQN agent')
     parser.add_argument('--learning-rate-decay', type=float, default=0.5,
                         help='LR decay for DQN agent')

@@ -21,6 +21,7 @@ import random
 from pathlib import Path
 
 import logging
+import time
 
 
 # These 2 lines must go before the import from src/
@@ -36,10 +37,10 @@ def main(args):
     np.random.seed(1)
 
 
-    agent_weights_path = "/home/runnphoenix/work/flatland-rl/rainbow/test_results/checkpoint_1_agents_on_25_25/epoch_200_07_01_2022__17_19_"
+    agent_weights_path = "/home/runnphoenix/work/flatland-rl/rainbow/test_results/checkpoint_1_agents_on_25_25/epoch_150_16_01_2022__05_29_"
     ######## TEST SET SELECTION - PARAMETERS ########
     
-    test_multi_agent_setup = 1             # 1 for Medium size test, 2 for Big size test
+    test_multi_agent_setup = 2             # 1 for Medium size test, 2 for Big size test
     test_n_agents = 5                      # Number of agents to test (3 - 5 - 7 for Medium, 5 - 7 - 10 for Big)
     test_malfunctions_enabled = False      # Malfunctions enabled?
     test_agents_one_speed = True           # Test agents with the same speed (1) or with 4 different speeds?
@@ -154,6 +155,7 @@ def main(args):
     #rewards_dict.done_reward = 0
     #rewards_dict.deadlock_reward = 0
     rewards_dict = {'done_reward':0, 'deadlock_rewad':0}
+    
 
     print("--------------- TESTING STARTED ------------------")
     # Test performance over several episodes
@@ -167,6 +169,14 @@ def main(args):
 
             obs, info = env.reset()
             ep_controller.reset()
+            
+            
+                
+            # render
+            env_renderer = RenderTool(env)
+            env_renderer.render_env(show=True, frames=True, show_observations=False)
+            
+    
             
             # first action
             for a in range(env.get_num_agents()):
@@ -187,7 +197,7 @@ def main(args):
             # MULTI AGENT
             # initialize actions for all agents in this episode
             num_agents = env.get_num_agents()
-            actions = torch.randint(0, 2, size=(num_agents,))
+            actions = torch.randint(0, 1, size=(num_agents,))
 
             # Main loop
             for step in range(max_steps):
@@ -209,66 +219,61 @@ def main(args):
                 # step together
                 def infer_acts(states, actions, num_iter=3):
                     N = actions.shape[0]
-                    mean_fields = torch.zeros(N,2).to(device)
-                    actions_ = actions.clone()
+                    actions_ = actions.clone()               
+                    joint_actions = torch.zeros(N, 2**2).to(device)
                     q_values = torch.zeros(N).to(device)
-                    
+
                     # calculating distance matrix of all agents
-                    if N > 4:
-                        positions = [(0,0) for _ in range(num_agents)]
-                        distance_matrix = [[0] * num_agents for _ in range(num_agents)]
-                        for i in range(num_agents):
-                            agent = env.agents[i]
-                            positions[i] = agent.position if agent.position != None else agent.initial_position
-                        #print(positions)
-                        for i in range(num_agents):
-                            for j in range(i+1, num_agents):
-                                distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
-                                distance_matrix[j][i] = distance_matrix[i][j]
-                        #print(distance_matrix)
+                    positions = [(0,0) for _ in range(num_agents)]
+                    distance_matrix = [[0] * num_agents for _ in range(num_agents)]
+                    for i in range(num_agents):
+                        agent = env.agents[i]
+                        positions[i] = agent.position if agent.position != None else agent.initial_position
+                    #print(positions)
+                    for i in range(num_agents):
+                        for j in range(i+1, num_agents):
+                            distance_matrix[i][j] = abs(positions[i][0] - positions[j][0]) + abs(positions[i][1] - positions[j][1])
+                            #distance_matrix[i][j] = math.sqrt( (positions[i][0] - positions[j][0]) ** 2 + (positions[i][1] - positions[j][1]) ** 2)
+                            distance_matrix[j][i] = distance_matrix[i][j]
+                    #print(distance_matrix)
+                  
+                    for i in range(num_iter):
+                        if N == 1:
+                            neighbor_action = torch.tensor([1, 0]) # [1,0] for stop
+                            joint_action = torch.outer(neighbor_action, neighbor_action).flatten()
+                            joint_actions[0] = joint_action
+                        elif N == 2: # using joint actions of 2 nearest neighbors
+                            for j in range(N):
+                                neighbor = np.argsort(distance_matrix[j])[1]
+                                neighbor_action = actions_[neighbor]
+                                neighbor_action = torch.nn.functional.one_hot(neighbor_action, num_classes=2)
+                                complement = torch.tensor([1, 0])
+                                joint_neighbor_action = torch.outer(neighbor_action, complement).flatten()
+                                joint_actions[j] = joint_neighbor_action
+                        else:
+                            for j in range(N):
+                                neighbors = np.argsort(distance_matrix[j])[1:3]
+                                neighbor_actions = actions_[neighbors]
+                                #print("neigh_actions:{}".format(neighbor_actions))
+                                neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
+                                joint_neighbor_action = torch.outer(neighbor_actions[0], neighbor_actions[1]).flatten()
+                                joint_actions[j] = joint_neighbor_action
                 
-                    #for i in range(num_iter):
-                    if N <= 4:
-                        onehot_actions = torch.nn.functional.one_hot(actions_, num_classes=2)
                         for j in range(N):
-                            mean_fields[j] = torch.mean(onehot_actions.float(), dim=0) #Category actions to vectors first
-                    else:
-                        for j in range(N):
-                            # select all other agents
-                            #pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
-                            #aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1,N)))
-                            #other_actions = torch.cat((pre_actions, aft_actions))
-                            
-                            # select 3 nearest neighbors
-                            neighbors = np.argpartition(distance_matrix[j], 4)[:4]
-                            #print("neighbors: {}".format(neighbors))
-                            neighbor_actions = actions_[neighbors]
-                            #print("neigh_actions:{}".format(neighbor_actions))
-                            neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2) 
-                            mean_fields[j] = torch.mean(neighbor_actions.float(), dim=0) #Category actions to vectors first
-                    for j in range(N):
-                        # concatenate state and mf
-                        #state = states[j].to(device).clone()
-                        state = states[j].to(device)
-                        #new_x = torch.cat([state.x, mean_fields[j].repeat(state.x.shape[0], 1)], dim=1)
-                        #state.x = new_x
-                        # calculate q and action
-                        #q_action = ep_controller.rl_agent.act(state)
-                        q_action = rl_agent.act(state, mean_fields[j])
-                        q_values[j] = q_action[j][3]
-                        actions_[j] = q_action[j][1]
-                        
-                    return actions_, mean_fields, q_values
+                            state = states[j].to(device)
+                            q_action = ep_controller.rl_agent.act(state, joint_actions[j], eps=eps)
+                            q_values[j] = q_action[j][3]
+                            actions_[j] = q_action[j][1]
+                    return actions_, joint_actions, q_values
                  
-                actions, mean_fields, q_values = infer_acts(states, actions)
-                
-                
+                actions, joint_actions, q_values = infer_acts(states, actions)
+                                
 
                 # for each agent
                 for a in range(env.get_num_agents()):
                     agent = env.agents[a]
                     # compute action for agent a and update dict
-                    agent_next_action = ep_controller.compute_agent_action(a, info, eps, mean_fields[a])
+                    agent_next_action = ep_controller.compute_agent_action(a, info, eps, joint_actions[a])
                     railenv_action_dict.update({a: agent_next_action})
                 # Environment step
                 next_obs, all_rewards, done, info = env.step(railenv_action_dict)
@@ -285,9 +290,16 @@ def main(args):
 
                 # Update replay buffer and train agent
                 for a in range(env.get_num_agents()):
-                    ep_controller.save_experience_and_train(a, railenv_action_dict[a], all_rewards[a], next_obs[a], done[a], step, args, ep, mean_fields[a], next_q_values[a], train=False)
+                    ep_controller.save_experience_and_train(a, railenv_action_dict[a], all_rewards[a], next_obs[a], done[a], step, args, ep, joint_actions[a], next_q_values[a], train=False)
                 if ep_controller.is_episode_done():
                     break
+                    
+                
+                
+                env_renderer.render_env(show=True, frames=True, show_observations=False)
+                time.sleep(0.1)
+                
+                
 
             # end of episode
 
