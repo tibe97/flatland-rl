@@ -170,7 +170,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                 # step together
                 def infer_acts(states, actions, num_iter=3):
                     N = actions.shape[0]
-                    joint_actions = torch.zeros(N, 2**7).to(device)
+                    mean_fields = torch.zeros(N, 2).to(device)
                     actions_ = actions.clone()
                     q_values = torch.zeros(N).to(device)
                     
@@ -189,37 +189,26 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                     #print(distance_matrix)
                 
                     for i in range(num_iter):
-                        # using joint action of all other agents' actions
-                        for j in range(N):
-                            neighbors = np.argsort(distance_matrix[j])[1:] # all neighbor except for agent itself
-                            neighbor_actions = actions_[neighbors]
-                            neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
-                            complement = torch.tensor([1, 0])
-                            
-                            if N == 1:
-                                joint_action = complement
-                                for k in range(6):
-                                    joint_action = torch.outer(complement, joint_action).flatten()
-                            else:
-                                joint_action = neighbor_actions[0]   
-                                # joint action of exsiting neighbors
-                                for k in range(N-2): 
-                                    joint_action = torch.outer(neighbor_actions[k+1], joint_action).flatten()
-                                # joint action of completments
-                                for k in range(8-N): 
-                                    joint_action = torch.outer(complement, joint_action).flatten()
-                                
-                            joint_actions[j] = joint_action
+                        # using mean field of all other agents' actions
+                        if N == 1:
+                            mean_fields = torch.FloatTensor([[0.5,0.5]]).to(device)
+                        else:
+                            for j in range(N):
+                                pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
+                                aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1, N)))
+                                other_actions = torch.cat([pre_actions, aft_actions])
+                                other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2)
+                                mean_fields[j] = other_actions
 
                         for j in range(N):
                             state = states[j].to(device)
-                            q_action = dqn_agent.act(state, joint_actions[j])
+                            q_action = dqn_agent.act(state, mean_fields[j])
                             q_values[j] = q_action[j][3]
                             actions_[j] = q_action[j][1]
                         
-                    return actions_, joint_actions, q_values
+                    return actions_, mean_fields, q_values
                  
-                actions, joint_actions, q_values = infer_acts(states, actions)
+                actions, mean_fields, q_values = infer_acts(states, actions)
 
                 for a in range(env.get_num_agents()):
                     agent = env.agents[a]
@@ -250,7 +239,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                                 #obs_batch.x = new_x
                                 
                                 # Choose path to take at the current switch
-                                path_values = dqn_agent.act(obs_batch, joint_actions[a], eps=0)
+                                path_values = dqn_agent.act(obs_batch, mean_fields[a], eps=0)
                                 railenv_action = env.obs_builder.choose_railenv_actions(a, path_values[a])
                                 agent_action_buffer[a] = railenv_action
                                 # as state to save we take the path chosen by agent

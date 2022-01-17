@@ -228,7 +228,7 @@ def main(args):
             def infer_acts(states, actions, num_iter=3):
                 N = actions.shape[0]
                 actions_ = actions.clone()               
-                joint_actions = torch.zeros(N, 2**7).to(device)
+                mean_fields = torch.zeros(N, 2).to(device)
                 q_values = torch.zeros(N).to(device)
 
                 # calculating distance matrix of all agents
@@ -246,43 +246,32 @@ def main(args):
                 #print(distance_matrix)
                 
                 for i in range(num_iter):
-                    # using joint action of all other agents' actions
-                    for j in range(N):
-                        neighbors = np.argsort(distance_matrix[j])[1:] # all neighbor except for agent itself
-                        neighbor_actions = actions_[neighbors]
-                        neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
-                        complement = torch.tensor([1, 0])
-                        
-                        if N == 1:
-                            joint_action = complement
-                            for k in range(6):
-                                joint_action = torch.outer(complement, joint_action).flatten()
-                        else:
-                            joint_action = neighbor_actions[0]   
-                            # joint action of exsiting neighbors
-                            for k in range(N-2): 
-                                joint_action = torch.outer(neighbor_actions[k+1], joint_action).flatten()
-                            # joint action of completments
-                            for k in range(8-N): 
-                                joint_action = torch.outer(complement, joint_action).flatten()
-                            
-                        joint_actions[j] = joint_action
+                    # using mean field of all other agents' actions
+                    if N == 1:
+                        mean_fields = torch.FloatTensor([[0.5,0.5]]).to(device)
+                    else:
+                        for j in range(N):
+                            pre_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j)))
+                            aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1, N)))
+                            other_actions = torch.cat([pre_actions, aft_actions])
+                            other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2)
+                            mean_fields[j] = other_actions
 
                     for j in range(N):
                         state = states[j].to(device)
-                        q_action = ep_controller.rl_agent.act(state, joint_actions[j], eps=eps)
+                        q_action = ep_controller.rl_agent.act(state, mean_fields[j], eps=eps)
                         q_values[j] = q_action[j][3]
                         actions_[j] = q_action[j][1]
                         
-                return actions_, joint_actions, q_values
+                return actions_, mean_fields, q_values
                  
-            actions, joint_actions, q_values = infer_acts(states, actions)
+            actions, mean_fields, q_values = infer_acts(states, actions)
             #print("#AGENTS: {}, ACTIONS: {}, MF: {} for current Q".format(num_agents, actions, joint_actions))
             
             # For each agent
             for a in range(env.get_num_agents()):
                 agent = env.agents[a]
-                agent_next_action = ep_controller.compute_agent_action(a, info, eps, joint_actions[a]) # here the action is 5-dim
+                agent_next_action = ep_controller.compute_agent_action(a, info, eps, mean_fields[a]) # here the action is 5-dim
                 railenv_action_dict.update({a: agent_next_action})
             # Environment step
             next_obs, all_rewards, done, info = env.step(railenv_action_dict)
@@ -299,7 +288,7 @@ def main(args):
 
             # Update replay buffer and train agent
             for a in range(env.get_num_agents()):
-                ep_controller.save_experience_and_train(a, railenv_action_dict[a], all_rewards[a], next_obs[a], done[a], step, args, ep, joint_actions[a], next_q_values[a])
+                ep_controller.save_experience_and_train(a, railenv_action_dict[a], all_rewards[a], next_obs[a], done[a], step, args, ep, mean_fields[a], next_q_values[a])
                 
             if ep_controller.is_episode_done():
                 break  
