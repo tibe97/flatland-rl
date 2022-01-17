@@ -258,10 +258,17 @@ def main(args):
                             else:
                             	joint_action = neighbor_actions[0]
                             	
-                            if N == 3: # joint action of exsiting neighbors
+                            # joint action of exsiting neighbors
+                            if N == 3: 
                             	joint_action = torch.outer(neighbor_actions[1], joint_action).flatten()
-                            for k in range(3+1-N): # joint actioin of completments
-                            	joint_action = torch.outer(complement, joint_action).flatten()
+                            	
+                            # joint action of completments
+                            if N == 1:
+                                for k in range(2):
+                                    joint_action = torch.outer(complement, joint_action).flatten()
+                            else:
+                                for k in range(3+1-N): 
+                            	    joint_action = torch.outer(complement, joint_action).flatten()
                             	
                             joint_actions[j] = joint_action
                     else:

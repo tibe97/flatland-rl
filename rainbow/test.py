@@ -170,7 +170,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                 # step together
                 def infer_acts(states, actions, num_iter=3):
                     N = actions.shape[0]
-                    joint_actions = torch.zeros(N, 2**2).to(device)
+                    joint_actions = torch.zeros(N, 2**3).to(device)
                     actions_ = actions.clone()
                     q_values = torch.zeros(N).to(device)
                     

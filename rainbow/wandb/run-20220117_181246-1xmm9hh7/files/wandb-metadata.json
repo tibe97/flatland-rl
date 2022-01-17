@@ -1,0 +1,30 @@
+{
+    "os": "Linux-5.11.0-37-generic-x86_64-with-glibc2.10",
+    "python": "3.8.5",
+    "heartbeatAt": "2022-01-17T10:12:47.875453",
+    "startedAt": "2022-01-17T10:12:46.022365",
+    "docker": null,
+    "gpu": "NVIDIA GeForce GTX 1060",
+    "gpu_count": 1,
+    "cpu_count": 8,
+    "cuda": null,
+    "args": [
+        "--num-episodes=200",
+        "--resume-weights=False",
+        "--run-title=joint-action-3-neighbors",
+        "--wandb-project-name=multi-agent-fc",
+        "--deadlock-reward=-1000"
+    ],
+    "state": "running",
+    "program": "train.py",
+    "codePath": "rainbow/train.py",
+    "git": {
+        "remote": "git@github.com:tibe97/flatland-rl.git",
+        "commit": "3549ccde3d66b78d1846aef00f68193d8e350b53"
+    },
+    "email": "runnphoenix@gmail.com",
+    "root": "/home/runnphoenix/work/flatland-rl",
+    "host": "AW15R3",
+    "username": "runnphoenix",
+    "executable": "/home/runnphoenix/anaconda3/bin/python3"
+}

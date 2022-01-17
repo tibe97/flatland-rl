@@ -220,7 +220,7 @@ def main(args):
                 def infer_acts(states, actions, num_iter=3):
                     N = actions.shape[0]
                     actions_ = actions.clone()               
-                    joint_actions = torch.zeros(N, 2**2).to(device)
+                    joint_actions = torch.zeros(N, 2**3).to(device)
                     q_values = torch.zeros(N).to(device)
 
                     # calculating distance matrix of all agents
