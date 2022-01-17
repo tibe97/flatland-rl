@@ -37,10 +37,10 @@ def main(args):
     np.random.seed(1)
 
 
-    agent_weights_path = "/home/runnphoenix/work/flatland-rl/rainbow/test_results/checkpoint_1_agents_on_25_25/epoch_200_11_01_2022__19_39_"
+    agent_weights_path = "/home/runnphoenix/work/flatland-rl/rainbow/test_results/checkpoint_1_agents_on_25_25/epoch_100_16_01_2022__19_26_"
     ######## TEST SET SELECTION - PARAMETERS ########
     
-    test_multi_agent_setup = 2             # 1 for Medium size test, 2 for Big size test
+    test_multi_agent_setup = 1             # 1 for Medium size test, 2 for Big size test
     test_n_agents = 5                      # Number of agents to test (3 - 5 - 7 for Medium, 5 - 7 - 10 for Big)
     test_malfunctions_enabled = False      # Malfunctions enabled?
     test_agents_one_speed = True           # Test agents with the same speed (1) or with 4 different speeds?
@@ -239,14 +239,14 @@ def main(args):
                                 complements = torch.tensor([0]).repeat(1, (4-N))[0]
                                 neighbor_actions = torch.cat([neighbor_actions, complements])
                                 neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
-                                neighbor_actions = torch.mean(neighbor_actions, dim=0)
+                                neighbor_actions = torch.mean(neighbor_actions.float(), dim=0)
                                 mean_fields[j] = neighbor_actions
                         else:
                             for j in range(N):
                                 neighbors = np.argsort(distance_matrix[j])[1:4]
                                 neighbor_actions = actions_[neighbors]
                                 neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
-                                neighbor_actions = torch.mean(neighbor_actions, dim=0)
+                                neighbor_actions = torch.mean(neighbor_actions.float(), dim=0)
                                 mean_fields[j] = neighbor_actions
 
                         for j in range(N):
