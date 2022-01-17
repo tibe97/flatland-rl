@@ -47,7 +47,7 @@ class Agent:
         
         #self.qnetwork_action = DQN_action(state_size).to(device)
         #self.qnetwork_action = GAT_action(14, 10, 2, args.gat_layers, args.dropout_rate, 0.3, args.attention_heads, args.flow, args.batch_norm).to(device)
-        self.qnetwork_action = FC_action(1+2**2, 16, 8, 2).to(device)
+        self.qnetwork_action = FC_action(1+2**3, 32, 8, 2).to(device)
         
         self.learning_rate = args.learning_rate
         self.optimizer_value = optim.Adam(self.qnetwork_value_local.parameters(), lr=self.learning_rate)

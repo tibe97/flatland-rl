@@ -189,26 +189,41 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                     #print(distance_matrix)
                 
                     for i in range(num_iter):
-                        if N == 1:
-                            neighbor_action = torch.tensor([1, 0]) # [1,0] for stop
-                            joint_action = torch.outer(neighbor_action, neighbor_action).flatten()
-                            joint_actions[0] = joint_action
-                        elif N == 2: # using joint actions of 2 nearest neighbors
+                        if N <= 3: # using joint action of 3 nearest neighbors
                             for j in range(N):
-                                neighbor = np.argsort(distance_matrix[j])[1]
-                                neighbor_action = actions_[neighbor]
-                                neighbor_action = torch.nn.functional.one_hot(neighbor_action, num_classes=2)
+                                neighbors = np.argsort(distance_matrix[j])[1:] # all neighbor except for agent itself
+                                neighbor_actions = actions_[neighbors]
+                                neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
                                 complement = torch.tensor([1, 0])
-                                joint_neighbor_action = torch.outer(neighbor_action, complement).flatten()
-                                joint_actions[j] = joint_neighbor_action
+                            
+                                if N == 1:
+                                    joint_action = torch.tensor([1,0])
+                                else:
+                                	joint_action = neighbor_actions[0]
+                            	
+                                # joint action of exsiting neighbors
+                                if N == 3: 
+                            	    joint_action = torch.outer(neighbor_actions[1], joint_action).flatten()
+                            	
+                                # joint action of completments
+                                if N == 1:
+                                    for k in range(2):
+                                        joint_action = torch.outer(complement, joint_action).flatten()
+                                else:
+                                    for k in range(3+1-N): 
+                            	        joint_action = torch.outer(complement, joint_action).flatten()
+                            	        
+                                joint_actions[j] = joint_action
                         else:
                             for j in range(N):
-                                neighbors = np.argsort(distance_matrix[j])[1:3]
+                                neighbors = np.argsort(distance_matrix[j])[1:3+1]
                                 neighbor_actions = actions_[neighbors]
-                                #print("neigh_actions:{}".format(neighbor_actions))
                                 neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
-                                joint_neighbor_action = torch.outer(neighbor_actions[0], neighbor_actions[1]).flatten()
-                                joint_actions[j] = joint_neighbor_action
+                            
+                                joint_action = neighbor_actions[0]
+                                for k in range(3-1):
+                                    joint_action = torch.outer(joint_action, neighbor_actions[k+1]).flatten()
+                                joint_actions[j] = joint_action
                             
                         for j in range(N):
                             state = states[j].to(device)
