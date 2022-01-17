@@ -113,6 +113,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
             num_done_agents = 0
             if args.render:
                 env_renderer.reset()
+                env_renderer.render_env(show=True, frames=True, show_observations=False)
 
             obs, info = env.reset()
             # env.obs_builder.render_environment()
@@ -191,17 +192,17 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                             for j in range(N):
                                 neighbors = np.argsort(distance_matrix[j])[1:]
                                 neighbor_actions = actions_[neighbors]
-                                complements = torch.tensor([0]).repeat(1, (4-N))[0]
+                                complements = torch.tensor([0]).repeat(1, (4-N))[0].to(device)
                                 neighbor_actions = torch.cat([neighbor_actions, complements])
                                 neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
-                                neighbor_actions = torch.mean(neighbor_actions, dim=0)
+                                neighbor_actions = torch.mean(neighbor_actions.float(), dim=0)
                                 mean_fields[j] = neighbor_actions
                         else:
                             for j in range(N):
                                 neighbors = np.argsort(distance_matrix[j])[1:4]
                                 neighbor_actions = actions_[neighbors]
                                 neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
-                                neighbor_actions = torch.mean(neighbor_actions, dim=0)
+                                neighbor_actions = torch.mean(neighbor_actions.float(), dim=0)
                                 mean_fields[j] = neighbor_actions
 
                         for j in range(N):
@@ -364,8 +365,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
 
                 
                 if args.render:
-                    env_renderer.render_env(
-                        show=True, show_observations=False, show_predictions=False)
+                    env_renderer.render_env(show=True, show_frames=True, show_observations=False)
                 
 
                 if agent_done_removed.count(True) == env.get_num_agents():
