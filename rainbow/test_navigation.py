@@ -220,7 +220,7 @@ def main(args):
                 def infer_acts(states, actions, num_iter=3):
                     N = actions.shape[0]
                     actions_ = actions.clone()               
-                    joint_actions = torch.zeros(N, 2**3).to(device)
+                    joint_actions = torch.zeros(N, 2**7).to(device)
                     q_values = torch.zeros(N).to(device)
 
                     # calculating distance matrix of all agents
@@ -238,42 +238,28 @@ def main(args):
                     #print(distance_matrix)
                   
                     for i in range(num_iter):
-                        if N <= 3: # using joint action of 3 nearest neighbors
-                            for j in range(N):
-                                neighbors = np.argsort(distance_matrix[j])[1:] # all neighbor except for agent itself
-                                neighbor_actions = actions_[neighbors]
-                                neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
-                                complement = torch.tensor([1, 0])
+                        # using joint action of all other agents' actions
+                        for j in range(N):
+                            neighbors = np.argsort(distance_matrix[j])[1:] # all neighbor except for agent itself
+                            neighbor_actions = actions_[neighbors]
+                            neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
+                            complement = torch.tensor([1, 0])
                             
-                                if N == 1:
-                                    joint_action = torch.tensor([1,0])
-                                else:
-                                	joint_action = neighbor_actions[0]
-                            	
+                            if N == 1:
+                                joint_action = complement
+                                for k in range(6):
+                                    joint_action = torch.outer(complement, joint_action).flatten()
+                            else:
+                                joint_action = neighbor_actions[0]   
                                 # joint action of exsiting neighbors
-                                if N == 3: 
-                            	    joint_action = torch.outer(neighbor_actions[1], joint_action).flatten()
-                            	
+                                for k in range(N-2): 
+                                    joint_action = torch.outer(neighbor_actions[k+1], joint_action).flatten()
                                 # joint action of completments
-                                if N == 1:
-                                    for k in range(2):
-                                        joint_action = torch.outer(complement, joint_action).flatten()
-                                else:
-                                    for k in range(3+1-N): 
-                                	    joint_action = torch.outer(complement, joint_action).flatten()
-                            	
-                                joint_actions[j] = joint_action
-                        else:
-                            for j in range(N):
-                                neighbors = np.argsort(distance_matrix[j])[1:3+1]
-                                neighbor_actions = actions_[neighbors]
-                                neighbor_actions = torch.nn.functional.one_hot(neighbor_actions, num_classes=2)
-                            
-                                joint_action = neighbor_actions[0]
-                                for k in range(3-1):
-                                    joint_action = torch.outer(joint_action, neighbor_actions[k+1]).flatten()
-                                joint_actions[j] = joint_action
-                
+                                for k in range(8-N): 
+                                    joint_action = torch.outer(complement, joint_action).flatten()
+                                
+                            joint_actions[j] = joint_action
+    
                         for j in range(N):
                             state = states[j].to(device)
                             q_action = ep_controller.rl_agent.act(state, joint_actions[j], eps=eps)
