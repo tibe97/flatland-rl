@@ -198,6 +198,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
                                 aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1, N)))
                                 other_actions = torch.cat([pre_actions, aft_actions])
                                 other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2)
+                                other_actions = torch.mean(other_actions.float(), dim=0)
                                 mean_fields[j] = other_actions
 
                         for j in range(N):

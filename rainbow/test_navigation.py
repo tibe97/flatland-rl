@@ -37,10 +37,10 @@ def main(args):
     np.random.seed(1)
 
 
-    agent_weights_path = "/home/runnphoenix/work/flatland-rl/rainbow/test_results/checkpoint_1_agents_on_25_25/epoch_150_16_01_2022__05_29_"
+    agent_weights_path = "/home/runnphoenix/work/flatland-rl/rainbow/test_results/checkpoint_1_agents_on_25_25/epoch_150_20_01_2022__05_06_"
     ######## TEST SET SELECTION - PARAMETERS ########
     
-    test_multi_agent_setup = 2             # 1 for Medium size test, 2 for Big size test
+    test_multi_agent_setup = 1             # 1 for Medium size test, 2 for Big size test
     test_n_agents = 5                      # Number of agents to test (3 - 5 - 7 for Medium, 5 - 7 - 10 for Big)
     test_malfunctions_enabled = False      # Malfunctions enabled?
     test_agents_one_speed = True           # Test agents with the same speed (1) or with 4 different speeds?
@@ -247,6 +247,7 @@ def main(args):
                                 aft_actions = torch.index_select(actions_, 0, torch.LongTensor(range(j+1, N)))
                                 other_actions = torch.cat([pre_actions, aft_actions])
                                 other_actions = torch.nn.functional.one_hot(other_actions, num_classes=2)
+                                other_actions = torch.mean(other_actions.float(), dim=0)
                                 mean_fields[j] = other_actions
     
                         for j in range(N):
