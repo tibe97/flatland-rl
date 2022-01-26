@@ -329,7 +329,7 @@ def test(args, ep, dqn_agent, metrics, results_dir, evaluate=False):
             T_all_done.append(all_done)
             T_agents_deadlock.append(num_agents_in_deadlock / env.get_num_agents())
             # Print training results info
-            episode_stats = '\rEp: {}\t {} Agents on ({},{}).\t Ep score {:.3f}\t Done Agents in ep: {:.2f}%\t In deadlock {:.2f}%(at switch {})\t Not started {}\tEP ended at step: {}/{}\n'.format(
+            episode_stats = '\rEp: {}\t {} Agents on ({},{}).\t Ep score {:.3f}\t Done Agents in ep: {:.2f}%\t In deadlock {:.2f}%(at switch {})\t Not started {}\tEP ended at step: {}/{}'.format(
                 ep,
                 env.get_num_agents(), args.width, args.height,
                 score,

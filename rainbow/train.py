@@ -19,7 +19,7 @@ import pprint
 import math
 # make sure the root path is in system path
 from pathlib import Path
-from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau
+from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, CyclicLR
 from torch.utils.tensorboard import SummaryWriter
 import logging
 import wandb
@@ -40,8 +40,8 @@ def main(args):
     # initialize Weight and Biases for logging results
     
     # turn wandb off when only testing the code correctness
-    #wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_{}_agents_on_({}, {})_{}".format(args.run_title, args.num_agents, args.width, args.height, datetime.now().strftime("%d/%m/%Y %H:%M:%S")), config=args)
-    wandb.init(mode='disabled')
+    wandb.init(project="Flatland-{}".format(args.wandb_project_name), name= "{}_{}_agents_on_({}, {})_{}".format(args.run_title, args.num_agents, args.width, args.height, datetime.now().strftime("%d/%m/%Y %H:%M:%S")), config=args)
+    #wandb.init(mode='disabled')
 
     # ADAPTIVE parameters according to official configurations of tests 
     max_num_cities_adaptive = (args.num_agents//10)+2
@@ -115,10 +115,13 @@ def main(args):
         print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
 
     # LR scheduler to reduce learning rate over epochs
-    lr_scheduler = StepLR(rl_agent.optimizer_value, step_size=25, gamma=args.learning_rate_decay)
-    #lr_scheduler = ReduceLROnPlateau(rl_agent.optimizer_value, mode='min', factor=args.learning_rate_decay, patience=0, verbose=True, eps=1e-25)
-    lr_scheduler_policy = StepLR(rl_agent.optimizer_action, step_size=25, gamma=args.learning_rate_decay_policy)
+    # lr_scheduler = StepLR(rl_agent.optimizer_value, step_size=25, gamma=args.learning_rate_decay)
+    # lr_scheduler = ReduceLROnPlateau(rl_agent.optimizer_value, mode='min', factor=args.learning_rate_decay, patience=0, verbose=True, eps=1e-25)
+    # lr_scheduler_policy = StepLR(rl_agent.optimizer_action, step_size=25, gamma=args.learning_rate_decay_policy)
     
+    lr_scheduler = CyclicLR(rl_agent.optimizer_value, base_lr=0.0, max_lr=args.learning_rate, step_size_up=20, cycle_momentum=False, mode="triangular2")
+    lr_scheduler_policy = CyclicLR(rl_agent.optimizer_action, base_lr=0.0, max_lr=args.learning_rate, step_size_up=20, cycle_momentum=False, mode="triangular2")
+
     # Construct the environment with the given observation, generators, predictors, and stochastic data
     env = RailEnv(width=args.width,
                   height=args.height,
@@ -224,11 +227,11 @@ def main(args):
             if ep_controller.is_episode_done():
                 break  
 
-            eps = max(eps_end, eps_decay * eps)  # Decrease epsilon
+        eps = max(eps_end, eps_decay * eps)  # Decrease epsilon
 
         # Learn action STOP/GO only at the end of episode
         # For now let's just use value network
-        #rl_agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
+        rl_agent.learn_actions(ep_controller.log_probs_buffer, ep_controller.agent_ending_timestep, ep_controller.agent_done_removed, max_steps, ep)
 
         
         # end of episode
@@ -325,13 +328,13 @@ if __name__ == '__main__':
     parser.add_argument('--render', action='store_true',
                         default=False, help='Display screen (testing only)')
     parser.add_argument('--evaluation-interval', type=int, default=10, metavar='EPISODES', help='Number of episodes between evaluations')
-    parser.add_argument('--save-model-interval', type=int, default=50,
+    parser.add_argument('--save-model-interval', type=int, default=10,
                         help='Save models every tot episodes')
     parser.add_argument('--start-lr-decay', type=int, default=150,
                         help='Save models every tot episodes')
-    parser.add_argument('--eps-decay', type=float, default=0.999,
+    parser.add_argument('--eps-decay', type=float, default=0.992,
                         help='epsilon decay value')
-    parser.add_argument('--learning-rate', type=float, default=0.005,
+    parser.add_argument('--learning-rate', type=float, default=0.03,
                         help='LR for DQN agent')
     parser.add_argument('--learning-rate-decay', type=float, default=1.0,
                         help='LR decay for DQN agent')
