@@ -2,6 +2,12 @@
 
 The official page of the challenge, with all the details and materials, can be reached here: https://www.aicrowd.com/challenges/flatland
 
+This code was developed for the Flatland Challenge as the final project for the Deep Learning course from the Master Degree in Artificial Intelligence at UniBo.
+
+The code was developed by:
+- Jia Liang Zhou 0000929518
+- Hanying Zhang
+
 ## Observation
 The rail environment can be seen as composed of track sections, where each track section is a portion of the track delimited by 2 switches (forks). A switch is a cell where the train can choose between different direcitions, so it's a choice point. Other cells where there is only one possible direction are part of at least one track section. There are cells belonging to 2 track sections, these are the intersection cells.
 The state is the subjective point of view of an agent. Each agent has its own state-representation because the features are determined by relative attributes, such as the distance to the goal, the number of agents on the same track section navigating in the same or opposite direction and so on.
