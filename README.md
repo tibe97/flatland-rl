@@ -52,6 +52,8 @@ Problems with policy-based methos: neighbors are order invariant, so each node c
 So, policy-based approach should be NOT FEASIBIBLE combined with Graph Neural Network approach.
 For this reason we use a Value-based approach where we only compute the values of the reachable track section from a certain switch and then select the path leading to the highest value.
 
+## Multi Agent Communication
+Because the interactions between agents affect the decicsion-makeing of each other, we enable the interactions by makig a slightly more sophisticated Q function that incorparates knowledge of actions of other agents. We use mainly two different kinds of the new Q functionn, which are the mean field of other agents' actions and the joint action of other agents' actions.
 
 ## GNN Convolution layer
 This is the explaination of the VRSPConvolution.py file.

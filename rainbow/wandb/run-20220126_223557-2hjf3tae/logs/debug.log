@@ -1,0 +1,23 @@
+2022-01-26 22:35:57,950 INFO    MainThread:19486 [wandb_setup.py:_flush():71] setting env: {}
+2022-01-26 22:35:57,950 INFO    MainThread:19486 [wandb_setup.py:_flush():71] setting login settings: {}
+2022-01-26 22:35:57,951 INFO    MainThread:19486 [wandb_init.py:_log_setup():357] Logging user logs to /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20220126_223557-2hjf3tae/logs/debug.log
+2022-01-26 22:35:57,951 INFO    MainThread:19486 [wandb_init.py:_log_setup():358] Logging internal logs to /home/runnphoenix/work/flatland-rl/rainbow/wandb/run-20220126_223557-2hjf3tae/logs/debug-internal.log
+2022-01-26 22:35:57,951 INFO    MainThread:19486 [wandb_init.py:init():390] calling init triggers
+2022-01-26 22:35:57,951 INFO    MainThread:19486 [wandb_init.py:init():395] wandb.init called with sweep_config: {}
+config: {'width': 25, 'height': 25, 'num_agents': 1, 'max_num_cities': 2, 'seed': 1, 'grid_mode': False, 'max_rails_between_cities': 2, 'max_rails_in_city': 4, 'malfunction_rate': 0, 'min_duration': 20, 'max_duration': 50, 'observation_builder': 'GraphObsForRailEnv', 'predictor': 'ShortestPathPredictorForRailEnv', 'view_semiwidth': 7, 'view_height': 30, 'offset': 25, 'observation_depth': 3, 'num_episodes': 200, 'start_epoch': 0, 'max_steps': 300, 'eps': 1, 'debug_print': False, 'load_memory': False, 'evaluation_episodes': 3, 'render': False, 'evaluation_interval': 10, 'save_model_interval': 10, 'start_lr_decay': 150, 'eps_decay': 0.992, 'learning_rate': 0.03, 'learning_rate_decay': 1.0, 'learning_rate_decay_policy': 1.0, 'run_title': 'no-multi-no-action', 'wandb_project_name': 'flatland-original', 'model_path': 'test_results/', 'model_name': '', 'gat_layers': 3, 'flow': 'source_to_target', 'resume_weights': True, 'batch_norm': False, 'dropout_rate': 0.8, 'attention_heads': 4, 'batch_size': 128, 'use_stop_action': False, 'done_reward': 0, 'deadlock_reward': -1000, 'reward_scaling': 0.1}
+2022-01-26 22:35:57,951 INFO    MainThread:19486 [wandb_init.py:init():435] starting backend
+2022-01-26 22:35:57,951 INFO    MainThread:19486 [backend.py:_multiprocessing_setup():95] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2022-01-26 22:35:57,963 INFO    MainThread:19486 [backend.py:ensure_launched():199] starting backend process...
+2022-01-26 22:35:57,972 INFO    MainThread:19486 [backend.py:ensure_launched():204] started backend process with pid: 19655
+2022-01-26 22:35:57,973 INFO    MainThread:19486 [wandb_init.py:init():444] backend started and connected
+2022-01-26 22:35:57,976 INFO    MainThread:19486 [wandb_init.py:init():503] updated telemetry
+2022-01-26 22:35:57,999 INFO    MainThread:19486 [wandb_init.py:init():533] communicating current version
+2022-01-26 22:36:01,945 INFO    MainThread:19486 [wandb_init.py:init():538] got version response 
+2022-01-26 22:36:01,945 INFO    MainThread:19486 [wandb_init.py:init():548] communicating run to backend with 30 second timeout
+2022-01-26 22:36:31,947 INFO    MainThread:19486 [interface_queue.py:_communicate_run():336] couldn't get run from backend
+2022-01-26 22:36:31,947 ERROR   MainThread:19486 [wandb_init.py:init():553] backend process timed out
+2022-01-26 22:36:31,947 ERROR   MainThread:19486 [wandb_init.py:init():562] encountered error: Error communicating with wandb process
+try: wandb.init(settings=wandb.Settings(start_method='fork'))
+or:  wandb.init(settings=wandb.Settings(start_method='thread'))
+For more info see: https://docs.wandb.ai/library/init#init-start-error
+2022-01-26 22:37:01,369 INFO    MainThread:19486 [wandb_init.py:teardown():205] tearing down wandb.init
